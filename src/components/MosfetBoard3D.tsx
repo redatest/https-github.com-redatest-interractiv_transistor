@@ -53,8 +53,8 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
 
   const cid = params.catalogId;
   const isHBridge =
-    params.chapterId === 8 &&
-    (params.exampleId === 'h-bridge-motor' || params.exampleId === 'hbridge-motor' || cid === 'mos-hbridge-drive');
+    (params.chapterId === 8 && (params.exampleId === 'h-bridge-motor' || params.exampleId === 'hbridge-motor')) ||
+    cid === 'mos-hbridge-drive';
   const isCMOS = params.chapterId === 4 || cid === 'mos-cmos-inverter';
   const isBoost = params.chapterId === 7 || cid === 'mos-boost-12v';
   const isTester = cid === 'mos-multimeter-tester';
@@ -136,10 +136,12 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
               ))}
 
               {/* Copper rails */}
-              <path d="M 38 42 H 482" stroke="#b87333" strokeWidth="5" opacity="0.7" />
+              <path d="M 38 42 H 482" stroke={params.batteryReversed ? '#e11d48' : '#b87333'} strokeWidth="5" opacity="0.7" />
               <path d="M 38 212 H 482" stroke="#64748b" strokeWidth="5" opacity="0.75" />
-              <text x="42" y="34" fill="#fbbf24" fontSize="10" fontFamily="monospace" fontWeight="700">
-                +{isCMOS ? '5.0' : isBoost ? params.boostVin.toFixed(1) : params.vdd.toFixed(0)}V RAIL
+              <text x="42" y="34" fill={params.batteryReversed ? '#fb7185' : '#fbbf24'} fontSize="10" fontFamily="monospace" fontWeight="700">
+                {params.batteryReversed
+                  ? '−12V REVERSED!'
+                  : `+${isCMOS ? '5.0' : isBoost ? params.boostVin.toFixed(1) : params.vdd.toFixed(0)}V RAIL`}
               </text>
               <text x="42" y="229" fill="#94a3b8" fontSize="10" fontFamily="monospace" fontWeight="700">
                 GND (0 V)
@@ -215,24 +217,78 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   {/* Traces */}
                   <path d="M 137 42 V 66 M 387 42 V 66 M 137 188 V 212 M 387 188 V 212" stroke="#d4af37" strokeWidth="3" />
                   <path
-                    d="M 137 102 V 152 M 387 102 V 152 M 137 127 H 222 M 298 127 H 387"
-                    stroke={powerFlow ? '#38bdf8' : '#64748b'}
+                    d="M 137 102 V 152 M 387 102 V 152"
+                    stroke="#64748b"
+                    strokeWidth="3"
+                  />
+                  {/* Active Motor Current Path */}
+                  <path
+                    d="M 137 127 H 222 M 298 127 H 387"
+                    stroke={
+                      params.hbridgeState === 'FWD'
+                        ? '#38bdf8'
+                        : params.hbridgeState === 'REV'
+                        ? '#fbbf24'
+                        : params.hbridgeState === 'BRAKE'
+                        ? '#fb7185'
+                        : '#64748b'
+                    }
                     strokeWidth="3.5"
-                    className={powerFlow ? 'flow-active' : ''}
+                    className={
+                      params.hbridgeState === 'FWD'
+                        ? 'flow-active'
+                        : params.hbridgeState === 'REV'
+                        ? 'flow-active-rev'
+                        : ''
+                    }
                   />
 
-                  {/* Center Motor */}
+                  {/* Center Motor (rotor cleanly centered inside circle) */}
                   <g onClick={() => setSelectedPart('inductor')} className="cursor-pointer">
-                    <circle cx="260" cy="127" r="34" fill="#1e293b" stroke={powerFlow ? '#fbbf24' : '#64748b'} strokeWidth="3" />
-                    <g className={params.hbridgeState === 'FWD' || params.hbridgeState === 'REV' ? 'fan-spin' : ''} style={{ transformOrigin: '260px 127px' }}>
-                      <line x1="236" y1="127" x2="284" y2="127" stroke="#fbbf24" strokeWidth="3" />
-                      <line x1="260" y1="103" x2="260" y2="151" stroke="#38bdf8" strokeWidth="3" />
+                    <circle
+                      cx="260"
+                      cy="127"
+                      r="34"
+                      fill="#1e293b"
+                      stroke={
+                        params.hbridgeState === 'BRAKE'
+                          ? '#fb7185'
+                          : powerFlow
+                          ? '#fbbf24'
+                          : '#64748b'
+                      }
+                      strokeWidth="3"
+                    />
+                    <g transform="translate(260, 127)">
+                      <g
+                        className={
+                          params.hbridgeState === 'FWD'
+                            ? 'fan-spin'
+                            : params.hbridgeState === 'REV'
+                            ? 'fan-spin-rev'
+                            : ''
+                        }
+                      >
+                        <rect x="-24" y="-3.5" width="48" height="7" rx="3.5" fill="#fbbf24" />
+                        <rect x="-3.5" y="-24" width="7" height="48" rx="3.5" fill="#38bdf8" />
+                      </g>
                     </g>
-                    <circle cx="260" cy="127" r="10" fill="#0f172a" />
-                    <text x="260" y="131" textAnchor="middle" fill="#fff" fontSize="10" fontFamily="monospace" fontWeight="700">
+                    <circle cx="260" cy="127" r="10" fill="#0f172a" stroke="#e2e8f0" strokeWidth="1.5" />
+                    <text x="260" y="130.5" textAnchor="middle" fill="#fff" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       M
                     </text>
                   </g>
+
+                  {/* Direction label below motor */}
+                  <text x="260" y="177" textAnchor="middle" fill="#e2e8f0" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    {params.hbridgeState === 'FWD'
+                      ? '↻ FWD (CW)'
+                      : params.hbridgeState === 'REV'
+                      ? '↺ REV (CCW)'
+                      : params.hbridgeState === 'BRAKE'
+                      ? '■ BRAKE'
+                      : '○ COAST'}
+                  </text>
                 </g>
               ) : isCMOS ? (
                 /* CMOS stacked P-MOS + N-MOS inverter */

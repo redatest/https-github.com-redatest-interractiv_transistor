@@ -19,8 +19,8 @@ export const MosfetSchematicScope: React.FC<Props> = ({ params, sim, lang }) => 
   const isCMOS = params.chapterId === 4 || cid === 'mos-cmos-inverter';
   const isBoost = params.chapterId === 7 || cid === 'mos-boost-12v';
   const isHBridge =
-    params.chapterId === 8 &&
-    (params.exampleId === 'h-bridge-motor' || params.exampleId === 'hbridge-motor' || cid === 'mos-hbridge-drive');
+    (params.chapterId === 8 && (params.exampleId === 'h-bridge-motor' || params.exampleId === 'hbridge-motor')) ||
+    cid === 'mos-hbridge-drive';
   const isPWMOrMiller = params.chapterId === 5 || cid === 'mos-audio-pwm';
   const isFlyback = params.chapterId === 6 || cid === 'mos-flyback-clamp';
 

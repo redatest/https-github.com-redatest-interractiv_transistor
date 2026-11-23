@@ -102,6 +102,12 @@
   animation: fanSpin var(--spin-speed, 0.8s) linear infinite;
 }
 
+.fan-spin-rev {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fanSpin var(--spin-speed, 0.8s) linear infinite reverse;
+}
+
 @keyframes speakerPulse {
   0%, 100% {
     transform: scale(1);

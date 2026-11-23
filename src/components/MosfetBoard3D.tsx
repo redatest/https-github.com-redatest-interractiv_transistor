@@ -11,40 +11,40 @@ interface Props {
 
 const PART_INFO: Record<string, { name: string; fr: string; ar: string; en: string }> = {
   mosfet: {
-    name: 'MOSFET TO-220 (G–D–S)',
-    fr: 'Grille isolée par SiO₂ (I_G ≈ 0). Le champ électrique ouvre un canal entre Drain et Source avec R_DS(on) très faible.',
-    ar: 'بوابة معزولة بأكسيد SiO₂ (تيار ≈ 0). يفتح المجال الكهربائي قناة بين Drain و Source بمقاومة ضئيلة.',
-    en: 'Insulated SiO₂ Gate (I_G ≈ 0). Electric field opens a low-resistance channel between Drain and Source.',
+    name: 'MOSFET (G – D – S)',
+    fr: 'Grille (G) isolée par SiO₂ (I_G ≈ 0). La tension entre G et S ouvre un canal conducteur entre Drain (D) et Source (S).',
+    ar: 'البوابة (G) معزولة بأكسيد SiO₂ (تيار ≈ 0). يفتح الجهد بين G و S قناة بين المصرف (D) والمنبع (S).',
+    en: 'Gate (G) is insulated by SiO₂ (I_G ≈ 0). Voltage between G and S opens a conductive channel between Drain (D) and Source (S).',
   },
   pulldown: {
     name: '1 MΩ Gate Pull-Down',
-    fr: 'Décharge la capacité de grille C_iss vers GND dès qu’aucun signal n’est appliqué (évite le déclenchement statique).',
-    ar: 'تفرّغ شحنة مكثف البوابة نحو الأرضي لمنع بقاء الترانزستور مفتوحاً عشوائياً.',
-    en: 'Bleeds gate capacitance C_iss to GND whenever floating so static charge cannot latch the MOSFET ON.',
+    fr: 'Décharge la capacité de grille C_iss vers GND dès qu’aucun signal n’est appliqué sur la broche G.',
+    ar: 'تفرّغ شحنة مكثف البوابة G نحو الأرضي عند انقطاع إشارة التحكم.',
+    en: 'Bleeds gate capacitance C_iss on pin G to GND whenever floating.',
   },
   rg: {
     name: 'R_G Gate Resistor',
-    fr: 'Limite le pic de courant transitoire à l’entrée du microcontrôleur et calme les oscillations parasites.',
-    ar: 'تحدّ من ذروة تيار شحن البوابة لحماية منفذ الميكروكونترولر ومنع الرنين.',
-    en: 'Limits transient gate charging current spikes and damps parasitic ringing.',
+    fr: 'Placée en série devant la broche G (Grille) pour limiter le pic transitoire du microcontrôleur.',
+    ar: 'تُربط على التوالي مع البوابة G للحدّ من ذروة تيار الشحن اللحظي.',
+    en: 'Series resistor into pin G (Gate) to damp ringing and cap MCU peak current.',
   },
   flyback: {
     name: '1N5819 Flyback Diode',
-    fr: 'Absorbe la surtension −L·dI/dt d’un moteur ou d’une bobine à la coupure pour protéger le Drain.',
-    ar: 'تمتص قفزة الجهد الحثّية عند إطفاء المحرك أو الملف لحماية الموسفيت من الانهيار.',
-    en: 'Clamps inductive −L·dI/dt voltage spikes across motors/coils so the Drain never breaks down.',
+    fr: 'Protège la broche Drain (D) contre la surtension −L·dI/dt d’un moteur ou d’une bobine à la coupure.',
+    ar: 'تحمي المصرف (D) من قفزة الجهد الحثّية عند إطفاء المحرك أو الملف.',
+    en: 'Clamps inductive −L·dI/dt voltage spikes to protect the Drain (D) pin.',
   },
   inductor: {
-    name: 'Inductance L / Moteur',
-    fr: 'Stocke l’énergie magnétique (½·L·I²) lorsque le MOSFET conduit et la restitue quand il bloque.',
-    ar: 'يخزّن الطاقة المغناطيسية أثناء توصيل الموسفيت ثم يفرّغها بجهد أعلى أو في الحمل.',
-    en: 'Stores magnetic energy (½·L·I²) during ON-time and releases it on turn-off.',
+    name: 'Charge / Moteur / Bobine',
+    fr: 'Reçoit le flux de puissance lorsque le canal D ↔ S conduit. Observez le sens du courant à travers S et D.',
+    ar: 'تستقبل تيار القدرة عندما تنفتح القناة بين D و S. لاحظ اتجاه السهم عبر الأقطاب.',
+    en: 'Receives power flow when the D ↔ S channel conducts. Watch current flow through S and D.',
   },
   load: {
     name: 'Charge Puissance / LED',
-    fr: 'Reçoit la quasi-totalité de la tension grâce à R_DS(on) de quelques milliohms.',
-    ar: 'يحصل على الجهد الكامل تقريباً بفضل المقاومة الضئيلة للقناة المفتوحة.',
-    en: 'Receives nearly full rail voltage thanks to milliohm R_DS(on) drop.',
+    fr: 'Alimentée avec une chute minimale grâce à R_DS(on) de quelques milliohms entre D et S.',
+    ar: 'تتغذّى بهبوط جهد ضئيل جداً بفضل مقاومة R_DS(on) بين D و S.',
+    en: 'Powered with near-zero voltage drop thanks to milliohm R_DS(on) across D and S.',
   },
 };
 
@@ -80,26 +80,131 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
 
   const inspector = PART_INFO[selectedPart] ?? PART_INFO.mosfet;
 
+  // Helper to render a compact 3-pin MOSFET package for H-Bridge & CMOS (always showing G, D, S pins!)
+  const renderPinMosfet = ({
+    id,
+    x,
+    y,
+    polarity,
+    active,
+    gateDriveLabel,
+    gateHigh,
+    gateSide,
+    topPin,
+    bottomPin,
+  }: {
+    id: string;
+    x: number;
+    y: number;
+    polarity: 'P-MOS' | 'N-MOS';
+    active: boolean;
+    gateDriveLabel: string;
+    gateHigh: boolean;
+    gateSide: 'left' | 'right';
+    topPin: 'S' | 'D';
+    bottomPin: 'S' | 'D';
+  }) => {
+    const w = 68;
+    const h = 42;
+    const cx = x + w / 2;
+    const gatePinX = gateSide === 'left' ? x - 14 : x + w + 14;
+    const gateBodyX = gateSide === 'left' ? x : x + w;
+    const bodyColor = polarity === 'P-MOS' ? '#38bdf8' : '#fbbf24';
+
+    return (
+      <g key={id} onClick={() => setSelectedPart('mosfet')} className="cursor-pointer">
+        {/* Top vertical lead (S or D) */}
+        <line x1={cx} y1={y - 12} x2={cx} y2={y} stroke="#cbd5e1" strokeWidth="4" />
+        <circle cx={cx} cy={y - 12} r="3.5" fill={active ? bodyColor : '#94a3b8'} />
+        <text
+          x={cx + 8}
+          y={y - 4}
+          fill={topPin === 'S' ? '#e2e8f0' : '#fbbf24'}
+          fontSize="9"
+          fontFamily="monospace"
+          fontWeight="700"
+        >
+          {topPin}
+        </text>
+
+        {/* Bottom vertical lead (D or S) */}
+        <line x1={cx} y1={y + h} x2={cx} y2={y + h + 12} stroke="#cbd5e1" strokeWidth="4" />
+        <circle cx={cx} cy={y + h + 12} r="3.5" fill={active ? bodyColor : '#94a3b8'} />
+        <text
+          x={cx + 8}
+          y={y + h + 11}
+          fill={bottomPin === 'S' ? '#e2e8f0' : '#fbbf24'}
+          fontSize="9"
+          fontFamily="monospace"
+          fontWeight="700"
+        >
+          {bottomPin}
+        </text>
+
+        {/* Gate horizontal lead (G) */}
+        <line x1={gatePinX} y1={y + h / 2} x2={gateBodyX} y2={y + h / 2} stroke={gateHigh ? '#38bdf8' : '#94a3b8'} strokeWidth="3.5" />
+        <circle cx={gatePinX} cy={y + h / 2} r="3.5" fill={gateHigh ? '#38bdf8' : '#64748b'} />
+        <text
+          x={gateSide === 'left' ? gatePinX + 5 : gatePinX - 11}
+          y={y + h / 2 - 5}
+          fill="#38bdf8"
+          fontSize="9"
+          fontFamily="monospace"
+          fontWeight="700"
+        >
+          G
+        </text>
+        <text
+          x={gateSide === 'left' ? gatePinX - 4 : gatePinX + 4}
+          y={y + h / 2 + 12}
+          textAnchor={gateSide === 'left' ? 'end' : 'start'}
+          fill={active ? '#34d399' : '#94a3b8'}
+          fontSize="8.5"
+          fontFamily="monospace"
+          fontWeight="700"
+        >
+          {gateDriveLabel}
+        </text>
+
+        {/* Epoxy Package Body */}
+        <rect
+          x={x}
+          y={y}
+          width={w}
+          height={h}
+          rx="4"
+          fill={active ? (polarity === 'P-MOS' ? '#0c4a6e' : '#451a03') : '#18181b'}
+          stroke={active ? bodyColor : '#52525b'}
+          strokeWidth="2.2"
+        />
+        <text x={cx} y={y + 17} textAnchor="middle" fill="#f8fafc" fontSize="10" fontFamily="monospace" fontWeight="700">
+          {id}
+        </text>
+        <text x={cx} y={y + 31} textAnchor="middle" fill={bodyColor} fontSize="8.5" fontFamily="monospace" fontWeight="700">
+          {polarity} {active ? 'ON' : 'OFF'}
+        </text>
+      </g>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="workbench-mat rounded-xl p-4 sm:p-6 border border-stone-800/40 relative overflow-hidden">
-        <div
-          className="flex items-center justify-between text-xs font-mono-num text-stone-300 mb-3"
-          dir="ltr"
-        >
+        <div className="flex items-center justify-between text-xs font-mono-num text-stone-300 mb-3" dir="ltr">
           <span>
             {isTester
               ? 'ANALOG / DIODE MOSFET TEST BENCH'
               : isHBridge
-              ? '4-MOSFET H-BRIDGE PCB'
+              ? '4-MOSFET H-BRIDGE PCB (PINS G·D·S)'
               : isCMOS
-              ? 'CMOS COMPLEMENTARY PAIR'
+              ? 'CMOS COMPLEMENTARY PAIR (PINS G·D·S)'
               : isBoost
-              ? 'BOOST DC-DC CONVERTER'
-              : `${fetLabel} WORKBENCH PCB`}
+              ? 'BOOST DC-DC CONVERTER (PINS G·D·S)'
+              : `${fetLabel} WORKBENCH PCB (PINS G·D·S)`}
           </span>
           <span className={criticalHeat ? 'text-rose-400 font-bold' : hotGlow ? 'text-amber-400 font-bold' : 'text-sky-300'}>
-            T_J ≈ {Math.round(sim.tempC)} °C · R_DS = {sim.rdsOhms >= 100 ? '∞' : sim.rdsOhms < 1 ? `${(sim.rdsOhms * 1000).toFixed(0)} mΩ` : `${sim.rdsOhms.toFixed(2)} Ω`}
+            T_J ≈ {Math.round(sim.tempC)} °C · R_DS ={' '}
+            {sim.rdsOhms >= 100 ? '∞' : sim.rdsOhms < 1 ? `${(sim.rdsOhms * 1000).toFixed(0)} mΩ` : `${sim.rdsOhms.toFixed(2)} Ω`}
           </span>
         </div>
 
@@ -112,7 +217,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
             }}
             className="w-full max-w-[560px] rounded-xl bg-gradient-to-br from-[#0f4734] via-[#0c3b2c] to-[#08291f] border-2 border-[#1e6a4e] shadow-[0_22px_36px_rgba(0,0,0,0.55)] p-3"
           >
-            <svg viewBox="0 0 520 250" className="w-full h-auto select-none" direction="ltr">
+            <svg viewBox="0 0 520 265" className="w-full h-auto select-none" direction="ltr">
               <defs>
                 <filter id="mos-glow" x="-40%" y="-40%" width="180%" height="180%">
                   <feGaussianBlur stdDeviation="5" result="blur" />
@@ -127,103 +232,111 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
               {[
                 [14, 14],
                 [506, 14],
-                [14, 236],
-                [506, 236],
+                [14, 251],
+                [506, 251],
               ].map(([cx, cy], idx) => (
-                <g key={idx}>
-                  <circle cx={cx} cy={cy} r="6" fill="#061913" stroke="#d4af37" strokeWidth="2" />
-                </g>
+                <circle key={idx} cx={cx} cy={cy} r="6" fill="#061913" stroke="#d4af37" strokeWidth="2" />
               ))}
 
-              {/* Copper rails */}
-              <path d="M 38 42 H 482" stroke={params.batteryReversed ? '#e11d48' : '#b87333'} strokeWidth="5" opacity="0.7" />
-              <path d="M 38 212 H 482" stroke="#64748b" strokeWidth="5" opacity="0.75" />
-              <text x="42" y="34" fill={params.batteryReversed ? '#fb7185' : '#fbbf24'} fontSize="10" fontFamily="monospace" fontWeight="700">
+              {/* Copper Supply & Ground Rails */}
+              <path d="M 38 36 H 482" stroke={params.batteryReversed ? '#e11d48' : '#b87333'} strokeWidth="5" opacity="0.78" />
+              <path d="M 38 230 H 482" stroke="#64748b" strokeWidth="5" opacity="0.78" />
+              <text x="42" y="28" fill={params.batteryReversed ? '#fb7185' : '#fbbf24'} fontSize="10" fontFamily="monospace" fontWeight="700">
                 {params.batteryReversed
                   ? '−12V REVERSED!'
                   : `+${isCMOS ? '5.0' : isBoost ? params.boostVin.toFixed(1) : params.vdd.toFixed(0)}V RAIL`}
               </text>
-              <text x="42" y="229" fill="#94a3b8" fontSize="10" fontFamily="monospace" fontWeight="700">
+              <text x="42" y="247" fill="#94a3b8" fontSize="10" fontFamily="monospace" fontWeight="700">
                 GND (0 V)
               </text>
 
               {isTester ? (
-                /* Tester layout on PCB */
+                /* Tester layout on PCB with explicit 1:G, 2:D, 3:S pins */
                 <g>
-                  <rect x="44" y="58" width="175" height="135" rx="10" fill="#1e293b" stroke="#64748b" strokeWidth="2" />
-                  <rect x="58" y="70" width="147" height="72" rx="6" fill="#fefce8" />
-                  <path d="M 74 128 A 58 58 0 0 1 188 128" fill="none" stroke="#1c1917" strokeWidth="2" />
-                  <text x="68" y="122" fontSize="10" fontWeight="700" fill="#dc2626">∞</text>
-                  <text x="176" y="122" fontSize="10" fontWeight="700" fill="#16a34a">0 Ω</text>
-                  <g transform={`translate(131, 134) rotate(${-45 + sim.meterDeflection * 90})`}>
+                  <rect x="44" y="58" width="175" height="145" rx="10" fill="#1e293b" stroke="#64748b" strokeWidth="2" />
+                  <rect x="58" y="70" width="147" height="76" rx="6" fill="#fefce8" />
+                  <path d="M 74 132 A 58 58 0 0 1 188 132" fill="none" stroke="#1c1917" strokeWidth="2" />
+                  <text x="68" y="126" fontSize="10" fontWeight="700" fill="#dc2626">∞</text>
+                  <text x="176" y="126" fontSize="10" fontWeight="700" fill="#16a34a">0 Ω</text>
+                  <g transform={`translate(131, 138) rotate(${-45 + sim.meterDeflection * 90})`}>
                     <line x1="0" y1="0" x2="0" y2="-50" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" />
                     <circle cx="0" cy="0" r="4" fill="#0f172a" />
                   </g>
-                  <text x="131" y="170" textAnchor="middle" fill={sim.conducting ? '#34d399' : '#e2e8f0'} fontSize="11" fontFamily="monospace" fontWeight="700">
+                  <text x="131" y="178" textAnchor="middle" fill={sim.conducting ? '#34d399' : '#e2e8f0'} fontSize="11" fontFamily="monospace" fontWeight="700">
                     {params.testerGateCharged ? 'GATE LATCHED!' : sim.bodyDiodeActive ? 'BODY DIODE ~0.55V' : 'G–D–S PROBE'}
                   </text>
 
-                  {/* TO-220 under test */}
                   <g onClick={() => setSelectedPart('mosfet')} className="cursor-pointer">
-                    <rect x="305" y="74" width="74" height="58" rx="4" fill="#18181b" stroke="#71717a" strokeWidth="2" />
-                    <rect x="305" y="58" width="74" height="18" rx="2" fill="#cbd5e1" />
-                    <circle cx="342" cy="67" r="4.5" fill="#0f4734" />
-                    <text x="342" y="106" textAnchor="middle" fill="#38bdf8" fontSize="11" fontFamily="monospace" fontWeight="700">
+                    <rect x="305" y="76" width="78" height="58" rx="4" fill="#18181b" stroke="#71717a" strokeWidth="2" />
+                    <rect x="305" y="58" width="78" height="18" rx="2" fill="#cbd5e1" />
+                    <circle cx="344" cy="67" r="4.5" fill="#0f4734" />
+                    <text x="344" y="108" textAnchor="middle" fill="#38bdf8" fontSize="11" fontFamily="monospace" fontWeight="700">
                       {params.testerType === 'pmos_gds' ? 'IRF9540' : 'IRLZ44N'}
                     </text>
                     {[1, 2, 3].map((pin) => {
-                      const px = 300 + pin * 21;
+                      const px = 301 + pin * 21.5;
                       const isB = params.blackPin === pin;
                       const isR = params.redPin === pin;
                       return (
                         <g key={pin}>
-                          <line x1={px} y1="132" x2={px} y2="180" stroke="#cbd5e1" strokeWidth="4.5" />
-                          <text x={px} y="196" textAnchor="middle" fill="#e2e8f0" fontSize="11" fontFamily="monospace" fontWeight="700">
+                          <line x1={px} y1="134" x2={px} y2="188" stroke="#cbd5e1" strokeWidth="4.5" />
+                          <text x={px} y="206" textAnchor="middle" fill={pin === 1 ? '#38bdf8' : pin === 2 ? '#fbbf24' : '#e2e8f0'} fontSize="11" fontFamily="monospace" fontWeight="700">
                             {pin === 1 ? '1:G' : pin === 2 ? '2:D' : '3:S'}
                           </text>
-                          {isB && <circle cx={px} cy="166" r="6" fill="#09090b" stroke="#fff" strokeWidth="2" />}
-                          {isR && <circle cx={px} cy="152" r="6" fill="#e11d48" stroke="#fff" strokeWidth="2" />}
+                          {isB && <circle cx={px} cy="172" r="6" fill="#09090b" stroke="#fff" strokeWidth="2" />}
+                          {isR && <circle cx={px} cy="156" r="6" fill="#e11d48" stroke="#fff" strokeWidth="2" />}
                         </g>
                       );
                     })}
                   </g>
                 </g>
               ) : isHBridge ? (
-                /* 4 MOSFET H-Bridge layout */
+                /* 4-MOSFET H-Bridge PCB — every MOSFET drawn with S, D, G pins & copper flow */
                 <g>
-                  {[
-                    { id: 'Q1', x: 105, y: 66, label: 'Q1 P-MOS', on: params.hbridgeState === 'FWD' },
-                    { id: 'Q3', x: 355, y: 66, label: 'Q3 P-MOS', on: params.hbridgeState === 'REV' },
-                    { id: 'Q2', x: 105, y: 152, label: 'Q2 N-MOS', on: params.hbridgeState === 'REV' || params.hbridgeState === 'BRAKE' },
-                    { id: 'Q4', x: 355, y: 152, label: 'Q4 N-MOS', on: params.hbridgeState === 'FWD' || params.hbridgeState === 'BRAKE' },
-                  ].map((q) => (
-                    <g key={q.id} onClick={() => setSelectedPart('mosfet')} className="cursor-pointer">
-                      <rect
-                        x={q.x}
-                        y={q.y}
-                        width="64"
-                        height="36"
-                        rx="4"
-                        fill={q.on ? '#0369a1' : '#18181b'}
-                        stroke={q.on ? '#38bdf8' : '#52525b'}
-                        strokeWidth="2"
-                      />
-                      <text x={q.x + 32} y={q.y + 22} textAnchor="middle" fill="#f8fafc" fontSize="10" fontFamily="monospace" fontWeight="700">
-                        {q.label}
-                      </text>
-                    </g>
-                  ))}
-
-                  {/* Traces */}
-                  <path d="M 137 42 V 66 M 387 42 V 66 M 137 188 V 212 M 387 188 V 212" stroke="#d4af37" strokeWidth="3" />
+                  {/* Supply links into Q1.S & Q3.S */}
                   <path
-                    d="M 137 102 V 152 M 387 102 V 152"
-                    stroke="#64748b"
-                    strokeWidth="3"
+                    d="M 124 36 V 52"
+                    stroke={params.hbridgeState === 'FWD' ? '#fbbf24' : '#b87333'}
+                    strokeWidth="3.5"
+                    className={params.hbridgeState === 'FWD' ? 'flow-active' : ''}
                   />
-                  {/* Active Motor Current Path */}
                   <path
-                    d="M 137 127 H 222 M 298 127 H 387"
+                    d="M 396 36 V 52"
+                    stroke={params.hbridgeState === 'REV' ? '#fbbf24' : '#b87333'}
+                    strokeWidth="3.5"
+                    className={params.hbridgeState === 'REV' ? 'flow-active' : ''}
+                  />
+
+                  {/* Ground links out of Q2.S & Q4.S */}
+                  <path
+                    d="M 124 214 V 230"
+                    stroke={params.hbridgeState === 'REV' ? '#38bdf8' : params.hbridgeState === 'BRAKE' ? '#fb7185' : '#64748b'}
+                    strokeWidth="3.5"
+                    className={params.hbridgeState === 'REV' ? 'flow-active' : ''}
+                  />
+                  <path
+                    d="M 396 214 V 230"
+                    stroke={params.hbridgeState === 'FWD' ? '#38bdf8' : params.hbridgeState === 'BRAKE' ? '#fb7185' : '#64748b'}
+                    strokeWidth="3.5"
+                    className={params.hbridgeState === 'FWD' ? 'flow-active' : ''}
+                  />
+
+                  {/* Left Drain bus: Q1.D <-> Motor Left <-> Q2.D */}
+                  <path
+                    d="M 124 118 V 148"
+                    stroke={params.hbridgeState === 'FWD' || params.hbridgeState === 'REV' ? '#38bdf8' : params.hbridgeState === 'BRAKE' ? '#fb7185' : '#64748b'}
+                    strokeWidth="3.5"
+                  />
+                  {/* Right Drain bus: Q3.D <-> Motor Right <-> Q4.D */}
+                  <path
+                    d="M 396 118 V 148"
+                    stroke={params.hbridgeState === 'FWD' || params.hbridgeState === 'REV' ? '#fbbf24' : params.hbridgeState === 'BRAKE' ? '#fb7185' : '#64748b'}
+                    strokeWidth="3.5"
+                  />
+
+                  {/* Active Motor Horizontal Bus */}
+                  <path
+                    d="M 124 133 H 222 M 298 133 H 396"
                     stroke={
                       params.hbridgeState === 'FWD'
                         ? '#38bdf8'
@@ -233,7 +346,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                         ? '#fb7185'
                         : '#64748b'
                     }
-                    strokeWidth="3.5"
+                    strokeWidth="4"
                     className={
                       params.hbridgeState === 'FWD'
                         ? 'flow-active'
@@ -243,23 +356,67 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                     }
                   />
 
-                  {/* Center Motor (rotor cleanly centered inside circle) */}
+                  {/* 4 Real 3-Pin MOSFETs (Q1..Q4) */}
+                  {renderPinMosfet({
+                    id: 'Q1',
+                    x: 90,
+                    y: 64,
+                    polarity: 'P-MOS',
+                    active: params.hbridgeState === 'FWD',
+                    gateDriveLabel: params.hbridgeState === 'FWD' ? '0 V' : '+12V',
+                    gateHigh: params.hbridgeState === 'FWD',
+                    gateSide: 'left',
+                    topPin: 'S',
+                    bottomPin: 'D',
+                  })}
+                  {renderPinMosfet({
+                    id: 'Q3',
+                    x: 362,
+                    y: 64,
+                    polarity: 'P-MOS',
+                    active: params.hbridgeState === 'REV',
+                    gateDriveLabel: params.hbridgeState === 'REV' ? '0 V' : '+12V',
+                    gateHigh: params.hbridgeState === 'REV',
+                    gateSide: 'right',
+                    topPin: 'S',
+                    bottomPin: 'D',
+                  })}
+                  {renderPinMosfet({
+                    id: 'Q2',
+                    x: 90,
+                    y: 160,
+                    polarity: 'N-MOS',
+                    active: params.hbridgeState === 'REV' || params.hbridgeState === 'BRAKE',
+                    gateDriveLabel: params.hbridgeState === 'REV' || params.hbridgeState === 'BRAKE' ? '+12V' : '0 V',
+                    gateHigh: params.hbridgeState === 'REV' || params.hbridgeState === 'BRAKE',
+                    gateSide: 'left',
+                    topPin: 'D',
+                    bottomPin: 'S',
+                  })}
+                  {renderPinMosfet({
+                    id: 'Q4',
+                    x: 362,
+                    y: 160,
+                    polarity: 'N-MOS',
+                    active: params.hbridgeState === 'FWD' || params.hbridgeState === 'BRAKE',
+                    gateDriveLabel: params.hbridgeState === 'FWD' || params.hbridgeState === 'BRAKE' ? '+12V' : '0 V',
+                    gateHigh: params.hbridgeState === 'FWD' || params.hbridgeState === 'BRAKE',
+                    gateSide: 'right',
+                    topPin: 'D',
+                    bottomPin: 'S',
+                  })}
+
+                  {/* Center Motor (rotor centered cleanly at 260, 133) */}
                   <g onClick={() => setSelectedPart('inductor')} className="cursor-pointer">
                     <circle
                       cx="260"
-                      cy="127"
+                      cy="133"
                       r="34"
                       fill="#1e293b"
-                      stroke={
-                        params.hbridgeState === 'BRAKE'
-                          ? '#fb7185'
-                          : powerFlow
-                          ? '#fbbf24'
-                          : '#64748b'
-                      }
+                      stroke={params.hbridgeState === 'BRAKE' ? '#fb7185' : powerFlow ? '#fbbf24' : '#64748b'}
                       strokeWidth="3"
                     />
-                    <g transform="translate(260, 127)">
+                    <g transform="translate(260, 133)">
                       <g
                         className={
                           params.hbridgeState === 'FWD'
@@ -273,73 +430,153 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                         <rect x="-3.5" y="-24" width="7" height="48" rx="3.5" fill="#38bdf8" />
                       </g>
                     </g>
-                    <circle cx="260" cy="127" r="10" fill="#0f172a" stroke="#e2e8f0" strokeWidth="1.5" />
-                    <text x="260" y="130.5" textAnchor="middle" fill="#fff" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    <circle cx="260" cy="133" r="10" fill="#0f172a" stroke="#e2e8f0" strokeWidth="1.5" />
+                    <text x="260" y="136.5" textAnchor="middle" fill="#fff" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       M
                     </text>
                   </g>
 
-                  {/* Direction label below motor */}
-                  <text x="260" y="177" textAnchor="middle" fill="#e2e8f0" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                  <text x="260" y="185" textAnchor="middle" fill="#e2e8f0" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                     {params.hbridgeState === 'FWD'
-                      ? '↻ FWD (CW)'
+                      ? '↻ FWD (Q1.S→D → M → Q4.D→S)'
                       : params.hbridgeState === 'REV'
-                      ? '↺ REV (CCW)'
+                      ? '↺ REV (Q3.S→D → M → Q2.D→S)'
                       : params.hbridgeState === 'BRAKE'
-                      ? '■ BRAKE'
-                      : '○ COAST'}
+                      ? '■ BRAKE (Q2 + Q4 → GND)'
+                      : '○ COAST (ALL OFF)'}
                   </text>
                 </g>
               ) : isCMOS ? (
-                /* CMOS stacked P-MOS + N-MOS inverter */
+                /* CMOS Inverter PCB — Q1 P-MOS & Q2 N-MOS with real G, D, S pins & voltage flow */
                 <g>
                   {sim.shootThrough && (
-                    <rect x="218" y="48" width="96" height="156" rx="12" fill="rgba(244,63,94,0.28)" filter="url(#mos-glow)" />
+                    <rect x="206" y="48" width="114" height="174" rx="12" fill="rgba(244,63,94,0.26)" filter="url(#mos-glow)" />
                   )}
+
+                  {/* +5V Rail into Q1.S */}
                   <path
-                    d="M 266 42 V 212"
-                    stroke={sim.shootThrough ? '#f43f5e' : '#fbbf24'}
-                    strokeWidth={sim.shootThrough ? '5' : '3'}
-                    className={sim.shootThrough ? 'flow-active' : ''}
+                    d="M 262 36 V 52"
+                    stroke={params.cmosVin < 3.5 ? '#38bdf8' : '#b87333'}
+                    strokeWidth="4"
+                    className={sim.shootThrough || params.cmosVin <= 1.5 ? 'flow-active' : ''}
                   />
-                  <g onClick={() => setSelectedPart('mosfet')} className="cursor-pointer">
-                    <rect x="228" y="64" width="76" height="42" rx="4" fill="#18181b" stroke={params.cmosVin < 3.5 ? '#38bdf8' : '#52525b'} strokeWidth="2" />
-                    <text x="266" y="88" textAnchor="middle" fill="#38bdf8" fontSize="11" fontFamily="monospace" fontWeight="700">
-                      Q1 P-MOS
-                    </text>
-                    <rect x="228" y="144" width="76" height="42" rx="4" fill="#18181b" stroke={params.cmosVin > 1.5 ? '#fbbf24' : '#52525b'} strokeWidth="2" />
-                    <text x="266" y="168" textAnchor="middle" fill="#fbbf24" fontSize="11" fontFamily="monospace" fontWeight="700">
-                      Q2 N-MOS
-                    </text>
-                  </g>
-                  <path d="M 118 125 H 196 V 85 H 228 M 196 125 V 165 H 228" stroke="#38bdf8" strokeWidth="3" fill="none" />
-                  <rect x="64" y="108" width="68" height="34" rx="6" fill="#0f172a" stroke="#38bdf8" strokeWidth="2" />
-                  <text x="98" y="129" textAnchor="middle" fill="#e0f2fe" fontSize="11" fontFamily="monospace" fontWeight="700">
-                    IN {params.cmosVin.toFixed(1)}V
+
+                  {/* Shared Drain Junction (Q1.D <-> Q2.D) -> OUT */}
+                  <path
+                    d="M 262 118 V 148 M 262 133 H 376"
+                    stroke={sim.shootThrough ? '#f43f5e' : sim.vout > 2.5 ? '#38bdf8' : '#fbbf24'}
+                    strokeWidth="4"
+                    className={sim.shootThrough || params.cmosVin <= 1.5 || params.cmosVin >= 3.5 ? 'flow-active' : ''}
+                  />
+
+                  {/* Q2.S down to GND */}
+                  <path
+                    d="M 262 214 V 230"
+                    stroke={sim.shootThrough ? '#f43f5e' : params.cmosVin >= 3.5 ? '#fbbf24' : '#64748b'}
+                    strokeWidth="4"
+                    className={sim.shootThrough || params.cmosVin >= 3.5 ? 'flow-active' : ''}
+                  />
+
+                  {/* Input V_in copper bus feeding BOTH Gate pins (Q1.G & Q2.G) */}
+                  <path
+                    d="M 118 133 H 188 V 85 H 214 M 188 133 V 181 H 214"
+                    stroke={params.cmosVin >= 2.5 ? '#38bdf8' : '#64748b'}
+                    strokeWidth="3.5"
+                    fill="none"
+                  />
+
+                  {/* Real 3-Pin Q1 P-MOS & Q2 N-MOS */}
+                  {renderPinMosfet({
+                    id: 'Q1',
+                    x: 228,
+                    y: 64,
+                    polarity: 'P-MOS',
+                    active: params.cmosVin < 3.5 && (!sim.shootThrough ? params.cmosVin <= 1.5 || !params.deadTimeEnabled : true),
+                    gateDriveLabel: `${params.cmosVin.toFixed(1)}V`,
+                    gateHigh: params.cmosVin >= 2.5,
+                    gateSide: 'left',
+                    topPin: 'S',
+                    bottomPin: 'D',
+                  })}
+                  {renderPinMosfet({
+                    id: 'Q2',
+                    x: 228,
+                    y: 160,
+                    polarity: 'N-MOS',
+                    active: params.cmosVin > 1.5 && (!sim.shootThrough ? params.cmosVin >= 3.5 || !params.deadTimeEnabled : true),
+                    gateDriveLabel: `${params.cmosVin.toFixed(1)}V`,
+                    gateHigh: params.cmosVin >= 2.5,
+                    gateSide: 'left',
+                    topPin: 'D',
+                    bottomPin: 'S',
+                  })}
+
+                  {/* Input & Output Blocks */}
+                  <rect x="44" y="114" width="76" height="38" rx="6" fill="#0f172a" stroke="#38bdf8" strokeWidth="2" />
+                  <text x="82" y="131" textAnchor="middle" fill="#38bdf8" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    GATE IN
                   </text>
-                  <path d="M 266 125 H 378" stroke="#34d399" strokeWidth="3.5" />
-                  <rect x="378" y="106" width="96" height="38" rx="6" fill="#0f172a" stroke="#34d399" strokeWidth="2" />
-                  <text x="426" y="129" textAnchor="middle" fill="#34d399" fontSize="11" fontFamily="monospace" fontWeight="700">
-                    OUT {sim.vout.toFixed(1)}V
+                  <text x="82" y="145" textAnchor="middle" fill="#e0f2fe" fontSize="11" fontFamily="monospace" fontWeight="700">
+                    {params.cmosVin.toFixed(1)} V
+                  </text>
+
+                  <rect x="376" y="112" width="102" height="42" rx="6" fill="#0f172a" stroke={sim.shootThrough ? '#f43f5e' : '#34d399'} strokeWidth="2" />
+                  <text x="427" y="130" textAnchor="middle" fill="#94a3b8" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    DRAIN OUT
+                  </text>
+                  <text x="427" y="146" textAnchor="middle" fill={sim.shootThrough ? '#fb7185' : '#34d399'} fontSize="11" fontFamily="monospace" fontWeight="700">
+                    {sim.vout.toFixed(1)} V
                   </text>
                 </g>
               ) : (
-                /* Standard Power / Gate Control PCB layout */
+                /* Standard Power / Gate Control PCB — copper traces connect directly into exact G, D, S pads */
                 <g>
-                  {/* Copper Traces */}
+                  {/* 1) Copper trace from GATE IN -> R_G -> 1MΩ node -> Gate pin G (x=250, y=194) */}
                   <path
-                    d="M 88 148 H 170 H 228"
+                    d="M 118 148 H 198 V 194 H 250"
                     stroke={Math.abs(sim.vgs) > 0.5 ? '#38bdf8' : '#64748b'}
                     strokeWidth="3.5"
                     fill="none"
                   />
-                  <path
-                    d="M 272 42 V 82 M 272 135 V 188 M 305 188 H 430 V 42"
-                    stroke={powerFlow ? '#fbbf24' : '#b87333'}
-                    strokeWidth="4"
-                    fill="none"
-                    className={powerFlow ? 'flow-active' : ''}
-                  />
+
+                  {/* 2) Copper power trace through exact Drain (x=274) and Source (x=298) pins */}
+                  {isPMOS ? (
+                    <>
+                      {/* P-MOS High-Side / Reverse Guard: +Rail -> S (x=298) -> D (x=274) -> Load -> GND */}
+                      <path
+                        d="M 298 36 V 194"
+                        stroke={powerFlow ? '#38bdf8' : params.batteryReversed ? '#fb7185' : '#b87333'}
+                        strokeWidth="4"
+                        fill="none"
+                        className={powerFlow ? 'flow-active' : ''}
+                      />
+                      <path
+                        d="M 274 194 V 208 H 424 V 156 M 424 78 V 230"
+                        stroke={powerFlow ? '#fbbf24' : '#64748b'}
+                        strokeWidth="4"
+                        fill="none"
+                        className={powerFlow ? 'flow-active' : ''}
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {/* N-MOS Low-Side: +Rail -> Load -> Drain pin D (x=274) -> Source pin S (x=298) -> GND */}
+                      <path
+                        d="M 424 36 V 78 M 424 156 V 208 H 274 V 194"
+                        stroke={powerFlow ? '#fbbf24' : '#b87333'}
+                        strokeWidth="4"
+                        fill="none"
+                        className={powerFlow ? 'flow-active' : ''}
+                      />
+                      <path
+                        d="M 298 194 V 230"
+                        stroke={powerFlow ? '#38bdf8' : '#64748b'}
+                        strokeWidth="4"
+                        fill="none"
+                        className={powerFlow ? 'flow-active' : ''}
+                      />
+                    </>
+                  )}
 
                   {/* Gate Input Pad / MCU */}
                   <g
@@ -354,36 +591,36 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                     }
                     className="cursor-pointer"
                   >
-                    <rect x="36" y="126" width="84" height="44" rx="6" fill="#0f172a" stroke="#38bdf8" strokeWidth="2" />
-                    <text x="78" y="145" textAnchor="middle" fill="#38bdf8" fontSize="10" fontFamily="monospace" fontWeight="700">
+                    <rect x="34" y="126" width="84" height="44" rx="6" fill="#0f172a" stroke="#38bdf8" strokeWidth="2" />
+                    <text x="76" y="145" textAnchor="middle" fill="#38bdf8" fontSize="10" fontFamily="monospace" fontWeight="700">
                       GATE IN
                     </text>
-                    <text x="78" y="160" textAnchor="middle" fill="#f8fafc" fontSize="11" fontFamily="monospace" fontWeight="700">
+                    <text x="76" y="160" textAnchor="middle" fill="#f8fafc" fontSize="11" fontFamily="monospace" fontWeight="700">
                       {sim.vgs.toFixed(1)} V
                     </text>
                   </g>
 
                   {/* R_G Gate Resistor */}
                   <g onClick={() => setSelectedPart('rg')} className="cursor-pointer">
-                    <rect x="140" y="139" width="44" height="18" rx="4" fill="#d6b47c" stroke="#92400e" strokeWidth="1.5" />
-                    <text x="162" y="151" textAnchor="middle" fill="#1c1917" fontSize="9" fontFamily="monospace" fontWeight="700">
+                    <rect x="136" y="139" width="42" height="18" rx="4" fill="#d6b47c" stroke="#92400e" strokeWidth="1.5" />
+                    <text x="157" y="151" textAnchor="middle" fill="#1c1917" fontSize="9" fontFamily="monospace" fontWeight="700">
                       R_G
                     </text>
                   </g>
 
-                  {/* 1 MOhm Pull-Down */}
+                  {/* 1 MOhm Pull-Down from Gate node to GND */}
                   <g onClick={() => setSelectedPart('pulldown')} className="cursor-pointer">
-                    <line x1="200" y1="148" x2="200" y2="212" stroke="#64748b" strokeWidth="2.5" />
+                    <line x1="198" y1="148" x2="198" y2="230" stroke="#64748b" strokeWidth="2.5" />
                     <rect
-                      x="189"
-                      y="165"
+                      x="187"
+                      y="174"
                       width="22"
                       height="30"
                       rx="3"
                       fill={params.pullDown1M ? '#3b82f6' : '#334155'}
                       opacity={params.pullDown1M ? 1 : 0.35}
                     />
-                    <text x="200" y="183" textAnchor="middle" fill="#fff" fontSize="8" fontFamily="monospace" fontWeight="700">
+                    <text x="198" y="192" textAnchor="middle" fill="#fff" fontSize="8" fontFamily="monospace" fontWeight="700">
                       {params.pullDown1M ? '1MΩ' : 'OFF'}
                     </text>
                   </g>
@@ -391,7 +628,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   {/* Thermal halo on MOSFET */}
                   {hotGlow && (
                     <circle
-                      cx="272"
+                      cx="274"
                       cy="126"
                       r="52"
                       fill={criticalHeat ? 'rgba(244,63,94,0.38)' : 'rgba(245,158,11,0.3)'}
@@ -399,56 +636,80 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                     />
                   )}
 
-                  {/* Main TO-220 MOSFET */}
+                  {/* Main TO-220 MOSFET with explicit copper solder pads & G / D / S pin names */}
                   <g onClick={() => setSelectedPart('mosfet')} className="cursor-pointer">
-                    <rect x="234" y="80" width="76" height="22" rx="2" fill="#cbd5e1" stroke="#64748b" />
-                    <circle cx="272" cy="91" r="5" fill="#0f4734" />
+                    <rect x="236" y="76" width="76" height="22" rx="2" fill="#cbd5e1" stroke="#64748b" />
+                    <circle cx="274" cy="87" r="5" fill="#0f4734" />
                     <rect
-                      x="234"
-                      y="102"
+                      x="236"
+                      y="98"
                       width="76"
-                      height="52"
+                      height="56"
                       rx="4"
                       fill="#18181b"
                       stroke={hotGlow ? '#f43f5e' : powerFlow ? '#38bdf8' : '#71717a'}
                       strokeWidth="2.5"
                     />
-                    <text x="272" y="124" textAnchor="middle" fill="#f8fafc" fontSize="11" fontFamily="monospace" fontWeight="700">
+                    <text x="274" y="121" textAnchor="middle" fill="#f8fafc" fontSize="11" fontFamily="monospace" fontWeight="700">
                       {fetLabel}
                     </text>
-                    <text x="272" y="141" textAnchor="middle" fill={powerFlow ? '#34d399' : '#94a3b8'} fontSize="9.5" fontFamily="monospace">
+                    <text x="274" y="138" textAnchor="middle" fill={powerFlow ? '#34d399' : '#94a3b8'} fontSize="9.5" fontFamily="monospace">
                       {sim.rdsOhms < 1 ? `${(sim.rdsOhms * 1000).toFixed(0)} mΩ` : sim.rdsOhms > 1e5 ? 'OFF' : `${sim.rdsOhms.toFixed(1)} Ω`}
                     </text>
-                    {/* Leads G D S */}
-                    <line x1="248" y1="154" x2="248" y2="188" stroke="#cbd5e1" strokeWidth="4" />
-                    <line x1="272" y1="154" x2="272" y2="188" stroke="#cbd5e1" strokeWidth="4" />
-                    <line x1="296" y1="154" x2="296" y2="188" stroke="#cbd5e1" strokeWidth="4" />
-                    <text x="248" y="200" textAnchor="middle" fill="#38bdf8" fontSize="10" fontFamily="monospace" fontWeight="700">G</text>
-                    <text x="272" y="200" textAnchor="middle" fill="#fbbf24" fontSize="10" fontFamily="monospace" fontWeight="700">D</text>
-                    <text x="296" y="200" textAnchor="middle" fill="#94a3b8" fontSize="10" fontFamily="monospace" fontWeight="700">S</text>
-                    <path d="M 296 188 V 212" stroke="#94a3b8" strokeWidth="3.5" />
+
+                    {/* Leads G (250), D (274), S (298) down to PCB solder pads at y=194 */}
+                    <line x1="250" y1="154" x2="250" y2="194" stroke="#cbd5e1" strokeWidth="4.5" />
+                    <line x1="274" y1="154" x2="274" y2="194" stroke="#cbd5e1" strokeWidth="4.5" />
+                    <line x1="298" y1="154" x2="298" y2="194" stroke="#cbd5e1" strokeWidth="4.5" />
+
+                    {/* Copper pads */}
+                    <circle cx="250" cy="194" r="5" fill={Math.abs(sim.vgs) > 0.5 ? '#38bdf8' : '#94a3b8'} stroke="#0f172a" strokeWidth="1.5" />
+                    <circle cx="274" cy="194" r="5" fill={powerFlow ? '#fbbf24' : '#94a3b8'} stroke="#0f172a" strokeWidth="1.5" />
+                    <circle cx="298" cy="194" r="5" fill={powerFlow ? '#38bdf8' : '#94a3b8'} stroke="#0f172a" strokeWidth="1.5" />
+
+                    {/* Clear Pin Labels + Pin Voltages */}
+                    <text x="250" y="182" textAnchor="end" dx="-7" fill="#38bdf8" fontSize="10.5" fontFamily="monospace" fontWeight="700">
+                      G
+                    </text>
+                    <text x="274" y="176" textAnchor="middle" fill="#fbbf24" fontSize="10.5" fontFamily="monospace" fontWeight="700">
+                      D
+                    </text>
+                    <text x="298" y="182" textAnchor="start" dx="7" fill="#e2e8f0" fontSize="10.5" fontFamily="monospace" fontWeight="700">
+                      S
+                    </text>
+
+                    {/* Pin voltage telemetry underneath pads */}
+                    <text x="250" y="216" textAnchor="middle" fill="#38bdf8" fontSize="8.5" fontFamily="monospace">
+                      {sim.vgs.toFixed(1)}V
+                    </text>
+                    <text x="274" y="223" textAnchor="middle" fill="#fbbf24" fontSize="8.5" fontFamily="monospace">
+                      {sim.vds.toFixed(1)}V
+                    </text>
+                    <text x="298" y="216" textAnchor="middle" fill="#cbd5e1" fontSize="8.5" fontFamily="monospace">
+                      {isPMOS ? `+${params.vdd.toFixed(0)}V` : '0V'}
+                    </text>
                   </g>
 
-                  {/* Load / Inductor / LED / Boost Stage */}
+                  {/* Load / Inductor / Boost Stage */}
                   <g onClick={() => setSelectedPart(isBoost ? 'inductor' : 'load')} className="cursor-pointer">
                     <rect
                       x="372"
-                      y="76"
-                      width="102"
-                      height="76"
+                      y="78"
+                      width="104"
+                      height="78"
                       rx="10"
                       fill={powerFlow ? 'rgba(251,191,36,0.16)' : '#0f172a'}
                       stroke={powerFlow ? '#fbbf24' : '#475569'}
                       strokeWidth="2.5"
                     />
-                    <text x="423" y="108" textAnchor="middle" fill="#fbbf24" fontSize="11" fontFamily="monospace" fontWeight="700">
+                    <text x="424" y="110" textAnchor="middle" fill="#fbbf24" fontSize="11" fontFamily="monospace" fontWeight="700">
                       {isBoost
                         ? `BOOST ${sim.vout.toFixed(1)}V`
                         : params.chapterId === 6 || cid === 'mos-flyback-clamp'
                         ? 'COIL / MOTOR'
                         : 'LOAD'}
                     </text>
-                    <text x="423" y="130" textAnchor="middle" fill="#e2e8f0" fontSize="12" fontFamily="monospace" fontWeight="700">
+                    <text x="424" y="132" textAnchor="middle" fill="#e2e8f0" fontSize="12" fontFamily="monospace" fontWeight="700">
                       {sim.idA.toFixed(2)} A
                     </text>
                   </g>
@@ -458,14 +719,14 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                     <g onClick={() => setSelectedPart('flyback')} className="cursor-pointer">
                       <rect
                         x="372"
-                        y="164"
-                        width="102"
+                        y="168"
+                        width="104"
                         height="26"
                         rx="5"
                         fill={params.flybackInstalled ? '#064e3b' : '#7f1d1d'}
                         stroke={params.flybackInstalled ? '#34d399' : '#f87171'}
                       />
-                      <text x="423" y="181" textAnchor="middle" fill="#fff" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      <text x="424" y="185" textAnchor="middle" fill="#fff" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                         {params.flybackInstalled ? '1N5819 DIODE OK' : 'NO DIODE! +96V'}
                       </text>
                     </g>

@@ -12,6 +12,8 @@ import {
   CheckCircle2,
   AlertCircle,
   BookOpen,
+  Columns2,
+  Maximize2,
 } from 'lucide-react';
 import { ChapterDef, Lang, tr } from '../types';
 import { computeSimulation, fingerResistance, SimParams } from '../utils/physics';
@@ -49,6 +51,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
   );
 
   const [stageView, setStageView] = useState<StageView>('board3d');
+  const [wideReading, setWideReading] = useState<boolean>(false);
   const [selectedExampleId, setSelectedExampleId] = useState<string>(
     activeExampleId || chapter.examples[0].id
   );
@@ -201,6 +204,26 @@ export const ChapterWorkspace: React.FC<Props> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {!teacherMode && (
+            <button
+              type="button"
+              onClick={() => setWideReading((w) => !w)}
+              className={`px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+                wideReading
+                  ? 'bg-amber-600 text-white border-amber-600'
+                  : 'border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800'
+              }`}
+              title={tr(lang, 'Élargir la zone de lecture', 'توسيع مساحة القراءة', 'Widen reading pane')}
+            >
+              {wideReading ? <Columns2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              <span>
+                {wideReading
+                  ? tr(lang, 'Côte à côte', 'عرض مزدوج', 'Side-by-side')
+                  : tr(lang, 'Lecture large', 'قراءة موسّعة', 'Wide Reading')}
+              </span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onToggleMute}
@@ -232,10 +255,10 @@ export const ChapterWorkspace: React.FC<Props> = ({
       </div>
 
       {/* Main Two-Zone Educational Sandbox */}
-      <div className={`grid grid-cols-1 ${teacherMode ? '' : 'lg:grid-cols-12'} gap-6 items-start`}>
+      <div className={`grid grid-cols-1 ${teacherMode || wideReading ? '' : 'lg:grid-cols-12'} gap-8 items-start`}>
         {/* LEFT ZONE: Theory, Concrete Book Examples & Predict-Observe-Explain */}
         {!teacherMode && (
-          <div className="lg:col-span-5 flex flex-col gap-5">
+          <div className={`${wideReading ? 'w-full max-w-5xl mx-auto' : 'lg:col-span-6'} flex flex-col gap-6`}>
             {/* Chapter Title + Book Page Reference */}
             <div>
               <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 font-mono-num mb-1.5">
@@ -244,10 +267,10 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 <span aria-hidden="true">·</span>
                 <span>{chapter.pageRef}</span>
               </div>
-              <h2 className="text-2xl font-bold text-stone-900 dark:text-stone-50 tracking-tight text-balance">
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-50 tracking-tight text-balance">
                 {chapter.title[lang]}
               </h2>
-              <p className="text-sm text-stone-600 dark:text-stone-300 mt-1">
+              <p className="text-[15px] text-stone-600 dark:text-stone-300 mt-1.5 leading-relaxed">
                 {chapter.subtitle[lang]}
               </p>
             </div>
@@ -268,7 +291,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
             </div>
 
             {/* Concise Theory Points */}
-            <div className="space-y-2.5 text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
+            <div className="space-y-3 text-[15px] text-stone-700 dark:text-stone-300 leading-7">
               {chapter.theory.map((t, i) => (
                 <p key={i}>{t[lang]}</p>
               ))}
@@ -364,7 +387,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
         )}
 
         {/* RIGHT ZONE: Interactive Simulation Stage + Controls */}
-        <div className={`${teacherMode ? 'w-full max-w-5xl mx-auto' : 'lg:col-span-7'} flex flex-col gap-4`}>
+        <div className={`${teacherMode || wideReading ? 'w-full max-w-5xl mx-auto' : 'lg:col-span-6'} flex flex-col gap-4`}>
           {/* Stage Visual Mode Switcher */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1 p-1 bg-stone-200/80 dark:bg-stone-800 rounded-lg">

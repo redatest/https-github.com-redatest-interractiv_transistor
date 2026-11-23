@@ -555,15 +555,15 @@ export const MosfetCatalogLabView: React.FC<Props> = ({
       {stageView === 'analogy' && <MosfetAnalogyView params={params} sim={sim} lang={lang} />}
 
       {/* Circuit Explanation + Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-4 flex flex-col gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-6 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-5 flex flex-col gap-2.5">
           <div className="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-400">
             {tr(lang, 'Principe du montage', 'مبدأ الدارة', 'Circuit Principle')}
           </div>
-          <p className="text-sm text-stone-700 dark:text-stone-200 leading-relaxed">{circuit.concept[lang]}</p>
+          <p className="text-[15px] text-stone-700 dark:text-stone-200 leading-7">{circuit.concept[lang]}</p>
         </div>
 
-        <div className="lg:col-span-7 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-4 flex flex-col gap-4">
+        <div className="lg:col-span-6 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-5 flex flex-col gap-4">
           {renderControls()}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-stone-200 dark:border-stone-800 text-xs">
             <div>

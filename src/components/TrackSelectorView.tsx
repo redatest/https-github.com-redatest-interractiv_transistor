@@ -26,7 +26,7 @@ export const TrackSelectorView: React.FC<Props> = ({
   return (
     <div className="flex flex-col gap-8 py-2">
       {/* Editorial Header */}
-      <section className="max-w-3xl">
+      <section className="max-w-5xl">
         <p className="text-xs font-mono-num text-amber-700 dark:text-amber-400">
           {tr(
             lang,

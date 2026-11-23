@@ -11,6 +11,8 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
+  Columns2,
+  Maximize2,
 } from 'lucide-react';
 import { ChapterDef, Lang, tr } from '../types';
 import {
@@ -122,6 +124,7 @@ export const MosfetWorkspace: React.FC<Props> = ({
   );
 
   const [stageView, setStageView] = useState<StageView>('board3d');
+  const [wideReading, setWideReading] = useState<boolean>(false);
   const [params, setParams] = useState<MosfetSimParams>(() =>
     buildMosfetParamsForChapter(chapter.id, activeExampleId ?? chapter.examples[0]?.id)
   );
@@ -590,6 +593,24 @@ export const MosfetWorkspace: React.FC<Props> = ({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {!teacherMode && (
+            <button
+              type="button"
+              onClick={() => setWideReading((w) => !w)}
+              className={`px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
+                wideReading
+                  ? 'bg-sky-600 text-white border-sky-600'
+                  : 'bg-white dark:bg-stone-900 border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800'
+              }`}
+            >
+              {wideReading ? <Columns2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              <span>
+                {wideReading
+                  ? tr(lang, 'Côte à côte', 'عرض مزدوج', 'Side-by-side')
+                  : tr(lang, 'Lecture large', 'قراءة موسّعة', 'Wide Reading')}
+              </span>
+            </button>
+          )}
           <button
             type="button"
             onClick={onToggleMute}
@@ -632,20 +653,20 @@ export const MosfetWorkspace: React.FC<Props> = ({
       </div>
 
       {/* Main 2-Zone Pedagogical Sandbox */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN (5 cols): Theory, Formula, Examples, Quiz */}
+      <div className={`grid grid-cols-1 ${teacherMode || wideReading ? '' : 'lg:grid-cols-12'} gap-8 items-start`}>
+        {/* LEFT COLUMN: Theory, Formula, Examples, Quiz */}
         {!teacherMode && (
-          <section className="lg:col-span-5 flex flex-col gap-5">
+          <section className={`${wideReading ? 'w-full max-w-5xl mx-auto' : 'lg:col-span-6'} flex flex-col gap-6`}>
             <div>
               <div className="text-xs font-mono-num text-sky-700 dark:text-sky-400">
                 {tr(lang, `MOSFET · Chapitre ${chapter.id} / ${chapters.length}`, `الموسفيت · الفصل ${chapter.id} / ${chapters.length}`, `MOSFET · Chapter ${chapter.id} / ${chapters.length}`)}
                 {' · '}
                 {chapter.pageRef}
               </div>
-              <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-50 mt-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-50 mt-1">
                 {chapter.title[lang]}
               </h1>
-              <p className="text-sm text-stone-600 dark:text-stone-300 mt-1">
+              <p className="text-[15px] text-stone-600 dark:text-stone-300 mt-1.5 leading-relaxed">
                 {chapter.subtitle[lang]}
               </p>
             </div>
@@ -675,7 +696,7 @@ export const MosfetWorkspace: React.FC<Props> = ({
               )}
             </div>
 
-            <div className="text-sm text-stone-700 dark:text-stone-200 leading-relaxed space-y-3">
+            <div className="text-[15px] text-stone-700 dark:text-stone-200 leading-7 space-y-3">
               {chapter.theory.map((para, idx) => (
                 <p key={idx}>{para[lang]}</p>
               ))}
@@ -768,8 +789,8 @@ export const MosfetWorkspace: React.FC<Props> = ({
           </section>
         )}
 
-        {/* RIGHT COLUMN (7 cols or full width in Teacher Mode): Interactive Workbench */}
-        <section className={`${teacherMode ? 'lg:col-span-12 max-w-5xl w-full mx-auto' : 'lg:col-span-7'} flex flex-col gap-4 lg:sticky lg:top-20`}>
+        {/* RIGHT COLUMN: Interactive Workbench */}
+        <section className={`${teacherMode || wideReading ? 'w-full max-w-5xl mx-auto' : 'lg:col-span-6 lg:sticky lg:top-20'} flex flex-col gap-4`}>
           {/* 3-Tab Stage Switcher + Reset */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1 p-1 bg-stone-200/80 dark:bg-stone-800/80 rounded-lg">

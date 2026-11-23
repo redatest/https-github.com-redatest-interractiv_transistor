@@ -129,7 +129,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col bg-[#fbf8f2] dark:bg-stone-950 text-stone-900 dark:text-stone-100 transition-colors">
       {/* Strictly 3-Zone Top Bar */}
       <header className="sticky top-0 z-30 border-b border-stone-200 dark:border-stone-800 bg-[#fbf8f2]/90 dark:bg-stone-950/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-8">
+        <div className="max-w-[1620px] mx-auto px-4 sm:px-8 lg:px-10 h-16 flex items-center justify-between gap-8">
           {/* Zone 1: Brand Wordmark */}
           <button
             type="button"
@@ -272,7 +272,7 @@ export default function App() {
 
       {/* Compact Workspace Toolbar (below header) */}
       <div className="border-b border-stone-200/80 dark:border-stone-800/80 bg-stone-100/60 dark:bg-stone-900/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="max-w-[1620px] mx-auto px-4 sm:px-8 lg:px-10 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-3 font-mono-num text-stone-600 dark:text-stone-400">
             <span>
               {track === 'mosfet'
@@ -366,7 +366,7 @@ export default function App() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 max-w-[1620px] w-full mx-auto px-4 sm:px-8 lg:px-10 py-6">
         {track === 'home' && (
           <TrackSelectorView
             lang={lang}
@@ -503,7 +503,7 @@ export default function App() {
 
       {/* Minimal Academic Footer */}
       <footer className="border-t border-stone-200 dark:border-stone-800 py-4 text-xs text-stone-500 dark:text-stone-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="max-w-[1620px] mx-auto px-4 sm:px-8 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
             {track === 'mosfet'
               ? tr(

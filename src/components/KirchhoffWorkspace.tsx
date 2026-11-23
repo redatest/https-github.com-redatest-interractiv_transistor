@@ -11,6 +11,8 @@ import {
   RotateCcw,
   Volume2,
   VolumeX,
+  Columns2,
+  Maximize2,
 } from 'lucide-react';
 import { ChapterDef, Lang, tr } from '../types';
 import {
@@ -149,6 +151,7 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
   );
 
   const [stageView, setStageView] = useState<StageView>('board3d');
+  const [wideReading, setWideReading] = useState<boolean>(false);
   const [params, setParams] = useState<KirchhoffSimParams>(() =>
     buildKirchhoffParamsForChapter(chapter.id, activeExampleId ?? chapter.examples[0]?.id)
   );
@@ -427,8 +430,8 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
   return (
     <div className="flex flex-col gap-6">
       {/* Chapter Horizontal Stepper */}
-      <nav aria-label={tr(lang, 'Navigation des chapitres', 'التنقل بين الفصول', 'Chapter navigation')}>
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
+      <nav aria-label={tr(lang, 'Navigation des chapitres', 'التنقل بين الفصول', 'Chapter navigation')} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
           {chapters.map((c) => {
             const active = c.id === chapter.id;
             return (
@@ -451,6 +454,25 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
             );
           })}
         </div>
+
+        {!teacherMode && (
+          <button
+            type="button"
+            onClick={() => setWideReading((w) => !w)}
+            className={`px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 w-fit transition-colors ${
+              wideReading
+                ? 'bg-emerald-700 text-white border-emerald-700'
+                : 'bg-white dark:bg-stone-900 border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800'
+            }`}
+          >
+            {wideReading ? <Columns2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            <span>
+              {wideReading
+                ? tr(lang, 'Côte à côte', 'عرض مزدوج', 'Side-by-side')
+                : tr(lang, 'Lecture large', 'قراءة موسّعة', 'Wide Reading')}
+            </span>
+          </button>
+        )}
       </nav>
 
       {/* Teacher Mode Banner */}
@@ -467,36 +489,36 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
       )}
 
       {/* Main 2-Zone Sandbox Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN (5 cols): Theory, Formula, Examples, Quiz */}
-        <section className="lg:col-span-5 flex flex-col gap-5">
-          <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-5">
+      <div className={`grid grid-cols-1 ${teacherMode || wideReading ? '' : 'lg:grid-cols-12'} gap-8 items-start`}>
+        {/* LEFT COLUMN: Theory, Formula, Examples, Quiz */}
+        <section className={`${wideReading ? 'w-full max-w-5xl mx-auto' : 'lg:col-span-6'} flex flex-col gap-6`}>
+          <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-6">
             <div className="text-xs font-mono-num text-emerald-700 dark:text-emerald-400">
               {chapter.pageRef} · {tr(lang, `Chapitre ${chapter.id} / ${chapters.length}`, `الفصل ${chapter.id} / ${chapters.length}`, `Chapter ${chapter.id} / ${chapters.length}`)}
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-stone-50 mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-50 mt-1">
               {chapter.title[lang]}
             </h1>
-            <p className="text-sm text-stone-600 dark:text-stone-300 mt-2 leading-relaxed">
+            <p className="text-[15px] text-stone-600 dark:text-stone-300 mt-2 leading-relaxed">
               {chapter.subtitle[lang]}
             </p>
 
             {/* Analogy Callout */}
-            <div className="mt-4 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-900/50 p-3.5">
+            <div className="mt-4 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-900/50 p-4">
               <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
                 <Droplets className="w-3.5 h-3.5 shrink-0" />
                 <span>{chapter.analogyTitle[lang]}</span>
               </div>
-              <p className="text-xs text-stone-700 dark:text-stone-300 mt-1.5 leading-relaxed">
+              <p className="text-sm text-stone-700 dark:text-stone-300 mt-1.5 leading-relaxed">
                 {chapter.analogyText[lang]}
               </p>
             </div>
 
             {/* Theory Points */}
-            <ul className="mt-4 space-y-2.5 text-sm text-stone-700 dark:text-stone-200">
+            <ul className="mt-5 space-y-3 text-[15px] text-stone-700 dark:text-stone-200">
               {chapter.theory.map((item, idx) => (
-                <li key={idx} className="flex gap-2.5 leading-relaxed">
-                  <span className="font-mono-num text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-1">
+                <li key={idx} className="flex gap-3 leading-7">
+                  <span className="font-mono-num text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-1.5">
                     {idx + 1}.
                   </span>
                   <span>{item[lang]}</span>
@@ -598,8 +620,8 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
           </div>
         </section>
 
-        {/* RIGHT COLUMN (7 cols): Sticky Interactive Workbench */}
-        <section className="lg:col-span-7 lg:sticky lg:top-20 flex flex-col gap-4">
+        {/* RIGHT COLUMN: Sticky Interactive Workbench */}
+        <section className={`${wideReading ? 'w-full max-w-5xl mx-auto' : 'lg:col-span-6 lg:sticky lg:top-20'} flex flex-col gap-4`}>
           {/* Stage View Switcher + Sound Toggle */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-1 p-1 rounded-lg bg-stone-200/75 dark:bg-stone-800/80">

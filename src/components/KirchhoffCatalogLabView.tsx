@@ -119,24 +119,24 @@ export const KirchhoffCatalogLabView: React.FC<Props> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <section className="lg:col-span-5 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-5 flex flex-col gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <section className="lg:col-span-6 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-6 flex flex-col gap-4">
           <div className="text-xs font-mono-num text-emerald-700 dark:text-emerald-400">
             p. {circuit.page} · {circuit.supply} · {circuit.transistors.join(' · ')}
           </div>
-          <h2 className="text-xl font-bold text-stone-900 dark:text-stone-50">
+          <h2 className="text-2xl font-bold text-stone-900 dark:text-stone-50">
             {circuit.titleBi[lang]}
           </h2>
-          <p className="text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
+          <p className="text-[15px] text-stone-600 dark:text-stone-300 leading-7">
             {circuit.concept[lang]}
           </p>
 
-          <div className="rounded-lg bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-900/50 p-3.5">
+          <div className="rounded-lg bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-900/50 p-4">
             <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
               <Droplets className="w-3.5 h-3.5 shrink-0" />
               <span>{circuit.analogyTitle[lang]}</span>
             </div>
-            <p className="text-xs text-stone-700 dark:text-stone-300 mt-1">{circuit.analogyText[lang]}</p>
+            <p className="text-sm text-stone-700 dark:text-stone-300 mt-1.5 leading-relaxed">{circuit.analogyText[lang]}</p>
           </div>
 
           <div className="pt-2 border-t border-stone-200 dark:border-stone-800 text-xs">
@@ -153,7 +153,7 @@ export const KirchhoffCatalogLabView: React.FC<Props> = ({
           </div>
         </section>
 
-        <section className="lg:col-span-7 flex flex-col gap-4">
+        <section className="lg:col-span-6 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1 p-1 rounded-lg bg-stone-200/75 dark:bg-stone-800/80">
               {(

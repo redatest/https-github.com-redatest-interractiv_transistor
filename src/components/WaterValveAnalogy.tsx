@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lang } from '../types';
+import { Lang, tr } from '../types';
 import { getLieDetector2State, getLieDetector5TState, SimParams, SimReadout } from '../utils/physics';
 
 interface Props {
@@ -37,9 +37,7 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           <rect x="28" y="26" width="186" height="164" rx="10" fill="rgba(148,163,184,0.12)" stroke="#64748b" strokeWidth="2" />
           <text x="121" y="45" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="currentColor">
             {mType === 'faulty'
-              ? lang === 'fr'
-                ? 'Clapets crevés (Court-circuit)'
-                : 'صمّامان مثقوبان (قصر داخلي)'
+              ? tr(lang, 'Clapets crevés (Court-circuit)', 'صمّامان مثقوبان (قصر داخلي)', 'Punctured check valves (Short)')
               : mType === 'pnp_bce'
               ? 'PNP (← B →)'
               : 'NPN (→ B ←)'}
@@ -86,8 +84,8 @@ export const WaterValveAnalogy: React.FC<Props> = ({
                 </text>
                 <text x="94" y={y + 4} fontSize="10" fontFamily="monospace" fontWeight="700" fill="currentColor">
                   {role !== '?' ? `[${role}]` : ''}
-                  {isBlack ? ' Noir(+)' : ''}
-                  {isRed ? ' Rouge(−)' : ''}
+                  {isBlack ? tr(lang, ' Noir(+)', ' أسود(+)', ' Black(+)') : ''}
+                  {isRed ? tr(lang, ' Rouge(−)', ' أحمر(−)', ' Red(−)') : ''}
                 </text>
               </g>
             );
@@ -106,12 +104,8 @@ export const WaterValveAnalogy: React.FC<Props> = ({
               />
               <text x="195" y="182" textAnchor="middle" fontSize="9.5" fontWeight="700" fill={params.fingerCB ? '#f59e0b' : '#64748b'}>
                 {params.fingerCB
-                  ? lang === 'fr'
-                    ? 'Fuite doigt C–B (×200)'
-                    : 'تسريب الإصبع C–B (×200)'
-                  : lang === 'fr'
-                  ? 'Doigt C–B levé'
-                  : 'الإصبع مرفوع'}
+                  ? tr(lang, 'Fuite doigt C–B (×200)', 'تسريب الإصبع C–B (×200)', 'Finger C–B leak (×200)')
+                  : tr(lang, 'Doigt C–B levé', 'الإصبع مرفوع', 'Finger C–B off')}
               </text>
             </g>
           )}
@@ -146,7 +140,7 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           {/* Skin valve inlet */}
           <rect x="28" y="84" width="90" height="26" rx="4" fill="rgba(56,189,248,0.18)" stroke="#0284c7" strokeWidth="2" />
           <text x="73" y="75" textAnchor="middle" fontSize="10" fontWeight="700" fill="#0284c7">
-            {lang === 'fr' ? 'Peau (≤ 300kΩ)' : 'الجلد (≤ 300kΩ)'}
+            {tr(lang, 'Peau (≤ 300kΩ)', 'الجلد (≤ 300kΩ)', 'Skin (≤ 300kΩ)')}
           </text>
           {on && <line x1="34" y1="97" x2="112" y2="97" stroke="#38bdf8" strokeWidth="5" className="flow-active" />}
 
@@ -156,20 +150,20 @@ export const WaterValveAnalogy: React.FC<Props> = ({
             Q1 (NPN) + Q2 (PNP)
           </text>
           <text x="192" y="108" textAnchor="middle" fontSize="10" fontFamily="monospace" fill="#f59e0b" fontWeight="700">
-            {on ? `${Math.round(freq)} Hz` : '0 Hz (Bloqué)'}
+            {on ? `${Math.round(freq)} Hz` : tr(lang, '0 Hz (Bloqué)', '0 Hz (متوقف)', '0 Hz (Blocked)')}
           </text>
 
           {/* 10nF return loop */}
           <path d="M 232 142 L 232 166 L 152 166 L 152 142" fill="none" stroke="#38bdf8" strokeWidth="2.5" className={on ? 'flow-active' : ''} />
           <text x="192" y="182" textAnchor="middle" fontSize="9.5" fontFamily="monospace" fill="#38bdf8">
-            10 nF (Boucle de retour)
+            {tr(lang, '10 nF (Boucle de retour)', '10 nF (حلقة العودة)', '10 nF (Feedback loop)')}
           </text>
 
           {/* Acoustic diaphragm */}
           <line x1="252" y1="97" x2="315" y2="97" stroke={on ? '#ef4444' : '#64748b'} strokeWidth="4" className={on ? 'flow-active' : ''} />
           <circle cx="348" cy="97" r={pulse ? 30 : 25} fill={on ? 'rgba(245,158,11,0.28)' : 'rgba(148,163,184,0.18)'} stroke="#f59e0b" strokeWidth="2.5" className="transition-all duration-100" />
           <text x="348" y="101" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="currentColor">
-            HP 8Ω
+            {tr(lang, 'HP 8Ω', 'سماعة 8Ω', '8Ω Spkr')}
           </text>
         </svg>
       );
@@ -182,9 +176,12 @@ export const WaterValveAnalogy: React.FC<Props> = ({
       return (
         <svg viewBox="0 0 420 205" className="w-full h-auto max-h-[240px]" direction="ltr">
           <text x="210" y="24" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="currentColor">
-            {lang === 'fr'
-              ? `Seuil VR1 (${vr1KOhm.toFixed(1)} kΩ) ↔ R_peau ${(rf / 1000).toFixed(0)} / ${(rTrip / 1000).toFixed(0)} kΩ`
-              : `عتبة VR1 (${vr1KOhm.toFixed(1)} kΩ) ↔ مقاومة الجلد ${(rf / 1000).toFixed(0)} kΩ`}
+            {tr(
+              lang,
+              `Seuil VR1 (${vr1KOhm.toFixed(1)} kΩ) ↔ R_peau ${(rf / 1000).toFixed(0)} / ${(rTrip / 1000).toFixed(0)} kΩ`,
+              `عتبة VR1 (${vr1KOhm.toFixed(1)} kΩ) ↔ مقاومة الجلد ${(rf / 1000).toFixed(0)} kΩ`,
+              `VR1 threshold (${vr1KOhm.toFixed(1)} kΩ) ↔ R_skin ${(rf / 1000).toFixed(0)} / ${(rTrip / 1000).toFixed(0)} kΩ`
+            )}
           </text>
 
           {/* Fulcrum */}
@@ -206,12 +203,18 @@ export const WaterValveAnalogy: React.FC<Props> = ({
 
           <text x="210" y="194" textAnchor="middle" fontSize="10.5" fontWeight="700" fill={isFalse ? '#ef4444' : '#22c55e'}>
             {isFalse
-              ? lang === 'fr'
-                ? 'R_peau ≤ seuil VR1 → Bascule sur L2 FALSE !'
-                : 'انخفضت مقاومة الجلد ← تحوّل إلى الأحمر FALSE!'
-              : lang === 'fr'
-              ? 'Repos / R_peau > seuil VR1 → Canal L1 TRUE ouvert'
-              : 'سكون / فوق العتبة ← المسار الأخضر TRUE مفتوح'}
+              ? tr(
+                  lang,
+                  'R_peau ≤ seuil VR1 → Bascule sur L2 FALSE !',
+                  'انخفضت مقاومة الجلد ← تحوّل إلى الأحمر FALSE!',
+                  'R_skin ≤ VR1 threshold → Flips to L2 FALSE!'
+                )
+              : tr(
+                  lang,
+                  'Repos / R_peau > seuil VR1 → Canal L1 TRUE ouvert',
+                  'سكون / فوق العتبة ← المسار الأخضر TRUE مفتوح',
+                  'Idle / R_skin > VR1 threshold → L1 TRUE channel open'
+                )}
           </text>
         </svg>
       );
@@ -225,7 +228,7 @@ export const WaterValveAnalogy: React.FC<Props> = ({
       return (
         <svg viewBox="0 0 420 205" className="w-full h-auto max-h-[240px]" direction="ltr">
           <text x="28" y="26" fontSize="10.5" fontWeight="700" fill="#38bdf8">
-            {lang === 'fr' ? 'Suiveur Q1 + 3 paliers 10 kΩ (sans diodes)' : 'عازل Q1 + ٣ عتبات عبر 10kΩ (بدون دايودات)'}
+            {tr(lang, 'Suiveur Q1 + 3 paliers 10 kΩ (sans diodes)', 'عازل Q1 + ٣ عتبات عبر 10kΩ (بدون دايودات)', 'Q1 Follower + 3 × 10 kΩ steps (no diodes)')}
           </text>
           {[0, 1, 2].map((i) => {
             const x = 68 + i * 114;
@@ -264,9 +267,12 @@ export const WaterValveAnalogy: React.FC<Props> = ({
       return (
         <svg viewBox="0 0 420 205" className="w-full h-auto max-h-[240px]" direction="ltr">
           <text x="22" y="22" fontSize="10" fontWeight="700" fill="#38bdf8">
-            {lang === 'fr'
-              ? `Q1 Suiveur + Pot. 100k (${potPct}%) → V_curseur = ${vWiper.toFixed(2)} V`
-              : `العازل Q1 + معاير 100k (${potPct}%) ← الجهد ${vWiper.toFixed(2)}V`}
+            {tr(
+              lang,
+              `Q1 Suiveur + Pot. 100k (${potPct}%) → V_curseur = ${vWiper.toFixed(2)} V`,
+              `العازل Q1 + معاير 100k (${potPct}%) ← الجهد ${vWiper.toFixed(2)}V`,
+              `Q1 Follower + 100k Pot (${potPct}%) → V_wiper = ${vWiper.toFixed(2)} V`
+            )}
           </text>
 
           {/* Q1 + 100k Buffer Chamber on Left */}
@@ -323,7 +329,7 @@ export const WaterValveAnalogy: React.FC<Props> = ({
       return (
         <svg viewBox="0 0 420 205" className="w-full h-auto max-h-[240px]" direction="ltr">
           <text x="28" y="26" fontSize="10.5" fontWeight="700" fill="#38bdf8">
-            {lang === 'fr' ? 'Pression peau → hauteur de colonne' : 'ضغط الأصابع ← ارتفاع منسوب الجهد'}
+            {tr(lang, 'Pression peau → hauteur de colonne', 'ضغط الأصابع ← ارتفاع منسوب الجهد', 'Skin pressure → column height')}
           </text>
           {[0, 1, 2, 3].map((i) => {
             const x = 44 + i * 90;
@@ -363,34 +369,28 @@ export const WaterValveAnalogy: React.FC<Props> = ({
         <svg viewBox="0 0 420 200" className="w-full h-auto max-h-[240px]" direction="ltr">
           <rect x="40" y="28" width="152" height="54" rx="8" fill={isHigh ? 'rgba(239,68,68,0.18)' : 'rgba(148,163,184,0.15)'} stroke="#ef4444" strokeWidth="2" />
           <text x="116" y="50" textAnchor="middle" fontSize="11" fontWeight="700" fill="#ef4444">
-            {lang === 'fr' ? 'Clapet NPN (Entrée HIGH)' : 'صمّام NPN (إشارة عالية)'}
+            {tr(lang, 'Clapet NPN (Entrée HIGH)', 'صمّام NPN (إشارة عالية)', 'NPN Valve (HIGH Input)')}
           </text>
           <text x="116" y="68" textAnchor="middle" fontSize="10" fontFamily="monospace" fill="currentColor">
-            {isHigh ? 'OUVERT → LED Rouge' : 'Fermé'}
+            {isHigh ? tr(lang, 'OUVERT → LED Rouge', 'مفتوح ← LED حمراء', 'OPEN → Red LED') : tr(lang, 'Fermé', 'مغلق', 'Closed')}
           </text>
 
           <rect x="40" y="114" width="152" height="54" rx="8" fill={isLow ? 'rgba(34,197,94,0.18)' : 'rgba(148,163,184,0.15)'} stroke="#22c55e" strokeWidth="2" />
           <text x="116" y="136" textAnchor="middle" fontSize="11" fontWeight="700" fill="#22c55e">
-            {lang === 'fr' ? 'Clapet PNP (Entrée LOW)' : 'صمّام PNP (إشارة منخفضة)'}
+            {tr(lang, 'Clapet PNP (Entrée LOW)', 'صمّام PNP (إشارة منخفضة)', 'PNP Valve (LOW Input)')}
           </text>
           <text x="116" y="154" textAnchor="middle" fontSize="10" fontFamily="monospace" fill="currentColor">
-            {isLow ? 'OUVERT → LED Verte' : 'Fermé'}
+            {isLow ? tr(lang, 'OUVERT → LED Verte', 'مفتوح ← LED خضراء', 'OPEN → Green LED') : tr(lang, 'Fermé', 'مغلق', 'Closed')}
           </text>
 
           <line x1="250" y1="28" x2="250" y2="168" stroke="#64748b" strokeWidth="4" />
           <circle cx="250" cy={isHigh ? 45 : isLow ? 150 : 98} r="14" fill={isHigh ? '#ef4444' : isLow ? '#22c55e' : '#eab308'} />
           <text x="276" y={isHigh ? 49 : isLow ? 154 : 102} fontSize="11" fontWeight="700" fill="currentColor">
             {isHigh
-              ? lang === 'fr'
-                ? 'Pression haute (5V) : ouvre NPN'
-                : 'ضغط عالٍ: يفتح NPN'
+              ? tr(lang, 'Pression haute (5V) : ouvre NPN', 'ضغط عالٍ: يفتح NPN', 'High pressure (5V): opens NPN')
               : isLow
-              ? lang === 'fr'
-                ? 'Aspiration basse (0V) : ouvre PNP'
-                : 'ضغط منخفض: يفتح PNP'
-              : lang === 'fr'
-              ? 'Équilibre flottant (0 mA)'
-              : 'توازن عائم (0 mA)'}
+              ? tr(lang, 'Aspiration basse (0V) : ouvre PNP', 'ضغط منخفض: يفتح PNP', 'Low suction (0V): opens PNP')
+              : tr(lang, 'Équilibre flottant (0 mA)', 'توازن عائم (0 mA)', 'Floating balance (0 mA)')}
           </text>
         </svg>
       );
@@ -413,24 +413,24 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           <g transform={`translate(208, 100)`}>
             {fault === 'short' ? (
               <text x="52" y="-6" fontSize="11" fontWeight="700" fill="#ef4444">
-                {lang === 'fr' ? 'Clapet cassé : fuite directe C–E !' : 'صمّام مكسور: تسرّب مباشر C–E!'}
+                {tr(lang, 'Clapet cassé : fuite directe C–E !', 'صمّام مكسور: تسرّب مباشر C–E!', 'Broken valve: direct C–E leak!')}
               </text>
             ) : fault === 'open' ? (
               <text x="52" y="-6" fontSize="11" fontWeight="700" fill="#ef4444">
-                {lang === 'fr' ? 'Conduit bouché (coupure interne)' : 'أنبوب مسدود (انقطاع داخلي)'}
+                {tr(lang, 'Conduit bouché (coupure interne)', 'أنبوب مسدود (انقطاع داخلي)', 'Blocked pipe (internal open)')}
               </text>
             ) : isPnp ? (
               <>
                 <line x1="-28" y1="0" x2="22" y2={flowOk ? -28 : 2} stroke="#38bdf8" strokeWidth="6" strokeLinecap="round" />
                 <text x="52" y="-6" fontSize="11" fontWeight="700" fill="#38bdf8">
-                  {lang === 'fr' ? 'Clapet PNP (↑ de E vers C)' : 'صمّام PNP (يتدفق من الأسفل ↑)'}
+                  {tr(lang, 'Clapet PNP (↑ de E vers C)', 'صمّام PNP (يتدفق من الأسفل ↑)', 'PNP Valve (↑ from E to C)')}
                 </text>
               </>
             ) : (
               <>
                 <line x1="-28" y1="0" x2="22" y2={flowOk ? 28 : -2} stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
                 <text x="52" y="-6" fontSize="11" fontWeight="700" fill="#ef4444">
-                  {lang === 'fr' ? 'Clapet NPN (↓ de C vers E)' : 'صمّام NPN (يتدفق من الأعلى ↓)'}
+                  {tr(lang, 'Clapet NPN (↓ de C vers E)', 'صمّام NPN (يتدفق من الأعلى ↓)', 'NPN Valve (↓ from C to E)')}
                 </text>
               </>
             )}
@@ -450,12 +450,8 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           ) : (
             <text x="260" y="116" fontSize="11" fontWeight="700" fill="#f43f5e">
               {fault === 'open'
-                ? lang === 'fr'
-                  ? '× Jonction coupée (0 mA)'
-                  : '× وصلة مقطوعة (0 mA)'
-                : lang === 'fr'
-                ? '× Clapet plaqué fermé (polarité inverse)'
-                : '× الصمّام مغلق (قطبية خاطئة)'}
+                ? tr(lang, '× Jonction coupée (0 mA)', '× وصلة مقطوعة (0 mA)', '× Open junction (0 mA)')
+                : tr(lang, '× Clapet plaqué fermé (polarité inverse)', '× الصمّام مغلق (قطبية خاطئة)', '× Valve slammed shut (reversed polarity)')}
             </text>
           )}
         </svg>
@@ -483,13 +479,13 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           <rect x="168" y="48" width="76" height="92" rx="6" fill="none" stroke="#38bdf8" strokeWidth="2.5" />
           <rect x="171" y={on ? 62 : 122} width="70" height={on ? 75 : 15} rx="3" fill="#38bdf8" opacity="0.65" />
           <text x="206" y="38" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#38bdf8">
-            10 µF Tampon
+            {tr(lang, '10 µF Tampon', '10 µF خزّان مؤقت', '10 µF Buffer')}
           </text>
 
           <line x1="244" y1="96" x2="310" y2="96" stroke={on ? '#22c55e' : '#64748b'} strokeWidth="5" className={on ? 'flow-active' : ''} />
           <circle cx="340" cy="96" r="24" fill={on ? '#facc15' : '#334155'} stroke="#f59e0b" strokeWidth="2" />
           <text x="340" y="138" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="currentColor">
-            {on ? 'LED ON!' : lang === 'fr' ? 'En écoute' : 'في الانتظار'}
+            {on ? 'LED ON!' : tr(lang, 'En écoute', 'في الانتظار', 'Listening')}
           </text>
         </svg>
       );
@@ -522,20 +518,12 @@ export const WaterValveAnalogy: React.FC<Props> = ({
 
           <text x="284" y="74" fontSize="11" fontWeight="700" fill="currentColor">
             {doorOpen
-              ? lang === 'fr'
-                ? 'Porte ouverte → réservoir vidé (100%)'
-                : 'الباب مفتوح ← الخزّان فارغ (100%)'
+              ? tr(lang, 'Porte ouverte → réservoir vidé (100%)', 'الباب مفتوح ← الخزّان فارغ (100%)', 'Door open → tank drained (100%)')
               : fillPct >= 98
-              ? lang === 'fr'
-                ? 'Réservoir plein → débit coupé !'
-                : 'الخزّان ممتلئ ← توقف التدفق!'
+              ? tr(lang, 'Réservoir plein → débit coupé !', 'الخزّان ممتلئ ← توقف التدفق!', 'Tank full → flow cut off!')
               : sim.conducting
-              ? lang === 'fr'
-                ? 'Remplissage → vanne ouverte'
-                : 'يمتلئ الآن ← الصمّام مفتوح'
-              : lang === 'fr'
-              ? 'En attente de charge'
-              : 'في انتظار بدء الشحن'}
+              ? tr(lang, 'Remplissage → vanne ouverte', 'يمتلئ الآن ← الصمّام مفتوح', 'Filling → valve open')
+              : tr(lang, 'En attente de charge', 'في انتظار بدء الشحن', 'Waiting to charge')}
           </text>
           <text x="284" y="96" fontSize="10" fontFamily="monospace" fill="#f59e0b">
             I_C = {sim.icMA.toFixed(1)} mA
@@ -561,7 +549,7 @@ export const WaterValveAnalogy: React.FC<Props> = ({
       return (
         <svg viewBox="0 0 420 200" className="w-full h-auto max-h-[240px]" direction="ltr">
           <text x="22" y="98" fontSize="10" fontWeight="700" fill="#38bdf8">
-            {lang === 'fr' ? 'Goutte' : 'قطرة'} ({sim.ibUA.toFixed(2)}µA)
+            {tr(lang, 'Goutte', 'قطرة', 'Drop')} ({sim.ibUA.toFixed(2)}µA)
           </text>
           <line x1="42" y1="108" x2="108" y2="108" stroke="#38bdf8" strokeWidth="2" className={sim.conducting ? 'flow-active' : ''} />
 
@@ -623,16 +611,12 @@ export const WaterValveAnalogy: React.FC<Props> = ({
             <rect x="215" y="94" width="60" height="8" rx="3" fill={spinning ? '#f59e0b' : '#94a3b8'} />
           </g>
           <text x="298" y="92" fontSize="11" fontWeight="700" fill="currentColor">
-            {lang === 'fr' ? `Impulsions 3V (${params.pwmDuty}%)` : `نبضات 3V (${params.pwmDuty}%)`}
+            {tr(lang, `Impulsions 3V (${params.pwmDuty}%)`, `نبضات 3V (${params.pwmDuty}%)`, `3V Pulses (${params.pwmDuty}%)`)}
           </text>
           <text x="298" y="112" fontSize="10" fill={spinning ? '#10b981' : '#ef4444'} fontWeight="700">
             {spinning
-              ? lang === 'fr'
-                ? 'Pleine force de poussée !'
-                : 'عزم دوران كامل!'
-              : lang === 'fr'
-              ? 'Calé sous charge lourde'
-              : 'متوقف تحت الحمل'}
+              ? tr(lang, 'Pleine force de poussée !', 'عزم دوران كامل!', 'Full push torque!')
+              : tr(lang, 'Calé sous charge lourde', 'متوقف تحت الحمل', 'Stalled under heavy load')}
           </text>
         </svg>
       );
@@ -664,29 +648,17 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           </g>
           <text x="42" y="96" fontSize="11" fontWeight="700" fill="#38bdf8">
             {isTouch
-              ? lang === 'fr'
-                ? 'Impulsion ON/OFF →'
-                : 'نبضة ON/OFF ←'
+              ? tr(lang, 'Impulsion ON/OFF →', 'نبضة ON/OFF ←', 'ON/OFF Pulse →')
               : isNight
-              ? lang === 'fr'
-                ? 'LDR ≤ 40% →'
-                : 'LDR ≤ 40% ←'
-              : lang === 'fr'
-              ? 'Hystérésis 30/55% →'
-              : 'هسترة 30/55% ←'}
+              ? tr(lang, 'LDR ≤ 40% →', 'LDR ≤ 40% ←', 'LDR ≤ 40% →')
+              : tr(lang, 'Hystérésis 30/55% →', 'هسترة 30/55% ←', 'Hysteresis 30/55% →')}
           </text>
           <text x="245" y="78" fontSize="11" fontWeight="700" fill="#eab308">
             {active
               ? isNight
-                ? lang === 'fr'
-                  ? 'Relais Veilleuse ON'
-                  : 'المرحّل يعمل ليلاً'
-                : lang === 'fr'
-                ? 'Verrouillé ON (Boucle rétroaction)'
-                : 'مثبّت ON (حلقة التغذية الراجعة)'
-              : lang === 'fr'
-              ? 'Déverrouillé (OFF)'
-              : 'مفتوح / مطفأ (OFF)'}
+                ? tr(lang, 'Relais Veilleuse ON', 'المرحّل يعمل ليلاً', 'Night Light Relay ON')
+                : tr(lang, 'Verrouillé ON (Boucle rétroaction)', 'مثبّت ON (حلقة التغذية الراجعة)', 'Latched ON (Feedback loop)')
+              : tr(lang, 'Déverrouillé (OFF)', 'مفتوح / مطفأ (OFF)', 'Unlatched (OFF)')}
           </text>
         </svg>
       );
@@ -718,22 +690,14 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           </g>
           <text x="210" y="34" textAnchor="middle" fontSize="11" fontWeight="700" fill="currentColor">
             {isChaser
-              ? `Phase ${(params.oscPhase % 3) + 1} / 3 ${params.chaserReverse ? '(Inversé)' : ''}`
+              ? `${tr(lang, 'Phase', 'الطور', 'Phase')} ${(params.oscPhase % 3) + 1} / 3 ${params.chaserReverse ? tr(lang, '(Inversé)', '(معكوس)', '(Reversed)') : ''}`
               : cid === 'ticking-bomb'
               ? params.sirenMode === 'siren'
-                ? lang === 'fr'
-                  ? 'Bascule ultra-rapide → Sirène continue !'
-                  : 'تذبذب سريع جداً ← صفّارة مستمرة!'
-                : lang === 'fr'
-                ? 'Impulsion sèche → Tic-Tac sur HP 8Ω'
-                : 'نبضات إيقاعية في سماعة 8Ω'
+                ? tr(lang, 'Bascule ultra-rapide → Sirène continue !', 'تذبذب سريع جداً ← صفّارة مستمرة!', 'Ultra-fast toggle → Continuous siren!')
+                : tr(lang, 'Impulsion sèche → Tic-Tac sur HP 8Ω', 'نبضات إيقاعية في سماعة 8Ω', 'Sharp pulse → Tick-tock on 8Ω speaker')
               : q1On
-              ? lang === 'fr'
-                ? 'Q1 plein → bascule à gauche (LED1 ON)'
-                : 'Q1 يمتلئ ← يميل لليسار (LED1)'
-              : lang === 'fr'
-              ? 'Q2 plein → bascule à droite (LED2 ON)'
-              : 'Q2 يمتلئ ← يميل لليمين (LED2)'}
+              ? tr(lang, 'Q1 plein → bascule à gauche (LED1 ON)', 'Q1 يمتلئ ← يميل لليسار (LED1)', 'Q1 full → tilts left (LED1 ON)')
+              : tr(lang, 'Q2 plein → bascule à droite (LED2 ON)', 'Q2 يمتلئ ← يميل لليمين (LED2)', 'Q2 full → tilts right (LED2 ON)')}
           </text>
         </svg>
       );
@@ -770,7 +734,7 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           </text>
           <rect x="302" y="80" width="88" height="44" rx="6" fill={sim.conducting ? 'rgba(239,68,68,0.28)' : 'rgba(148,163,184,0.16)'} stroke="#ef4444" strokeWidth="2" />
           <text x="346" y="106" textAnchor="middle" fontSize="11" fontWeight="700" fill="currentColor">
-            {sim.conducting ? `${(params.cellVoltage + 1).toFixed(2)}V ON` : lang === 'fr' ? 'Charge 1µF' : 'شحن 1µF'}
+            {sim.conducting ? `${(params.cellVoltage + 1).toFixed(2)}V ON` : tr(lang, 'Charge 1µF', 'شحن 1µF', 'Charge 1µF')}
           </text>
         </svg>
       );
@@ -790,12 +754,8 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           <rect x="200" y={isBike ? 36 : 58} width="28" height={isBike ? 142 : 120} fill="#64748b" />
           <text x="214" y={isBike ? 28 : 48} textAnchor="middle" fontSize="10" fontWeight="700" fill="#f59e0b">
             {isBike
-              ? lang === 'fr'
-                ? 'Double seuil 2 LEDs (6,4 V)'
-                : 'حاجز مصباحين (6.4V)'
-              : lang === 'fr'
-              ? 'Seuil LED (3,2 V)'
-              : 'حاجز الـ LED (3.2V)'}
+              ? tr(lang, 'Double seuil 2 LEDs (6,4 V)', 'حاجز مصباحين (6.4V)', 'Dual 2-LED threshold (6.4 V)')
+              : tr(lang, 'Seuil LED (3,2 V)', 'حاجز الـ LED (3.2V)', 'LED threshold (3.2 V)')}
           </text>
 
           {openFault ? (
@@ -814,7 +774,15 @@ export const WaterValveAnalogy: React.FC<Props> = ({
 
           <rect x="295" y="138" width="94" height="40" rx="4" fill={openFault ? 'rgba(239,68,68,0.28)' : ok ? 'rgba(251,191,36,0.35)' : 'rgba(148,163,184,0.15)'} stroke={openFault ? '#ef4444' : '#f59e0b'} strokeWidth="2" />
           <text x="342" y="162" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="currentColor">
-            {openFault ? 'PIC > 50V!' : ok ? (isBike ? 'FLASH 2×LED!' : 'LED ON!') : isBike ? 'Pause / Bas' : lang === 'fr' ? 'Trop bas' : 'أقل من الحاجز'}
+            {openFault
+              ? tr(lang, 'PIC > 50V!', 'نبضة > 50V!', 'SPIKE > 50V!')
+              : ok
+              ? isBike
+                ? 'FLASH 2×LED!'
+                : 'LED ON!'
+              : isBike
+              ? tr(lang, 'Pause / Bas', 'توقف / منخفض', 'Pause / Low')
+              : tr(lang, 'Trop bas', 'أقل من الحاجز', 'Too low')}
           </text>
         </svg>
       );
@@ -834,7 +802,7 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           <rect x="126" y="130" width="110" height="26" fill="#cbd5e1" opacity="0.25" stroke="#64748b" strokeWidth="2" />
           <rect x="165" y="130" width="18" height={Math.min(20, 6 + ((params.supplyV - 6) / 9) * 14)} fill="#f59e0b" />
           <text x="180" y="122" textAnchor="middle" fontSize="10" fontWeight="700" fill="#f59e0b">
-            {lang === 'fr' ? 'Soupape Q1 pince le débit' : 'صمّام Q1 يضبط التدفق'}
+            {tr(lang, 'Soupape Q1 pince le débit', 'صمّام Q1 يضبط التدفق', 'Q1 valve pinches flow')}
           </text>
 
           <line x1="236" y1="143" x2="365" y2="143" stroke={sim.warningFr ? '#f97316' : '#10b981'} strokeWidth="6" className="flow-active" />
@@ -853,11 +821,11 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           <rect x="153" y={167 - fillH} width="94" height={fillH} fill="#22c55e" opacity="0.45" />
           <line x1="140" y1="62" x2="260" y2="62" stroke="#ef4444" strokeDasharray="4 3" strokeWidth="1.8" />
           <text x="266" y="66" fontSize="10" fontFamily="monospace" fontWeight="700" fill="#ef4444">
-            13.7V (Coupure)
+            {tr(lang, '13.7V (Coupure)', '13.7V (فصل)', '13.7V (Cutout)')}
           </text>
           <line x1="140" y1="112" x2="260" y2="112" stroke="#10b981" strokeDasharray="4 3" strokeWidth="1.8" />
           <text x="266" y="116" fontSize="10" fontFamily="monospace" fontWeight="700" fill="#10b981">
-            12.5V (Reprise)
+            {tr(lang, '12.5V (Reprise)', '12.5V (استئناف)', '12.5V (Resume)')}
           </text>
 
           <line
@@ -874,7 +842,12 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           </text>
           {params.solarDiverted && (
             <text x="200" y="22" textAnchor="middle" fontSize="10.5" fontWeight="700" fill="#f97316">
-              → Trop-plein 100 Ω ({(sim.powerW ?? 3.24).toFixed(2)} W)
+              {tr(
+                lang,
+                `→ Trop-plein 100 Ω (${(sim.powerW ?? 3.24).toFixed(2)} W)`,
+                `← تحويل للحمل 100 Ω (${(sim.powerW ?? 3.24).toFixed(2)} W)`,
+                `→ 100 Ω Overflow (${(sim.powerW ?? 3.24).toFixed(2)} W)`
+              )}
             </text>
           )}
         </svg>
@@ -892,15 +865,15 @@ export const WaterValveAnalogy: React.FC<Props> = ({
         <svg viewBox="0 0 420 200" className="w-full h-auto max-h-[240px]" direction="ltr">
           <line x1="40" y1="28" x2="380" y2="28" stroke="#ef4444" strokeWidth="3" />
           <text x="44" y="21" fontSize="10" fontFamily="monospace" fontWeight="700" fill="#ef4444">
-            Plafond +5,0 V
+            {tr(lang, 'Plafond +5,0 V', 'السقف +5.0V', 'Ceiling +5.0 V')}
           </text>
           <line x1="40" y1="172" x2="380" y2="172" stroke="#ef4444" strokeWidth="3" />
           <text x="44" y="188" fontSize="10" fontFamily="monospace" fontWeight="700" fill="#ef4444">
-            Plancher 0,0 V
+            {tr(lang, 'Plancher 0,0 V', 'الأرضية 0.0V', 'Floor 0.0 V')}
           </text>
           <line x1="40" y1="100" x2="380" y2="100" stroke="#10b981" strokeDasharray="5 4" strokeWidth="1.5" />
           <text x="378" y="94" textAnchor="end" fontSize="10" fontFamily="monospace" fill="#10b981">
-            Centre idéal 2,50 V
+            {tr(lang, 'Centre idéal 2,50 V', 'المنتصف المثالي 2.50V', 'Ideal midpoint 2.50 V')}
           </text>
 
           <rect
@@ -917,12 +890,8 @@ export const WaterValveAnalogy: React.FC<Props> = ({
           <text x="234" y={cy + 4} fontSize="11" fontWeight="700" fill="currentColor">
             Q = {sim.vc.toFixed(2)} V ·{' '}
             {hitTop || hitBot
-              ? lang === 'fr'
-                ? 'Écrêtage contre la butée !'
-                : 'ارتطام وتشويه بالموجة!'
-              : lang === 'fr'
-              ? 'Excursion libre !'
-              : 'حركة حرة بلا تشويه!'}
+              ? tr(lang, 'Écrêtage contre la butée !', 'ارتطام وتشويه بالموجة!', 'Clipping against rail!')
+              : tr(lang, 'Excursion libre !', 'حركة حرة بلا تشويه!', 'Unclipped swing!')}
           </text>
         </svg>
       );
@@ -968,17 +937,13 @@ export const WaterValveAnalogy: React.FC<Props> = ({
         </text>
         <text x="42" y="76" fontSize="12" fontWeight="700" fill="#0284c7">
           {cid === 'plant-watering'
-            ? `Sondes terre · ${sim.ibUA.toFixed(1)} µA`
+            ? `${tr(lang, 'Sondes terre', 'مجسّات التربة', 'Soil probes')} · ${sim.ibUA.toFixed(1)} µA`
             : `Base (B) · ${sim.ibUA.toFixed(1)} µA`}
         </text>
         <text x="264" y="103" fontSize="11" fill="currentColor" opacity="0.75">
           {sim.conducting
-            ? lang === 'fr'
-              ? `Clapet ouvert (${Math.round(openRatio * 100)} %)`
-              : `الصمّام مفتوح (${Math.round(openRatio * 100)}%)`
-            : lang === 'fr'
-            ? 'Clapet fermé (I_B insuffisant)'
-            : 'الصمّام مغلق (تيار القاعدة غير كافٍ)'}
+            ? tr(lang, `Clapet ouvert (${Math.round(openRatio * 100)} %)`, `الصمّام مفتوح (${Math.round(openRatio * 100)}%)`, `Valve open (${Math.round(openRatio * 100)}%)`)
+            : tr(lang, 'Clapet fermé (I_B insuffisant)', 'الصمّام مغلق (تيار القاعدة غير كافٍ)', 'Valve closed (insufficient I_B)')}
         </text>
       </svg>
     );

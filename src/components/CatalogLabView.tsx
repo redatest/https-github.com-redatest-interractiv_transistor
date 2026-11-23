@@ -14,7 +14,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { CatalogCircuit, Lang } from '../types';
+import { CatalogCircuit, Lang, tr } from '../types';
 
 type StageView = 'board3d' | 'schematic' | 'analogy';
 import {
@@ -232,8 +232,10 @@ export const CatalogLabView: React.FC<Props> = ({
     }
   };
 
-  const warningText = lang === 'fr' ? sim.warningFr : sim.warningAr;
-  const statusText = lang === 'fr' ? sim.statusFr : sim.statusAr;
+  const warningText =
+    lang === 'fr' ? sim.warningFr : lang === 'en' ? sim.warningEn : sim.warningAr;
+  const statusText =
+    lang === 'fr' ? sim.statusFr : lang === 'en' ? sim.statusEn : sim.statusAr;
 
   const formatGain = (b: number) => {
     if (b >= 1_000_000) return `${(b / 1_000_000).toFixed(0)}M×`;
@@ -258,10 +260,10 @@ export const CatalogLabView: React.FC<Props> = ({
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-pressure" className="font-semibold text-stone-700 dark:text-stone-200 flex items-center gap-1.5">
                 <Hand className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>{lang === 'fr' ? 'Pression des doigts sur la piste' : 'قوة ضغط الأصابع على المسار'}</span>
+                <span>{tr(lang, 'Pression des doigts sur la piste', 'قوة ضغط الأصابع على المسار', 'Finger pressure on pads')}</span>
               </label>
               <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
-                {params.pressure}% · R_peau ≈ {rfKOhm} kΩ
+                {params.pressure}% · {tr(lang, 'R_peau', 'مقاومة الجلد', 'R_skin')} ≈ {rfKOhm} kΩ
               </span>
             </div>
             <input
@@ -278,7 +280,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'État de la peau :' : 'حالة الجلد:'}
+                {tr(lang, 'État de la peau :', 'حالة الجلد:', 'Skin state:')}
               </span>
               {(['dry', 'wet'] as const).map((m) => (
                 <button
@@ -292,12 +294,8 @@ export const CatalogLabView: React.FC<Props> = ({
                   }`}
                 >
                   {m === 'dry'
-                    ? lang === 'fr'
-                      ? 'Peau sèche'
-                      : 'جلد جاف'
-                    : lang === 'fr'
-                    ? 'Peau humide (÷4 R)'
-                    : 'جلد رطب'}
+                    ? tr(lang, 'Peau sèche', 'جلد جاف', 'Dry skin')
+                    : tr(lang, 'Peau humide (÷4 R)', 'جلد رطب', 'Wet skin (÷4 R)')}
                 </button>
               ))}
             </div>
@@ -305,7 +303,7 @@ export const CatalogLabView: React.FC<Props> = ({
             {cid === 'worlds-simplest' && (
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                  {lang === 'fr' ? 'Alimentation :' : 'التغذية:'}
+                  {tr(lang, 'Alimentation :', 'التغذية:', 'Supply:')}
                 </span>
                 {([6, 9] as const).map((v) => (
                   <button
@@ -327,22 +325,20 @@ export const CatalogLabView: React.FC<Props> = ({
             {cid === 'lie-detector-1' && (
               <div className="text-xs font-mono-num text-stone-600 dark:text-stone-300">
                 {sim.conducting
-                  ? `${Math.round(sim.freqHz ?? 0)} Hz (${lang === 'fr' ? '≤ 300 kΩ actif' : 'نشط ≤ 300kΩ'})`
-                  : lang === 'fr'
-                  ? 'Seuil détection ≤ 300 kΩ (pressez plus fort)'
-                  : 'حد الالتقاط ≤ 300kΩ (اضغط أقوى)'}
+                  ? `${Math.round(sim.freqHz ?? 0)} Hz (${tr(lang, '≤ 300 kΩ actif', 'نشط ≤ 300kΩ', '≤ 300 kΩ active')})`
+                  : tr(lang, 'Seuil détection ≤ 300 kΩ (pressez plus fort)', 'حد الالتقاط ≤ 300kΩ (اضغط أقوى)', 'Detection threshold ≤ 300 kΩ (press harder)')}
               </div>
             )}
 
             {cid === 'lie-detector-staircase' && (
               <div className="text-xs font-mono-num text-stone-600 dark:text-stone-300">
-                {lang === 'fr' ? 'Paliers actifs :' : 'العتبات المضاءة:'} {sim.staircaseLeds} / 4 (0.6 · 1.2 · 1.8 · 2.4 V)
+                {tr(lang, 'Paliers actifs :', 'العتبات المضاءة:', 'Active steps:')} {sim.staircaseLeds} / 4 (0.6 · 1.2 · 1.8 · 2.4 V)
               </div>
             )}
 
             {cid === 'lie-detector-4' && (
               <div className="text-xs font-mono-num text-stone-600 dark:text-stone-300">
-                {lang === 'fr' ? 'Paliers actifs (sans diodes) :' : 'العتبات المضاءة (بدون دايودات):'} {sim.staircaseLeds} / 3 (0.95 · 1.55 · 2.15 V)
+                {tr(lang, 'Paliers actifs (sans diodes) :', 'العتبات المضاءة (بدون دايودات):', 'Active steps (no diodes):')} {sim.staircaseLeds} / 3 (0.95 · 1.55 · 2.15 V)
               </div>
             )}
           </div>
@@ -359,7 +355,7 @@ export const CatalogLabView: React.FC<Props> = ({
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <label htmlFor="cat-ld2-pressure" className="font-semibold text-stone-700 dark:text-stone-200 flex items-center gap-1.5">
                   <Hand className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>{lang === 'fr' ? 'Pression / Stress sur les sondes' : 'ضغط الأصابع / التوتر'}</span>
+                  <span>{tr(lang, 'Pression / Stress sur les sondes', 'ضغط الأصابع / التوتر', 'Probe pressure / stress')}</span>
                 </label>
                 <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                   {params.pressure}% · {(rf / 1000).toFixed(0)} kΩ
@@ -388,7 +384,7 @@ export const CatalogLabView: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <label htmlFor="cat-ld2-vr1" className="font-semibold text-stone-700 dark:text-stone-200">
-                  {lang === 'fr' ? 'Calibrage VR1 (Pot. 47 kΩ) :' : 'معايرة المقاوم VR1 (47kΩ):'}
+                  {tr(lang, 'Calibrage VR1 (Pot. 47 kΩ) :', 'معايرة المقاوم VR1 (47kΩ):', 'VR1 calibration (47 kΩ Pot):')}
                 </label>
                 <span className="font-mono-num font-bold text-sky-700 dark:text-sky-400">
                   {vr1KOhm.toFixed(1)} kΩ (≤ {(rTrip / 1000).toFixed(0)} kΩ)
@@ -418,7 +414,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'État de la peau :' : 'حالة الجلد:'}
+                {tr(lang, 'État de la peau :', 'حالة الجلد:', 'Skin state:')}
               </span>
               {(['dry', 'wet'] as const).map((m) => (
                 <button
@@ -440,12 +436,8 @@ export const CatalogLabView: React.FC<Props> = ({
                   }`}
                 >
                   {m === 'dry'
-                    ? lang === 'fr'
-                      ? 'Peau sèche'
-                      : 'جلد جاف'
-                    : lang === 'fr'
-                    ? 'Peau humide (÷4 R)'
-                    : 'جلد رطب'}
+                    ? tr(lang, 'Peau sèche', 'جلد جاف', 'Dry skin')
+                    : tr(lang, 'Peau humide (÷4 R)', 'جلد رطب', 'Wet skin (÷4 R)')}
                 </button>
               ))}
             </div>
@@ -473,7 +465,7 @@ export const CatalogLabView: React.FC<Props> = ({
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <label htmlFor="cat-ld5t-pressure" className="font-semibold text-stone-700 dark:text-stone-200 flex items-center gap-1.5">
                   <Hand className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>{lang === 'fr' ? 'Pression sur les touch pads' : 'الضغط على لوحي اللمس'}</span>
+                  <span>{tr(lang, 'Pression sur les touch pads', 'الضغط على لوحي اللمس', 'Pressure on touch pads')}</span>
                 </label>
                 <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                   {params.pressure}% · {(rf / 1000).toFixed(0)} kΩ
@@ -493,10 +485,10 @@ export const CatalogLabView: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <label htmlFor="cat-ld5t-pot" className="font-semibold text-stone-700 dark:text-stone-200">
-                  {lang === 'fr' ? 'Potentiomètre 100 kΩ (Émetteur Q1) :' : 'المقاوم المتغير 100kΩ (باعث Q1):'}
+                  {tr(lang, 'Potentiomètre 100 kΩ (Émetteur Q1) :', 'المقاوم المتغير 100kΩ (باعث Q1):', '100 kΩ Potentiometer (Q1 Emitter):')}
                 </label>
                 <span className="font-mono-num font-bold text-sky-700 dark:text-sky-400">
-                  {potPct}% · V_curseur {vWiper.toFixed(2)} V
+                  {potPct}% · {tr(lang, 'V_curseur', 'V_wiper', 'V_wiper')} {vWiper.toFixed(2)} V
                 </span>
               </div>
               <input
@@ -514,7 +506,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'État de la peau :' : 'حالة الجلد:'}
+                {tr(lang, 'État de la peau :', 'حالة الجلد:', 'Skin state:')}
               </span>
               {(['dry', 'wet'] as const).map((m) => (
                 <button
@@ -528,12 +520,8 @@ export const CatalogLabView: React.FC<Props> = ({
                   }`}
                 >
                   {m === 'dry'
-                    ? lang === 'fr'
-                      ? 'Peau sèche'
-                      : 'جلد جاف'
-                    : lang === 'fr'
-                    ? 'Peau humide (÷4 R)'
-                    : 'جلد رطب'}
+                    ? tr(lang, 'Peau sèche', 'جلد جاف', 'Dry skin')
+                    : tr(lang, 'Peau humide (÷4 R)', 'جلد رطب', 'Wet skin (÷4 R)')}
                 </button>
               ))}
             </div>
@@ -553,12 +541,8 @@ export const CatalogLabView: React.FC<Props> = ({
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-prox" className="font-semibold text-stone-700 dark:text-stone-200">
                 {cid === 'mains-hum'
-                  ? lang === 'fr'
-                    ? 'Distance antenne ↔ câble secteur'
-                    : 'المسافة بين الهوائي وسلك الكهرباء'
-                  : lang === 'fr'
-                  ? 'Distance objet chargé / main ↔ sonde'
-                  : 'بُعد اليد / الشحنة الساكنة عن المجسّ'}
+                  ? tr(lang, 'Distance antenne ↔ câble secteur', 'المسافة بين الهوائي وسلك الكهرباء', 'Antenna ↔ mains cable distance')
+                  : tr(lang, 'Distance objet chargé / main ↔ sonde', 'بُعد اليد / الشحنة الساكنة عن المجسّ', 'Charged object / hand ↔ probe distance')}
               </label>
               <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                 {params.proximityCm} cm
@@ -578,7 +562,7 @@ export const CatalogLabView: React.FC<Props> = ({
           {cid === 'mains-hum' && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'Réseau secteur :' : 'تردد الشبكة:'}
+                {tr(lang, 'Réseau secteur :', 'تردد الشبكة:', 'Mains frequency:')}
               </span>
               {([50, 60] as const).map((hz) => (
                 <button
@@ -607,7 +591,7 @@ export const CatalogLabView: React.FC<Props> = ({
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-soil" className="font-semibold text-stone-700 dark:text-stone-200 flex items-center gap-1.5">
                 <Droplets className="w-3.5 h-3.5 text-sky-600" />
-                <span>{lang === 'fr' ? 'Humidité du substrat' : 'رطوبة التربة'}</span>
+                <span>{tr(lang, 'Humidité du substrat', 'رطوبة التربة', 'Soil moisture')}</span>
               </label>
               <span className="font-mono-num font-bold text-sky-700 dark:text-sky-400">
                 {params.pressure}%
@@ -626,13 +610,13 @@ export const CatalogLabView: React.FC<Props> = ({
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-              {lang === 'fr' ? 'Minéralité / Engrais :' : 'أملاح التربة:'}
+              {tr(lang, 'Minéralité / Engrais :', 'أملاح التربة:', 'Minerals / Fertilizer:')}
             </span>
             {(
               [
-                { id: 'pure', fr: 'Eau distillée (peu conductrice)', ar: 'ماء مقطّر' },
-                { id: 'normal', fr: 'Terre normale', ar: 'تربة عادية' },
-                { id: 'fertilizer', fr: 'Sol riche en engrais', ar: 'تربة غنية بالأسمدة' },
+                { id: 'pure', fr: 'Eau distillée (peu conductrice)', ar: 'ماء مقطّر', en: 'Distilled water (low conductivity)' },
+                { id: 'normal', fr: 'Terre normale', ar: 'تربة عادية', en: 'Normal soil' },
+                { id: 'fertilizer', fr: 'Sol riche en engrais', ar: 'تربة غنية بالأسمدة', en: 'Fertilizer-rich soil' },
               ] as const
             ).map((s) => (
               <button
@@ -659,7 +643,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'Type :' : 'النوع:'}
+                {tr(lang, 'Type :', 'النوع:', 'Type:')}
               </span>
               {(['NPN', 'PNP'] as const).map((t) => (
                 <button
@@ -687,23 +671,19 @@ export const CatalogLabView: React.FC<Props> = ({
               }`}
             >
               {params.batteryReversed
-                ? lang === 'fr'
-                  ? 'Pile 9 V inversée (−/+)'
-                  : 'البطارية معكوسة (−/+)'
-                : lang === 'fr'
-                ? 'Inverser la pile 9 V (+/−)'
-                : 'عكس البطارية (+/−)'}
+                ? tr(lang, 'Pile 9 V inversée (−/+)', 'البطارية معكوسة (−/+)', '9 V Battery reversed (−/+)')
+                : tr(lang, 'Inverser la pile 9 V (+/−)', 'عكس البطارية (+/−)', 'Reverse 9 V battery (+/−)')}
             </button>
 
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'Injection panne :' : 'محاكاة عطل:'}
+                {tr(lang, 'Injection panne :', 'محاكاة عطل:', 'Fault injection:')}
               </span>
               {(
                 [
-                  { id: 'ok', fr: 'Bon', ar: 'سليم' },
-                  { id: 'short', fr: 'Court-circuit C–E', ar: 'قصر C–E' },
-                  { id: 'open', fr: 'Coupé', ar: 'مقطوع' },
+                  { id: 'ok', fr: 'Bon', ar: 'سليم', en: 'Good' },
+                  { id: 'short', fr: 'Court-circuit C–E', ar: 'قصر C–E', en: 'C–E Short' },
+                  { id: 'open', fr: 'Coupé', ar: 'مقطوع', en: 'Open' },
                 ] as const
               ).map((f) => (
                 <button
@@ -727,7 +707,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-tester-p" className="font-semibold text-stone-700 dark:text-stone-200">
-                {lang === 'fr' ? 'Pression doigt sur la base :' : 'ضغط الإصبع على القاعدة:'}
+                {tr(lang, 'Pression doigt sur la base :', 'ضغط الإصبع على القاعدة:', 'Finger pressure on base:')}
               </label>
               <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">{params.pressure}%</span>
             </div>
@@ -749,13 +729,13 @@ export const CatalogLabView: React.FC<Props> = ({
       return (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-stone-700 dark:text-stone-200 me-1">
-            {lang === 'fr' ? 'Pointe de test :' : 'ملامسة المجسّ:'}
+            {tr(lang, 'Pointe de test :', 'ملامسة المجسّ:', 'Test probe tip:')}
           </span>
           {(
             [
-              { id: 'FLOAT', fr: 'En l’air (0 mA)', ar: 'عائم (0 mA)' },
-              { id: 'LOW', fr: 'LOW (0 V → Verte)', ar: 'LOW (0V ← خضراء)' },
-              { id: 'HIGH', fr: 'HIGH (+5 V → Rouge)', ar: 'HIGH (+5V ← حمراء)' },
+              { id: 'FLOAT', fr: 'En l’air (0 mA)', ar: 'عائم (0 mA)', en: 'Floating (0 mA)' },
+              { id: 'LOW', fr: 'LOW (0 V → Verte)', ar: 'LOW (0V ← خضراء)', en: 'LOW (0 V → Green)' },
+              { id: 'HIGH', fr: 'HIGH (+5 V → Rouge)', ar: 'HIGH (+5V ← حمراء)', en: 'HIGH (+5 V → Red)' },
             ] as const
           ).map((l) => (
             <button
@@ -795,7 +775,7 @@ export const CatalogLabView: React.FC<Props> = ({
                   : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700'
               }`}
             >
-              {lang === 'fr' ? 'Ouvrir portière (Vider C)' : 'فتح الباب (تفريغ المكثف)'}
+              {tr(lang, 'Ouvrir portière (Vider C)', 'فتح الباب (تفريغ المكثف)', 'Open door (Discharge C)')}
             </button>
             <button
               type="button"
@@ -809,24 +789,24 @@ export const CatalogLabView: React.FC<Props> = ({
                   : 'bg-stone-900 text-white dark:bg-amber-500 dark:text-stone-950 border-transparent'
               }`}
             >
-              {lang === 'fr' ? 'Fermer portière (Lancer temporisation)' : 'إغلاق الباب (بدء التأخير)'}
+              {tr(lang, 'Fermer portière (Lancer temporisation)', 'إغلاق الباب (بدء التأخير)', 'Close door (Start fade timer)')}
             </button>
             <button
               type="button"
               onClick={() => setParams((p) => ({ ...p, doorOpen: false, capTriggered: false, capCharge: 1 }))}
               className="px-3 py-2 rounded-lg text-xs font-semibold border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 cursor-pointer whitespace-nowrap shrink-0"
             >
-              {lang === 'fr' ? 'Extinction complète' : 'إطفاء فوري'}
+              {tr(lang, 'Extinction complète', 'إطفاء فوري', 'Turn off completely')}
             </button>
           </div>
 
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-cap-uf" className="font-semibold text-stone-700 dark:text-stone-200">
-                {lang === 'fr' ? 'Capacité du condensateur C :' : 'سعة المكثف C:'}
+                {tr(lang, 'Capacité du condensateur C :', 'سعة المكثف C:', 'Capacitance C:')}
               </label>
               <span className="font-mono-num font-bold text-sky-700 dark:text-sky-400">
-                {params.capValueUF} µF ({Math.round((params.doorOpen ? 0 : params.capCharge) * 100)}% chargé)
+                {params.capValueUF} µF ({Math.round((params.doorOpen ? 0 : params.capCharge) * 100)}% {tr(lang, 'chargé', 'مشحون', 'charged')})
               </span>
             </div>
             <input
@@ -856,7 +836,7 @@ export const CatalogLabView: React.FC<Props> = ({
                 : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700'
             }`}
           >
-            {lang === 'fr' ? 'Toucher pastille ON (Verrouiller)' : 'لمس زر ON (تثبيت)'}
+            {tr(lang, 'Toucher pastille ON (Verrouiller)', 'لمس زر ON (تثبيت)', 'Touch ON pad (Latch)')}
           </button>
           <button
             type="button"
@@ -867,7 +847,7 @@ export const CatalogLabView: React.FC<Props> = ({
                 : 'bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-200 border-stone-300 dark:border-stone-700'
             }`}
           >
-            {lang === 'fr' ? 'Toucher pastille OFF (Couper)' : 'لمس زر OFF (إطفاء)'}
+            {tr(lang, 'Toucher pastille OFF (Couper)', 'لمس زر OFF (إطفاء)', 'Touch OFF pad (Reset)')}
           </button>
         </div>
       );
@@ -881,7 +861,7 @@ export const CatalogLabView: React.FC<Props> = ({
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-lux" className="font-semibold text-stone-700 dark:text-stone-200 flex items-center gap-1.5">
                 <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-                <span>{lang === 'fr' ? 'Luminosité ambiante (LDR)' : 'شدة الإضاءة (LDR)'}</span>
+                <span>{tr(lang, 'Luminosité ambiante (LDR)', 'شدة الإضاءة (LDR)', 'Ambient light (LDR)')}</span>
               </label>
               <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                 {params.luxLevel}% {isNight ? '(≤ 40% ON)' : '(≤ 30% ON · ≥ 55% OFF)'}
@@ -916,7 +896,7 @@ export const CatalogLabView: React.FC<Props> = ({
           {isNight && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'Tension relais :' : 'جهد التغذية:'}
+                {tr(lang, 'Tension relais :', 'جهد التغذية:', 'Relay supply:')}
               </span>
               {([6, 12] as const).map((v) => (
                 <button
@@ -949,12 +929,12 @@ export const CatalogLabView: React.FC<Props> = ({
             }}
             className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold cursor-pointer whitespace-nowrap shrink-0"
           >
-            {lang === 'fr' ? 'Clapper des mains ! (Impulsion micro)' : 'تصفيق! (نبضة ميكروفون)'}
+            {tr(lang, 'Clapper des mains ! (Impulsion micro)', 'تصفيق! (نبضة ميكروفون)', 'Clap hands! (Mic pulse)')}
           </button>
 
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-              {lang === 'fr' ? 'Gain préampli :' : 'حساسية المكبّر:'}
+              {tr(lang, 'Gain préampli :', 'حساسية المكبّر:', 'Preamp gain:')}
             </span>
             {([1, 2, 3] as const).map((g) => (
               <button
@@ -981,7 +961,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-osc-r" className="font-semibold text-stone-700 dark:text-stone-200">
-                {lang === 'fr' ? 'Résistance de base R (Cadence) :' : 'مقاومة التوقيت R:'}
+                {tr(lang, 'Résistance de base R (Cadence) :', 'مقاومة التوقيت R:', 'Timing resistor R (Rate):')}
               </label>
               <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                 {params.oscSpeedR.toFixed(1)} kΩ {sim.freqHz ? `· ${sim.freqHz.toFixed(1)} Hz` : ''}
@@ -1002,7 +982,7 @@ export const CatalogLabView: React.FC<Props> = ({
           {cid === 'three-led-chaser' && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'Sens de rotation :' : 'اتجاه الدوران:'}
+                {tr(lang, 'Sens de rotation :', 'اتجاه الدوران:', 'Rotation direction:')}
               </span>
               <button
                 type="button"
@@ -1014,12 +994,8 @@ export const CatalogLabView: React.FC<Props> = ({
                 }`}
               >
                 {params.chaserReverse
-                  ? lang === 'fr'
-                    ? 'Sens inversé (3 → 2 → 1)'
-                    : 'اتجاه عكسي (3→2→1)'
-                  : lang === 'fr'
-                  ? 'Sens horaire (1 → 2 → 3)'
-                  : 'اتجاه طبيعي (1→2→3)'}
+                  ? tr(lang, 'Sens inversé (3 → 2 → 1)', 'اتجاه عكسي (3→2→1)', 'Reversed (3 → 2 → 1)')
+                  : tr(lang, 'Sens horaire (1 → 2 → 3)', 'اتجاه طبيعي (1→2→3)', 'Clockwise (1 → 2 → 3)')}
               </button>
             </div>
           )}
@@ -1027,12 +1003,12 @@ export const CatalogLabView: React.FC<Props> = ({
           {cid === 'ticking-bomb' && (
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'Mode acoustique :' : 'الوضع الصوتي:'}
+                {tr(lang, 'Mode acoustique :', 'الوضع الصوتي:', 'Sound mode:')}
               </span>
               {(
                 [
-                  { id: 'tick', fr: 'Tic-Tac rythmé', ar: 'نبضات متقطعة' },
-                  { id: 'siren', fr: 'Sirène continue', ar: 'صفّارة مستمرة' },
+                  { id: 'tick', fr: 'Tic-Tac rythmé', ar: 'نبضات متقطعة', en: 'Rhythmic tick-tock' },
+                  { id: 'siren', fr: 'Sirène continue', ar: 'صفّارة مستمرة', en: 'Continuous siren' },
                 ] as const
               ).map((m) => (
                 <button
@@ -1060,7 +1036,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-cellv" className="font-semibold text-stone-700 dark:text-stone-200">
-                {lang === 'fr' ? 'Tension de la pile 1,5 V (même usée) :' : 'جهد البطارية (حتى عند ضعفها):'}
+                {tr(lang, 'Tension de la pile 1,5 V (même usée) :', 'جهد البطارية (حتى عند ضعفها):', '1.5 V cell voltage (even drained):')}
               </label>
               <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                 {params.cellVoltage.toFixed(2)} V
@@ -1086,12 +1062,8 @@ export const CatalogLabView: React.FC<Props> = ({
                 className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 cursor-pointer whitespace-nowrap shrink-0"
               >
                 {pumpAuto
-                  ? lang === 'fr'
-                    ? 'Mettre en pause (pas à pas)'
-                    : 'إيقاف مؤقت للفحص'
-                  : lang === 'fr'
-                  ? 'Reprendre cycle auto'
-                  : 'استئناف التبديل التلقائي'}
+                  ? tr(lang, 'Mettre en pause (pas à pas)', 'إيقاف مؤقت للفحص', 'Pause (step by step)')
+                  : tr(lang, 'Reprendre cycle auto', 'استئناف التبديل التلقائي', 'Resume auto cycle')}
               </button>
               {(['A', 'B'] as const).map((ph) => (
                 <button
@@ -1108,12 +1080,8 @@ export const CatalogLabView: React.FC<Props> = ({
                   }`}
                 >
                   {ph === 'A'
-                    ? lang === 'fr'
-                      ? 'Phase A : Charge 1 µF'
-                      : 'الطور A: شحن 1µF'
-                    : lang === 'fr'
-                    ? 'Phase B : Décharge série (~2,5 V)'
-                    : 'الطور B: تفريغ متوالٍ (~2.5V)'}
+                    ? tr(lang, 'Phase A : Charge 1 µF', 'الطور A: شحن 1µF', 'Phase A: Charge 1 µF')
+                    : tr(lang, 'Phase B : Décharge série (~2,5 V)', 'الطور B: تفريغ متوالٍ (~2.5V)', 'Phase B: Series discharge (~2.5 V)')}
                 </button>
               ))}
             </div>
@@ -1130,12 +1098,8 @@ export const CatalogLabView: React.FC<Props> = ({
               <AlertTriangle className="w-3.5 h-3.5" />
               <span>
                 {params.openCircuitFault
-                  ? lang === 'fr'
-                    ? 'Rebrancher les LEDs (supprimer défaut)'
-                    : 'إعادة توصيل الـ LED'
-                  : lang === 'fr'
-                  ? 'Débrancher LED : test surtension à vide'
-                  : 'فصل الـ LED: اختبار ارتفاع الجهد الخطر'}
+                  ? tr(lang, 'Rebrancher les LEDs (supprimer défaut)', 'إعادة توصيل الـ LED', 'Reconnect LEDs (clear fault)')
+                  : tr(lang, 'Débrancher LED : test surtension à vide', 'فصل الـ LED: اختبار ارتفاع الجهد الخطر', 'Disconnect LED: open-circuit spike test')}
               </span>
             </button>
           )}
@@ -1152,10 +1116,10 @@ export const CatalogLabView: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <label htmlFor="cat-batt" className="font-semibold text-stone-700 dark:text-stone-200">
-                  {lang === 'fr' ? 'Tension batterie 12 V :' : 'جهد البطارية 12V:'}
+                  {tr(lang, 'Tension batterie 12 V :', 'جهد البطارية 12V:', '12 V Battery voltage:')}
                 </label>
                 <span className="font-mono-num font-bold text-emerald-700 dark:text-emerald-400">
-                  {params.battVoltage.toFixed(1)} V (12,5 ↔ 13,7 V)
+                  {params.battVoltage.toFixed(1)} V (12.5 ↔ 13.7 V)
                 </span>
               </div>
               <input
@@ -1186,7 +1150,7 @@ export const CatalogLabView: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <label htmlFor="cat-sun" className="font-semibold text-stone-700 dark:text-stone-200">
-                  {lang === 'fr' ? 'Ensoleillement panneau :' : 'شدة الإشعاع الشمسي:'}
+                  {tr(lang, 'Ensoleillement panneau :', 'شدة الإشعاع الشمسي:', 'Solar panel irradiance:')}
                 </label>
                 <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                   {sun}% ({panelV.toFixed(1)} V)
@@ -1214,12 +1178,8 @@ export const CatalogLabView: React.FC<Props> = ({
             }`}
           >
             {params.dummyLoadEnabled
-              ? lang === 'fr'
-                ? 'Charge factice 100 Ω 5W : Branchée'
-                : 'مقاومة التفريغ 100Ω 5W: متصلة'
-              : lang === 'fr'
-              ? 'Charge factice 100 Ω 5W : Débranchée'
-              : 'مقاومة التفريغ 100Ω 5W: مفصولة'}
+              ? tr(lang, 'Charge factice 100 Ω 5W : Branchée', 'مقاومة التفريغ 100Ω 5W: متصلة', '100 Ω 5W Dummy load: Connected')
+              : tr(lang, 'Charge factice 100 Ω 5W : Débranchée', 'مقاومة التفريغ 100Ω 5W: مفصولة', '100 Ω 5W Dummy load: Disconnected')}
           </button>
         </div>
       );
@@ -1231,7 +1191,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-supv" className="font-semibold text-stone-700 dark:text-stone-200">
-                {lang === 'fr' ? 'Tension d’alimentation +V :' : 'جهد التغذية +V:'}
+                {tr(lang, 'Tension d’alimentation +V :', 'جهد التغذية +V:', 'Supply voltage +V:')}
               </label>
               <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                 {params.supplyV.toFixed(1)} V
@@ -1270,7 +1230,7 @@ export const CatalogLabView: React.FC<Props> = ({
 
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'Charge LED série :' : 'عدد المصابيح:'}
+                {tr(lang, 'Charge LED série :', 'عدد المصابيح:', 'Series LED load:')}
               </span>
               {([1, 2, 3] as const).map((cnt) => (
                 <button
@@ -1298,7 +1258,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div>
             <div className="flex items-center justify-between text-xs mb-1.5">
               <label htmlFor="cat-pwm" className="font-semibold text-stone-700 dark:text-stone-200">
-                {lang === 'fr' ? 'Rapport cyclique PWM :' : 'نسبة نبضات PWM:'}
+                {tr(lang, 'Rapport cyclique PWM :', 'نسبة نبضات PWM:', 'PWM duty cycle:')}
               </label>
               <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                 {params.pwmDuty}%
@@ -1318,12 +1278,12 @@ export const CatalogLabView: React.FC<Props> = ({
 
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-              {lang === 'fr' ? 'Charge mécanique :' : 'الحمل الميكانيكي:'}
+              {tr(lang, 'Charge mécanique :', 'الحمل الميكانيكي:', 'Mechanical load:')}
             </span>
             {(
               [
-                { id: 'free', fr: 'À vide (démarrage 12%)', ar: 'حر (بدون حمل)' },
-                { id: 'heavy', fr: 'Charge lourde (seuil 25%)', ar: 'حمل ثقيل (عتبة 25%)' },
+                { id: 'free', fr: 'À vide (démarrage 12%)', ar: 'حر (بدون حمل)', en: 'No load (12% start)' },
+                { id: 'heavy', fr: 'Charge lourde (seuil 25%)', ar: 'حمل ثقيل (عتبة 25%)', en: 'Heavy load (25% threshold)' },
               ] as const
             ).map((l) => (
               <button
@@ -1352,7 +1312,7 @@ export const CatalogLabView: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <label htmlFor="cat-rb" className="font-semibold text-stone-700 dark:text-stone-200">
-                  {lang === 'fr' ? 'Résistance de polarisation R_B :' : 'مقاومة التحيّز R_B:'}
+                  {tr(lang, 'Résistance de polarisation R_B :', 'مقاومة التحيّز R_B:', 'Bias resistor R_B:')}
                 </label>
                 <span className="font-mono-num font-bold text-amber-700 dark:text-amber-400">
                   {rbK >= 1000 ? `${(rbK / 1000).toFixed(2)} MΩ` : `${rbK} kΩ`}
@@ -1372,7 +1332,7 @@ export const CatalogLabView: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <label htmlFor="cat-acamp" className="font-semibold text-stone-700 dark:text-stone-200">
-                  {lang === 'fr' ? 'Amplitude signal AC d’entrée :' : 'سعة موجة الدخل AC:'}
+                  {tr(lang, 'Amplitude signal AC d’entrée :', 'سعة موجة الدخل AC:', 'Input AC signal amplitude:')}
                 </label>
                 <span className="font-mono-num font-bold text-sky-700 dark:text-sky-400">
                   ±{(params.acAmplitude ?? 2.0).toFixed(1)} V
@@ -1397,7 +1357,7 @@ export const CatalogLabView: React.FC<Props> = ({
               onClick={() => setParams((p) => ({ ...p, rbSlider: 67 }))}
               className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-500 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 cursor-pointer whitespace-nowrap shrink-0"
             >
-              {lang === 'fr' ? 'Auto-centrer Q à 2,50 V (2,2 MΩ)' : 'ضبط نقطة التشغيل Q عند 2.50V'}
+              {tr(lang, 'Auto-centrer Q à 2,50 V (2,2 MΩ)', 'ضبط نقطة التشغيل Q عند 2.50V', 'Auto-center Q at 2.50 V (2.2 MΩ)')}
             </button>
             <button
               type="button"
@@ -1409,12 +1369,8 @@ export const CatalogLabView: React.FC<Props> = ({
               }`}
             >
               {params.acSignalOn
-                ? lang === 'fr'
-                  ? 'Signal AC : Actif'
-                  : 'موجة AC: نشطة'
-                : lang === 'fr'
-                ? 'Signal AC : Coupé'
-                : 'موجة AC: موقفة'}
+                ? tr(lang, 'Signal AC : Actif', 'موجة AC: نشطة', 'AC Signal: On')
+                : tr(lang, 'Signal AC : Coupé', 'موجة AC: موقفة', 'AC Signal: Off')}
             </button>
           </div>
         </div>
@@ -1427,13 +1383,13 @@ export const CatalogLabView: React.FC<Props> = ({
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'Boîtier mystère :' : 'الترانزستور المجهول:'}
+                {tr(lang, 'Boîtier mystère :', 'الترانزستور المجهول:', 'Mystery package:')}
               </span>
               {(
                 [
-                  { id: 'npn_ebc', fr: '#1 NPN (E-B-C)', ar: '#1 NPN (E-B-C)' },
-                  { id: 'pnp_bce', fr: '#2 PNP (B-C-E)', ar: '#2 PNP (B-C-E)' },
-                  { id: 'faulty', fr: '#3 Défectueux (C-C)', ar: '#3 تالف (قصر)' },
+                  { id: 'npn_ebc', fr: '#1 NPN (E-B-C)', ar: '#1 NPN (E-B-C)', en: '#1 NPN (E-B-C)' },
+                  { id: 'pnp_bce', fr: '#2 PNP (B-C-E)', ar: '#2 PNP (B-C-E)', en: '#2 PNP (B-C-E)' },
+                  { id: 'faulty', fr: '#3 Défectueux (C-C)', ar: '#3 تالف (قصر)', en: '#3 Faulty (Short)' },
                 ] as const
               ).map((m) => (
                 <button
@@ -1453,7 +1409,7 @@ export const CatalogLabView: React.FC<Props> = ({
 
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-medium text-stone-600 dark:text-stone-400">
-                {lang === 'fr' ? 'Calibre :' : 'التدريج:'}
+                {tr(lang, 'Calibre :', 'التدريج:', 'Range:')}
               </span>
               {(['x10', 'x10k'] as const).map((r) => (
                 <button
@@ -1481,7 +1437,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-stone-700 dark:text-stone-200">
-                {lang === 'fr' ? 'Sonde NOIRE (+) :' : 'المجس الأسود (+):'}
+                {tr(lang, 'Sonde NOIRE (+) :', 'المجس الأسود (+):', 'BLACK Probe (+):')}
               </span>
               {([1, 2, 3] as const).map((pin) => (
                 <button
@@ -1501,7 +1457,7 @@ export const CatalogLabView: React.FC<Props> = ({
 
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
-                {lang === 'fr' ? 'Sonde ROUGE (−) :' : 'المجس الأحمر (−):'}
+                {tr(lang, 'Sonde ROUGE (−) :', 'المجس الأحمر (−):', 'RED Probe (−):')}
               </span>
               {([1, 2, 3] as const).map((pin) => (
                 <button
@@ -1530,12 +1486,8 @@ export const CatalogLabView: React.FC<Props> = ({
                 }`}
               >
                 {params.fingerCB
-                  ? lang === 'fr'
-                    ? 'Doigt sur C + B : APPUYÉ'
-                    : 'الإصبع على C + B: مضغوط'
-                  : lang === 'fr'
-                  ? 'Poser doigt entre C et B'
-                  : 'وضع الإصبع بين C و B'}
+                  ? tr(lang, 'Doigt sur C + B : APPUYÉ', 'الإصبع على C + B: مضغوط', 'Finger on C + B: PRESSED')
+                  : tr(lang, 'Poser doigt entre C et B', 'وضع الإصبع بين C و B', 'Place finger between C & B')}
               </button>
             )}
 
@@ -1547,12 +1499,8 @@ export const CatalogLabView: React.FC<Props> = ({
               {params.revealPins ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               <span>
                 {params.revealPins
-                  ? lang === 'fr'
-                    ? 'Masquer brochage'
-                    : 'إخفاء الأطراف'
-                  : lang === 'fr'
-                  ? 'Révéler brochage réel'
-                  : 'كشف الأطراف الحقيقية'}
+                  ? tr(lang, 'Masquer brochage', 'إخفاء الأطراف', 'Hide pinout')
+                  : tr(lang, 'Révéler brochage réel', 'كشف الأطراف الحقيقية', 'Reveal true pinout')}
               </span>
             </button>
           </div>
@@ -1574,7 +1522,7 @@ export const CatalogLabView: React.FC<Props> = ({
             className="px-3 py-1.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-xs font-semibold text-stone-800 dark:text-stone-100 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>{lang === 'fr' ? 'Catalogue' : 'العودة للدليل'}</span>
+            <span>{tr(lang, 'Catalogue', 'العودة للدليل', 'Catalog')}</span>
           </button>
 
           <div className="min-w-0">
@@ -1598,9 +1546,9 @@ export const CatalogLabView: React.FC<Props> = ({
             type="button"
             onClick={handleSelectPrev}
             className="p-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer shrink-0"
-            aria-label={lang === 'fr' ? 'Circuit précédent' : 'الدارة السابقة'}
+            aria-label={tr(lang, 'Circuit précédent', 'الدارة السابقة', 'Previous circuit')}
           >
-            <ChevronLeft className="w-4 h-4" />
+            {lang === 'ar' ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
           <span className="text-xs font-mono-num font-bold text-stone-700 dark:text-stone-200 px-1 whitespace-nowrap shrink-0">
             {index + 1} / {circuits.length}
@@ -1609,17 +1557,17 @@ export const CatalogLabView: React.FC<Props> = ({
             type="button"
             onClick={handleSelectNext}
             className="p-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer shrink-0"
-            aria-label={lang === 'fr' ? 'Circuit suivant' : 'الدارة التالية'}
+            aria-label={tr(lang, 'Circuit suivant', 'الدارة التالية', 'Next circuit')}
           >
-            <ChevronRight className="w-4 h-4" />
+            {lang === 'ar' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
 
           <button
             type="button"
             onClick={() => setParams(buildInitialParams(circuit.id))}
             className="p-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer shrink-0"
-            title={lang === 'fr' ? 'Réinitialiser ce montage' : 'إعادة ضبط الدارة'}
-            aria-label={lang === 'fr' ? 'Réinitialiser' : 'إعادة ضبط'}
+            title={tr(lang, 'Réinitialiser ce montage', 'إعادة ضبط الدارة', 'Reset this circuit')}
+            aria-label={tr(lang, 'Réinitialiser', 'إعادة ضبط', 'Reset')}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -1628,7 +1576,7 @@ export const CatalogLabView: React.FC<Props> = ({
             type="button"
             onClick={onToggleMute}
             className="p-2 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800 cursor-pointer shrink-0"
-            aria-label={muted ? (lang === 'fr' ? 'Activer le son' : 'تشغيل الصوت') : lang === 'fr' ? 'Couper le son' : 'كتم الصوت'}
+            aria-label={muted ? tr(lang, 'Activer le son', 'تشغيل الصوت', 'Unmute') : tr(lang, 'Couper le son', 'كتم الصوت', 'Mute')}
           >
             {muted ? <VolumeX className="w-4 h-4 text-stone-400" /> : <Volume2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
           </button>
@@ -1640,9 +1588,9 @@ export const CatalogLabView: React.FC<Props> = ({
         <div className="flex items-center gap-1.5 p-1 bg-stone-200/75 dark:bg-stone-800/80 rounded-lg w-fit">
           {(
             [
-              { id: 'board3d', fr: 'Platine 3D', ar: 'اللوحة ثلاثية الأبعاد' },
-              { id: 'schematic', fr: 'Schéma & Oscillo', ar: 'المخطط والراسم' },
-              { id: 'analogy', fr: 'Analogie', ar: 'التشبيه المائي' },
+              { id: 'board3d', fr: 'Platine 3D', ar: 'اللوحة ثلاثية الأبعاد', en: '3D Board' },
+              { id: 'schematic', fr: 'Schéma & Oscillo', ar: 'المخطط والراسم', en: 'Schematic & Scope' },
+              { id: 'analogy', fr: 'Analogie', ar: 'التشبيه المائي', en: 'Analogy' },
             ] as const
           ).map((tab) => {
             const active = stageView === tab.id;
@@ -1707,7 +1655,7 @@ export const CatalogLabView: React.FC<Props> = ({
           <div className="flex items-center justify-between gap-2 border-b border-stone-200/70 dark:border-stone-800 pb-2.5">
             <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
               <Cpu className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              <span>{lang === 'fr' ? 'Banc de réglages du montage' : 'لوحة التحكم المتقدمة بالدارة'}</span>
+              <span>{tr(lang, 'Banc de réglages du montage', 'لوحة التحكم المتقدمة بالدارة', 'Circuit Control Panel')}</span>
             </h2>
             <span className="text-xs font-medium text-stone-700 dark:text-stone-200 truncate">
               {statusText}
@@ -1718,7 +1666,7 @@ export const CatalogLabView: React.FC<Props> = ({
 
         <section className="lg:col-span-5 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-4 flex flex-col justify-between gap-3">
           <h2 className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 border-b border-stone-200/70 dark:border-stone-800 pb-2.5">
-            {lang === 'fr' ? 'Mesures électriques en direct' : 'القياسات الكهربائية الحية'}
+            {tr(lang, 'Mesures électriques en direct', 'القياسات الكهربائية الحية', 'Live Electrical Measurements')}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2.5">
             <div className="rounded-lg bg-stone-50 dark:bg-stone-950/60 border border-stone-200/70 dark:border-stone-800 p-2.5">
@@ -1728,7 +1676,9 @@ export const CatalogLabView: React.FC<Props> = ({
               </div>
             </div>
             <div className="rounded-lg bg-stone-50 dark:bg-stone-950/60 border border-stone-200/70 dark:border-stone-800 p-2.5">
-              <div className="text-[11px] text-stone-500 dark:text-stone-400">I_C (Charge)</div>
+              <div className="text-[11px] text-stone-500 dark:text-stone-400">
+                {tr(lang, 'I_C (Charge)', 'I_C (الحِمل)', 'I_C (Load)')}
+              </div>
               <div className="text-sm font-mono-num font-bold text-amber-700 dark:text-amber-400 mt-0.5">
                 {sim.icMA.toFixed(1)} mA
               </div>
@@ -1742,18 +1692,12 @@ export const CatalogLabView: React.FC<Props> = ({
             <div className="rounded-lg bg-stone-50 dark:bg-stone-950/60 border border-stone-200/70 dark:border-stone-800 p-2.5">
               <div className="text-[11px] text-stone-500 dark:text-stone-400">
                 {sim.powerW !== undefined
-                  ? lang === 'fr'
-                    ? 'Dissipation'
-                    : 'الاستطاعة'
+                  ? tr(lang, 'Dissipation', 'الاستطاعة', 'Dissipation')
                   : sim.powerMW !== undefined
-                  ? lang === 'fr'
-                    ? 'Puissance'
-                    : 'القدرة'
+                  ? tr(lang, 'Puissance', 'القدرة', 'Power')
                   : sim.freqHz !== undefined
-                  ? lang === 'fr'
-                    ? 'Fréquence'
-                    : 'التردد'
-                  : 'Gain β'}
+                  ? tr(lang, 'Fréquence', 'التردد', 'Frequency')
+                  : tr(lang, 'Gain β', 'الكسب β', 'Gain β')}
               </div>
               <div className="text-sm font-mono-num font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
                 {sim.powerW !== undefined

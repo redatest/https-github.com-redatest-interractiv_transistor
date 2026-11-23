@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { RotateCcw, MousePointerClick } from 'lucide-react';
-import { Lang } from '../types';
+import { Lang, tr } from '../types';
 import { SimParams, SimReadout, getLieDetector2State, getLieDetector5TState } from '../utils/physics';
 
 interface Props {
@@ -12,116 +12,182 @@ interface Props {
 }
 
 interface InspectedPart {
-  name: string;
+  nameFr: string;
+  nameAr: string;
+  nameEn: string;
   roleFr: string;
   roleAr: string;
+  roleEn: string;
 }
 
 const PART_INFO: Record<string, InspectedPart> = {
   Q1: {
-    name: 'BC547 / BC337 (NPN)',
+    nameFr: 'BC547 / BC337 (NPN)',
+    nameAr: 'BC547 / BC337 (NPN)',
+    nameEn: 'BC547 / BC337 (NPN)',
     roleFr: 'Transistor NPN : lorsque V_B dépasse V_E d’environ 0,6 V, un faible courant I_B commande un fort courant I_C de C vers E.',
     roleAr: 'ترانزستور NPN: عندما يتجاوز جهد القاعدة V_B جهد الباعث V_E بنحو 0.6V، يفتح تياراً كبيراً من المجمّع C إلى الباعث E.',
+    roleEn: 'NPN transistor: when V_B exceeds V_E by ~0.6 V, a tiny base current I_B switches a large collector current I_C from C to E.',
   },
   Q2: {
-    name: 'Transistor de puissance / 2e étage (Q2)',
+    nameFr: 'Transistor de puissance / 2e étage (Q2)',
+    nameAr: 'ترانزستور القدرة / المرحلة الثانية (Q2)',
+    nameEn: 'Power / 2nd-Stage Transistor (Q2)',
     roleFr: 'Amplifie ou commute le courant issu du 1er étage : sa jonction Base-Émetteur suit le potentiel du transistor pilote.',
     roleAr: 'الترانزستور الثاني Q2: يضخّم أو يعكس إشارة المرحلة الأولى، ويتبع جهده عند الأقطاب (C, B, E) حالة الترانزستور الأول.',
+    roleEn: 'Amplifies or inverts the first stage output: its Base-Emitter junction tracks the driver transistor voltage.',
   },
   PNP: {
-    name: 'BC557 / BC327 (PNP)',
+    nameFr: 'BC557 / BC327 (PNP)',
+    nameAr: 'BC557 / BC327 (PNP)',
+    nameEn: 'BC557 / BC327 (PNP)',
     roleFr: 'Transistor PNP : l’émetteur E est au (+) ; lorsque V_B descend à ~0,6 V sous V_E, le courant sort de B et circule de E vers C.',
     roleAr: 'ترانزستور PNP: يتصل الباعث E بالقطب الموجب (+)؛ وعندما ينخفض V_B بمقدار 0.6V عن V_E يمر التيار من E إلى C.',
+    roleEn: 'PNP transistor: emitter E connects to (+); when V_B drops ~0.6 V below V_E, current leaves B and flows from E to C.',
   },
   R220: {
-    name: 'R2 · 220 Ω (Rouge-Rouge-Marron)',
+    nameFr: 'R2 · 220 Ω (Rouge-Rouge-Marron)',
+    nameAr: 'R2 · 220 Ω (أحمر-أحمر-بني)',
+    nameEn: 'R2 · 220 Ω (Red-Red-Brown)',
     roleFr: 'Résistance de limitation : protège la LED en plafonnant le courant à ~31,8 mA sous 9 V.',
     roleAr: 'مقاومة حماية: تحدّ من تيار الـ LED عند ~31.8mA لتمنع احتراقه.',
+    roleEn: 'Current-limiting resistor: protects the LED by capping current around ~31.8 mA on a 9 V supply.',
   },
   RSENSE: {
-    name: 'R_sense (22 Ω / 47 Ω / 120 Ω)',
+    nameFr: 'R_sense (22 Ω / 47 Ω / 120 Ω)',
+    nameAr: 'مقاومة الاستشعار R_sense (22Ω / 47Ω / 120Ω)',
+    nameEn: 'R_sense (22 Ω / 47 Ω / 120 Ω)',
     roleFr: 'Résistance de mesure en émetteur : dès que U = I_C × R_sense atteint 0,62 V, Q1 entre en conduction et bride Q2.',
     roleAr: 'مقاومة استشعار التيار: ما إن يبلغ الجهد عبرها 0.62V حتى يفتح الترانزستور Q1 ليمنع زيادة تيار Q2.',
+    roleEn: 'Emitter sense resistor: as soon as V = I_C × R_sense reaches 0.62 V, Q1 turns on and throttles Q2.',
   },
   CAP: {
-    name: 'Condensateur électrolytique / couplage',
+    nameFr: 'Condensateur électrolytique / couplage',
+    nameAr: 'مكثف كيميائي / ربط',
+    nameEn: 'Electrolytic / Coupling Capacitor',
     roleFr: 'Stocke la charge électrique et transmet les variations brusques de tension d’un collecteur C vers la base B voisine.',
     roleAr: 'مكثف توقيت/ربط: يخزّن الشحنة وينقل التغيّرات اللحظية في الجهد من مجمّع C إلى قاعدة B المجاورة.',
+    roleEn: 'Stores electric charge and transfers sudden voltage steps from one collector C to the neighboring base B.',
   },
   LDR: {
-    name: 'LDR ORP12 (Photorésistance)',
+    nameFr: 'LDR ORP12 (Photorésistance)',
+    nameAr: 'مقاومة ضوئية LDR ORP12',
+    nameEn: 'LDR ORP12 (Photoresistor)',
     roleFr: 'Sa résistance chute à la lumière (< 1 kΩ) et grimpe dans le noir (> 1 MΩ), modifiant la tension sur la base B.',
     roleAr: 'مقاومة ضوئية: تنخفض مقاومتها في الضوء وترتفع جداً في الظلام، مما يغيّر الجهد عند القاعدة B.',
+    roleEn: 'Resistance drops in bright light (< 1 kΩ) and climbs in darkness (> 1 MΩ), shifting the voltage on base B.',
   },
   RELAY: {
-    name: 'Relais 12 V + Diode 1N4148',
+    nameFr: 'Relais 12 V + Diode 1N4148',
+    nameAr: 'مرحّل 12V + دايود 1N4148',
+    nameEn: '12 V Relay + 1N4148 Flyback Diode',
     roleFr: 'Bobine reliée entre +V et le collecteur C de Q1 ; la diode D1 absorbe la surtension inverse à l’ouverture.',
     roleAr: 'مرحّل كهرومغناطيسي موصول بين الموجب والمجمّع C؛ الدايود D1 يمتص نبضة الارتداد عند فصل الملف.',
+    roleEn: 'Coil wired between +V and Q1 collector C; diode D1 absorbs the inductive kickback spike at turn-off.',
   },
   COIL: {
-    name: 'Bobine élévatrice bifilaire (Air / Ferrite)',
+    nameFr: 'Bobine élévatrice bifilaire (Air / Ferrite)',
+    nameAr: 'ملف رفع الجهد المزدوج (هوائي / فيريت)',
+    nameEn: 'Bifilar Step-Up Coil (Air / Ferrite)',
     roleFr: 'L’enroulement L1 alimente le collecteur C et L2 réinjecte l’impulsion vers la base B pour générer des pics > 3,4 V.',
     roleAr: 'ملف رفع الجهد المزدوج: L1 يغذي المجمّع C و L2 يغذّي القاعدة B عكسياً لتوليد نبضات تفوق 3.4V.',
+    roleEn: 'Winding L1 feeds collector C while L2 feeds pulses back into base B to generate > 3.4 V flyback spikes.',
   },
   SOLAR: {
-    name: 'Panneau solaire 18 V (28 cellules)',
+    nameFr: 'Panneau solaire 18 V (28 cellules)',
+    nameAr: 'لوح شمسي 18V (28 خلية)',
+    nameEn: '18 V Solar Panel (28 cells)',
     roleFr: 'Chaque cellule fournit ~0,6 V (28 × 0,6 ≈ 16,8–18 V) pour dépasser les 13,7 V de la batterie.',
     roleAr: 'لوح شمسي 18V (٢٨ خلية × 0.6V) ليتجاوز جهد البطارية (13.7V) أثناء الشحن.',
+    roleEn: 'Each cell delivers ~0.6 V (28 × 0.6 ≈ 16.8–18 V) to overcome the 13.7 V battery ceiling during charging.',
   },
   DUMMY: {
-    name: 'Charge factice 100 Ω / 5 W',
+    nameFr: 'Charge factice 100 Ω / 5 W',
+    nameAr: 'حمل وهمي 100 Ω / 5 W',
+    nameEn: '100 Ω / 5 W Dummy Load',
     roleFr: 'Dissipateur thermique : absorbe P = 18²/100 = 3,24 W quand Q1 active le relais K1 à 13,7 V.',
     roleAr: 'حِمل وهمي 100Ω: يبدّد قدرة 3.24W على شكل حرارة عندما يفعّل Q1 المرحّل عند 13.7V.',
+    roleEn: 'Power dump resistor: dissipates P = 18²/100 = 3.24 W when Q1 trips relay K1 at 13.7 V.',
   },
   FB4M7: {
-    name: 'Résistance de maintien 4,7 MΩ',
+    nameFr: 'Résistance de maintien 4,7 MΩ',
+    nameAr: 'مقاومة التغذية الراجعة 4.7 MΩ',
+    nameEn: '4.7 MΩ Latch Feedback Resistor',
     roleFr: 'Boucle de rétroaction positive : maintient le potentiel de la base B au-dessus de 0,6 V après le retrait du doigt.',
     roleAr: 'مقاومة التغذية الراجعة 4M7: تحافظ على جهد القاعدة B فوق 0.6V بعد رفع الإصبع عن لوح ON.',
+    roleEn: 'Positive feedback loop: keeps base B above 0.6 V after you lift your finger from the ON pad.',
   },
   STATIC: {
-    name: 'Plaque / Antenne électrostatique (×8 000 000)',
+    nameFr: 'Plaque / Antenne électrostatique (×8 000 000)',
+    nameAr: 'لوح / هوائي الشحنة الساكنة (×8,000,000)',
+    nameEn: 'Static / Antenna Pickup Plate (×8,000,000)',
     roleFr: 'Capte des nano-ampères induits sans contact grâce à la cascade de 3 transistors (Q1→Q2→Q3).',
     roleAr: 'لوح استشعار الشحنة الساكنة: يلتقط تيارات متناهية الصغر دون لمس بفضل تضخيم المراحل الثلاث.',
+    roleEn: 'Senses contactless nanoampere fields via the 3-transistor cascade (Q1→Q2→Q3).',
   },
   PWM: {
-    name: 'Oscillateur PWM (BC557 + BC338)',
+    nameFr: 'Oscillateur PWM (BC557 + BC338)',
+    nameAr: 'مذبذب نبضات PWM (BC557 + BC338)',
+    nameEn: 'PWM Oscillator (BC557 + BC338)',
     roleFr: 'Envoie des impulsions 3 V à plein courant mais à largeur variable : le moteur garde tout son couple même à faible vitesse.',
     roleAr: 'مذبذب نبضات PWM: يغذّي المحرك بنبضات سريعة كاملة الجهد (3V) ليحافظ على عزمه في السرعات البطيئة.',
+    roleEn: 'Drives full-voltage 3 V pulses with variable duty cycle so the motor retains high torque even at slow speeds.',
   },
   METER: {
-    name: 'Multimètre Analogique (Ohmmètre ×10 / ×10k)',
+    nameFr: 'Multimètre Analogique (Ohmmètre ×10 / ×10k)',
+    nameAr: 'ملتميتر تناظري (أوميتر ×10 / ×10k)',
+    nameEn: 'Analog Multimeter (Ohmmeter ×10 / ×10k)',
     roleFr: 'En position ohmmètre analogique, le cordon NOIR porte le (+) de la pile interne et le cordon ROUGE le (−).',
     roleAr: 'في وضع الأوميتر التناظري يحمل السلك الأسود القطب الموجب (+) للبطارية الداخلية والسلك الأحمر القطب السالب (−).',
+    roleEn: 'On analog ohmmeter ranges, the BLACK lead carries the internal battery (+) and the RED lead carries (−).',
   },
   DOME: {
-    name: 'Plafonnier 12 V + BD679 Darlington',
+    nameFr: 'Plafonnier 12 V + BD679 Darlington',
+    nameAr: 'مصباح سقف 12V + BD679 دارلنغتون',
+    nameEn: '12 V Dome Lamp + BD679 Darlington',
     roleFr: 'Alimenté en 12 V automobile : la charge du 47 µF ralentit progressivement le courant de base jusqu’à l’extinction douce.',
     roleAr: 'مصباح سيارة 12V: شحن المكثف 47µF يخفض تيار القاعدة تدريجياً حتى ينطفئ المصباح بنعومة.',
+    roleEn: '12 V automotive dome circuit: charging the 47 µF capacitor gently tapers base current for a smooth theater fade-out.',
   },
   VR1: {
-    name: 'Potentiomètre d’ajustement VR1 (47 kΩ)',
+    nameFr: 'Potentiomètre d’ajustement VR1 (47 kΩ)',
+    nameAr: 'مقاوم المعايرة VR1 (47 kΩ)',
+    nameEn: 'VR1 Trim Potentiometer (47 kΩ)',
     roleFr: 'Règle le seuil de déclenchement de TR1 : détermine à partir de quelle baisse de résistance cutanée le circuit bascule de TRUE à FALSE.',
     roleAr: 'مقاوم معايرة VR1 (47kΩ): يضبط عتبة حساسية TR1 للانتقال من المصباح الأخضر TRUE إلى الأحمر FALSE.',
+    roleEn: 'Sets the TR1 switching threshold, calibrating how much skin-resistance drop flips the output from TRUE to FALSE.',
   },
   SPEAKER: {
-    name: 'Haut-parleur 8 Ω + R_fb 1 kΩ',
+    nameFr: 'Haut-parleur 8 Ω + R_fb 1 kΩ',
+    nameAr: 'سماعة 8 Ω + R_fb 1 kΩ',
+    nameEn: '8 Ω Speaker + 1 kΩ Feedback Resistor',
     roleFr: 'Convertit les impulsions de commutation du BC557 en clics lents ou en tonalité continue dont la hauteur suit la conductivité de la peau.',
     roleAr: 'سماعة 8Ω: تحوّل نبضات التبديل بين BC547 و BC557 إلى نقرات أو نغمة صوتية يتغير ترددها حسب مقاومة الجلد.',
+    roleEn: 'Turns BC557 switching pulses into slow ticks or a rising tone whose pitch follows skin conductivity.',
   },
   TOUCH: {
-    name: 'Électrodes tactiles (Résistance de peau)',
+    nameFr: 'Électrodes tactiles (Résistance de peau)',
+    nameAr: 'أقطاب اللمس (مقاومة الجلد)',
+    nameEn: 'Touch Electrodes (Skin Resistance)',
     roleFr: 'Vos doigts ferment le pont diviseur d’entrée : une peau moite ou pressée fort abaisse R_peau et injecte davantage de courant dans Q1.',
     roleAr: 'أقطاب اللمس: يُغلق إصبعك الدارة؛ كلما زاد الضغط أو الرطوبة انخفضت المقاومة وزاد تيار القاعدة.',
+    roleEn: 'Your fingers bridge the input divider: firmer pressure or moisture lowers skin resistance and injects more base current into Q1.',
   },
   POT100K: {
-    name: 'Potentiomètre 100 kΩ (Sensibilité émetteur Q1)',
+    nameFr: 'Potentiomètre 100 kΩ (Sensibilité émetteur Q1)',
+    nameAr: 'مقاوم متغير 100 kΩ (حساسية باعث Q1)',
+    nameEn: '100 kΩ Potentiometer (Q1 Emitter Sensitivity)',
     roleFr: 'Divise la tension de sortie de l’émetteur Q1 avant d’attaquer la rampe Q2–Q5 : permet de calibrer la sensibilité selon l’humidité des doigts.',
     roleAr: 'مقاوم متغير 100kΩ على باعث Q1: يضبط حساسية الدارة ويقسّم الجهد المتجه نحو مراحل الإضاءة Q2–Q5.',
+    roleEn: 'Divides Q1 emitter voltage before driving the Q2–Q5 ladder, letting you calibrate sensitivity for dry or damp fingers.',
   },
   DIODE1N4148: {
-    name: 'Paires de diodes 1N4148 (6 × 1N4148)',
+    nameFr: 'Paires de diodes 1N4148 (6 × 1N4148)',
+    nameAr: 'أزواج دايودات 1N4148 (6 × 1N4148)',
+    nameEn: '1N4148 Diode Pairs (6 × 1N4148)',
     roleFr: 'Chaque paire de 1N4148 en série introduit une chute de ~1,3 V vers l’étage suivant, décalant nettement l’allumage progressif de LED2, LED3 puis LED4.',
     roleAr: 'دايودات 1N4148 على التوالي: يضيف كل زوج منها عتبة ~1.3V قبل الترانزستور التالي لتتدرج المصابيح واحداً تلو الآخر.',
+    roleEn: 'Each series 1N4148 pair introduces a ~1.3 V drop into the next stage, cleanly spacing the turn-on thresholds for LED2, LED3, and LED4.',
   },
 };
 
@@ -342,10 +408,10 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
             type="button"
             onClick={() => setRot({ rx: wide ? 22 : 28, rz: wide ? -4 : -6 })}
             className="pointer-events-auto bg-black/60 hover:bg-black/80 text-stone-100 text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
-            title={lang === 'fr' ? 'Réinitialiser l’angle' : 'إعادة ضبط الزاوية'}
+            title={tr(lang, 'Réinitialiser l’angle', 'إعادة ضبط الزاوية', 'Reset 3D angle')}
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>{lang === 'fr' ? 'Vue 3D' : 'زاوية 3D'}</span>
+            <span>{tr(lang, 'Vue 3D', 'زاوية 3D', '3D View')}</span>
           </button>
         </div>
 
@@ -424,10 +490,10 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
 
             {/* Silkscreen Legend */}
             <text x="50" y="287" fill="#d9f2e3" fontSize="8.5" fontFamily="monospace" opacity="0.88">
-              ● B (Base)  ● C (Collecteur)  ● E (Émetteur)
+              {tr(lang, '● B (Base)  ● C (Collecteur)  ● E (Émetteur)', '● B (القاعدة)  ● C (المجمّع)  ● E (الباعث)', '● B (Base)  ● C (Collector)  ● E (Emitter)')}
             </text>
             <text x="470" y="287" textAnchor="end" fill="#d9f2e3" fontSize="8.5" fontFamily="monospace" opacity="0.75">
-              LIVRE VIVANT · PCB 3D
+              {tr(lang, 'LIVRE VIVANT · PCB 3D', 'الكتاب الحي · PCB 3D', 'INTERACTIVE LAB · 3D PCB')}
             </text>
 
             {/* ================= CATALOG #24: ANALOG MULTIMETER TESTER ON 3D BENCH ================= */}
@@ -455,7 +521,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       <path d="M 74 122 A 68 68 0 0 1 204 122" fill="none" stroke="#1c1917" strokeWidth="2.2" />
                       <text x="68" y="106" fill="#dc2626" fontSize="12" fontWeight="700">∞</text>
                       <text x="139" y="64" textAnchor="middle" fill="#1c1917" fontSize="9.5" fontWeight="700" fontFamily="monospace">
-                        OHMMÈTRE ({range})
+                        {tr(lang, 'OHMMÈTRE', 'أوميتر', 'OHMMETER')} ({range})
                       </text>
                       <text x="196" y="106" fill="#16a34a" fontSize="11" fontWeight="700" fontFamily="monospace">0Ω</text>
                       <g transform={`translate(139, 134) rotate(${needleDeg})`} className="transition-transform duration-300 ease-out">
@@ -465,25 +531,33 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       {/* Range Switch & Battery Polarity Legend */}
                       <rect x="74" y="156" width="130" height="30" rx="5" fill="#0f172a" stroke="#475569" />
                       <text x="139" y="175" textAnchor="middle" fill="#fbbf24" fontSize="10" fontWeight="700" fontFamily="monospace">
-                        CALIBRE {range.toUpperCase()}
+                        {tr(lang, 'CALIBRE', 'النطاق', 'RANGE')} {range.toUpperCase()}
                       </text>
                       <circle cx="94" cy="222" r="14" fill="#18181b" stroke="#e2e8f0" strokeWidth="2.5" />
                       <text x="94" y="250" textAnchor="middle" fill="#e2e8f0" fontSize="9" fontWeight="700" fontFamily="monospace">
-                        NOIR (+)
+                        {tr(lang, 'NOIR (+)', 'أسود (+)', 'BLACK (+)')}
                       </text>
                       <circle cx="184" cy="222" r="14" fill="#dc2626" stroke="#fecaca" strokeWidth="2.5" />
                       <text x="184" y="250" textAnchor="middle" fill="#fca5a5" fontSize="9" fontWeight="700" fontFamily="monospace">
-                        ROUGE (−)
+                        {tr(lang, 'ROUGE (−)', 'أحمر (−)', 'RED (−)')}
                       </text>
                     </g>
 
                     {/* Unknown TO-92 Transistor Mounted on Right Test Socket */}
                     <rect x="296" y="94" width="148" height="62" rx="8" fill="#18181b" stroke="#a1a1aa" strokeWidth="2" />
                     <text x="370" y="122" textAnchor="middle" fill="#f4f4f5" fontSize="14" fontWeight="700" fontFamily="monospace">
-                      {rev ? (mystery === 'pnp_bce' ? 'PNP' : mystery === 'faulty' ? 'COURT-CIRCUIT' : 'NPN') : 'TRANSISTOR ???'}
+                      {rev
+                        ? mystery === 'pnp_bce'
+                          ? 'PNP'
+                          : mystery === 'faulty'
+                          ? tr(lang, 'COURT-CIRCUIT', 'قصر كهربائي', 'SHORTED')
+                          : 'NPN'
+                        : 'TRANSISTOR ???'}
                     </text>
                     <text x="370" y="141" textAnchor="middle" fill="#a1a1aa" fontSize="9" fontFamily="monospace">
-                      {rev ? 'Brochage révélé' : 'TO-92 Inconnu'}
+                      {rev
+                        ? tr(lang, 'Brochage révélé', 'تم كشف الأطراف', 'Pinout revealed')
+                        : tr(lang, 'TO-92 Inconnu', 'TO-92 مجهول', 'Unknown TO-92')}
                     </text>
 
                     {([1, 2, 3] as const).map((pin) => {
@@ -531,7 +605,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       <g>
                         <rect x="316" y="42" width="112" height="32" rx="14" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
                         <text x="372" y="62" textAnchor="middle" fill="#1c1917" fontSize="10" fontWeight="700">
-                          Doigt C–B actif
+                          {tr(lang, 'Doigt C–B actif', 'إصبع C–B نشط', 'Finger C–B active')}
                         </text>
                         <path d="M 370 74 L 370 94" stroke="#eab308" strokeWidth="3" strokeDasharray="3 3" />
                       </g>
@@ -611,7 +685,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     {/* Touch Pads */}
                     <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
                       <rect x="64" y="186" width="40" height="44" rx="5" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
-                      <text x="84" y="206" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontWeight="700">PEAU</text>
+                      <text x="84" y="206" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontWeight="700">{tr(lang, 'PEAU', 'الجلد', 'SKIN')}</text>
                       <text x="84" y="219" textAnchor="middle" fill="#1c1917" fontSize="7.5" fontFamily="monospace">≤300k</text>
                     </g>
 
@@ -620,7 +694,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       <circle cx="448" cy="148" r="28" fill="#27272a" stroke={active ? '#fbbf24' : '#a1a1aa'} strokeWidth="2.2" />
                       <circle cx="448" cy="148" r={pulse ? 16 : 12} fill={active ? '#f59e0b' : '#52525b'} className="transition-all duration-100" />
                       <text x="448" y="112" textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="700">
-                        {active ? `${Math.round(sim.freqHz ?? 0)} Hz` : 'HP 8 Ω'}
+                        {active ? `${Math.round(sim.freqHz ?? 0)} Hz` : tr(lang, 'HP 8 Ω', 'سماعة 8 Ω', '8 Ω SPKR')}
                       </text>
                     </g>
 
@@ -662,7 +736,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     <path d={`M 110 154 L ${trXs[0]} 154 L ${trXs[0]} ${padY}`} stroke="#38bdf8" strokeWidth="2.5" opacity="0.5" fill="none" />
                     <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
                       <rect x="64" y="196" width="42" height="38" rx="5" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
-                      <text x="85" y="219" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontWeight="700">SONDES</text>
+                      <text x="85" y="219" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontWeight="700">{tr(lang, 'SONDES', 'المجسات', 'PROBES')}</text>
                     </g>
                     <g data-comp="VR1" onClick={() => setInspected('VR1')} className="cursor-pointer">
                       <circle cx="84" cy="148" r="20" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="2" />
@@ -1659,7 +1733,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       <circle cx="444" cy="148" r="28" fill="#27272a" stroke="#a1a1aa" strokeWidth="2" />
                       <circle cx="444" cy="148" r="14" fill="#52525b" className="speaker-pulse" />
                       <text x="444" y="112" textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="700">
-                        HP 8 Ω
+                        {tr(lang, 'HP 8 Ω', 'سماعة 8 Ω', '8 Ω SPKR')}
                       </text>
                     </g>
 
@@ -1803,7 +1877,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       />
                       <circle cx="210" cy="86" r="4" fill="#fff" />
                       <text x="237" y="113" textAnchor="middle" fill="#bfdbfe" fontSize="8" fontFamily="monospace">
-                        {q1On ? 'Bobine ON' : 'Repos NC'}
+                        {q1On ? tr(lang, 'Bobine ON', 'الملف ON', 'Coil ON') : tr(lang, 'Repos NC', 'سكون NC', 'Rest NC')}
                       </text>
                     </g>
 
@@ -1843,7 +1917,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                         {params.battVoltage.toFixed(1)} V
                       </text>
                       <text x="412" y="211" textAnchor="middle" fill="#d9f99d" fontSize="9.5">
-                        {q1On ? 'Charge coupée' : 'Charge active'}
+                        {q1On ? tr(lang, 'Charge coupée', 'الشحن مقطوع', 'Charging cut') : tr(lang, 'Charge active', 'شحن نشط', 'Charging active')}
                       </text>
                     </g>
 
@@ -1962,7 +2036,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     <TransistorTO92
                       cx={q1X}
                       topY={topY}
-                      label="Q1 Rég."
+                      label={tr(lang, 'Q1 Rég.', 'Q1 منظّم', 'Q1 Reg.')}
                       sub="BC547"
                       compId="Q1"
                       active={sim.conducting}
@@ -2222,7 +2296,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
                         {cid === 'courtesy-light' && (
                           <text x="88" y="196" textAnchor="middle" fill="#fde68a" fontSize="9" fontWeight="700">
-                            {params.doorOpen ? 'Porte OUVERTE' : 'Porte FERMÉE'}
+                            {params.doorOpen ? tr(lang, 'Porte OUVERTE', 'الباب مفتوح', 'Door OPEN') : tr(lang, 'Porte FERMÉE', 'الباب مغلق', 'Door CLOSED')}
                           </text>
                         )}
                         <rect x="135" y="208" width="66" height="34" rx="6" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="1.5" />
@@ -2243,7 +2317,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       <g>
                         <circle cx="70" cy="228" r="14" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
                         <text x="70" y="205" textAnchor="middle" fill="#fef08a" fontSize="9.5" fontWeight="600">
-                          {isPlantScene ? 'Sonde' : 'Touch'}
+                          {isPlantScene ? tr(lang, 'Sonde', 'مسبار', 'Probe') : 'Touch'}
                         </text>
                         <rect x="132" y="218" width="64" height="19" rx="4" fill="#e7d6ac" stroke="#78350f" />
                         <text x="164" y="231" textAnchor="middle" fill="#1c1917" fontSize="10" fontFamily="monospace" fontWeight="700">
@@ -2300,7 +2374,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           fill="none"
                         />
                         <text x="282" y="34" textAnchor="middle" fill="#fde68a" fontSize="9.5" fontWeight="700">
-                          {isBikeScene ? 'Bobine Air 30+30t' : 'Ferrite F29 L1+L2'}
+                          {isBikeScene ? tr(lang, 'Bobine Air 30+30t', 'ملف هوائي 30+30 لفة', 'Air Coil 30+30t') : 'Ferrite F29 L1+L2'}
                         </text>
                       </g>
                     ) : isRelayOutScene ? (
@@ -2386,7 +2460,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           <rect x="398" y="58" width="44" height="8" rx="3" fill="#fde047" />
                         </g>
                         <text x="420" y="104" textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="700">
-                          {isPwmScene ? 'MOTEUR 3V' : 'MOTEUR'}
+                          {isPwmScene ? tr(lang, 'MOTEUR 3V', 'محرك 3V', '3V MOTOR') : tr(lang, 'MOTEUR', 'محرك', 'MOTOR')}
                         </text>
                       </g>
                     ) : isRelayOutScene ? (
@@ -2405,7 +2479,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           SONGLE {cid === 'night-light' && params.supplySelect6or9 === 6 ? '6V' : '12V'}
                         </text>
                         <text x="419" y="78" textAnchor="middle" fill="#dbeafe" fontSize="9.5">
-                          {sim.conducting ? 'FERMÉ' : 'OUVERT'}
+                          {sim.conducting ? tr(lang, 'FERMÉ', 'مغلق', 'CLOSED') : tr(lang, 'OUVERT', 'مفتوح', 'OPEN')}
                         </text>
                       </g>
                     ) : isCoilScene && params.openCircuitFault ? (
@@ -2415,7 +2489,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           {Math.round(sim.vc)}V!
                         </text>
                         <text x="420" y="98" textAnchor="middle" fill="#fda4af" fontSize="9" fontWeight="700">
-                          SURTENSION
+                          {tr(lang, 'SURTENSION', 'ارتفاع حاد بالجهد', 'OVERVOLTAGE')}
                         </text>
                       </g>
                     ) : isBikeScene ? (
@@ -2455,7 +2529,11 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           filter={ledGlow > 0.08 ? 'url(#ledGlow)' : undefined}
                         />
                         <text x="420" y="98" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700">
-                          {isTorchScene ? 'TORCHE' : cid === 'courtesy-light' ? 'PLAFONNIER' : 'LED'}
+                          {isTorchScene
+                            ? tr(lang, 'TORCHE', 'مصباح يدوي', 'TORCH')
+                            : cid === 'courtesy-light'
+                            ? tr(lang, 'PLAFONNIER', 'مصباح السقف', 'DOME LAMP')
+                            : 'LED'}
                         </text>
                       </g>
                     )}
@@ -2470,17 +2548,17 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
         <div className="absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
           <div className="flex flex-wrap items-center gap-2">
             <div className="bg-black/70 backdrop-blur-xs text-stone-100 text-xs px-3 py-1.5 rounded-md font-medium">
-              {lang === 'fr' ? sim.statusFr : sim.statusAr}
+              {lang === 'fr' ? sim.statusFr : lang === 'en' ? sim.statusEn : sim.statusAr}
             </div>
-            {(sim.warningFr || sim.warningAr) && (
+            {(sim.warningFr || sim.warningAr || sim.warningEn) && (
               <div className="bg-rose-950/90 border border-rose-500/70 text-rose-200 text-xs px-3 py-1.5 rounded-md font-semibold">
-                {lang === 'fr' ? sim.warningFr : sim.warningAr}
+                {lang === 'fr' ? sim.warningFr : lang === 'en' ? sim.warningEn : sim.warningAr}
               </div>
             )}
           </div>
           <div className="hidden sm:flex items-center gap-1.5 bg-black/55 text-stone-300 text-xs px-2.5 py-1.5 rounded-md">
             <MousePointerClick className="w-3.5 h-3.5" />
-            <span>{lang === 'fr' ? 'Glisser pour pivoter · Cliquer un composant' : 'اسحب للتدوير · انقر أي مكوّن'}</span>
+            <span>{tr(lang, 'Glisser pour pivoter · Cliquer un composant', 'اسحب للتدوير · انقر أي مكوّن', 'Drag to rotate · Click any part')}</span>
           </div>
         </div>
       </div>
@@ -2489,10 +2567,10 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
       <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="text-xs font-mono-num text-amber-700 dark:text-amber-400 font-semibold">
-            {part.name}
+            {tr(lang, part.nameFr, part.nameAr, part.nameEn)}
           </div>
           <p className="text-sm text-stone-700 dark:text-stone-300 mt-0.5 leading-snug">
-            {lang === 'fr' ? part.roleFr : part.roleAr}
+            {tr(lang, part.roleFr, part.roleAr, part.roleEn)}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0 text-xs font-mono-num">

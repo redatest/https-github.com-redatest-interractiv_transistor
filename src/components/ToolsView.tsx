@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Lang } from '../types';
+import { Lang, tr } from '../types';
 
 interface Props {
   lang: Lang;
@@ -15,6 +15,7 @@ const MYSTERY_DATA: Record<
     pins: Record<PinIdx, 'E' | 'B' | 'C'>;
     labelFr: string;
     labelAr: string;
+    labelEn: string;
   }
 > = {
   npn_ebc: {
@@ -22,32 +23,35 @@ const MYSTERY_DATA: Record<
     pins: { 1: 'E', 2: 'B', 3: 'C' },
     labelFr: 'Transistor Mystère A (NPN · E-B-C)',
     labelAr: 'ترانزستور غامض A (NPN · E-B-C)',
+    labelEn: 'Mystery Transistor A (NPN · E-B-C)',
   },
   pnp_bce: {
     type: 'PNP',
     pins: { 1: 'B', 2: 'C', 3: 'E' },
     labelFr: 'Transistor Mystère B (PNP · B-C-E)',
     labelAr: 'ترانزستور غامض B (PNP · B-C-E)',
+    labelEn: 'Mystery Transistor B (PNP · B-C-E)',
   },
   faulty: {
     type: 'FAULTY',
     pins: { 1: 'C', 2: 'B', 3: 'E' },
     labelFr: 'Transistor Mystère C (Défectueux / Court-circuit)',
     labelAr: 'ترانزستور غامض C (تالف / قصر داخلي)',
+    labelEn: 'Mystery Transistor C (Faulty / Shorted)',
   },
 };
 
 const RESISTOR_COLORS = [
-  { nameFr: 'Noir (0)', nameAr: 'أسود (0)', val: 0, mult: 1, hex: '#1c1917' },
-  { nameFr: 'Marron (1)', nameAr: 'بني (1)', val: 1, mult: 10, hex: '#78350f' },
-  { nameFr: 'Rouge (2)', nameAr: 'أحمر (2)', val: 2, mult: 100, hex: '#dc2626' },
-  { nameFr: 'Orange (3)', nameAr: 'برتقالي (3)', val: 3, mult: 1000, hex: '#ea580c' },
-  { nameFr: 'Jaune (4)', nameAr: 'أصفر (4)', val: 4, mult: 10000, hex: '#eab308' },
-  { nameFr: 'Vert (5)', nameAr: 'أخضر (5)', val: 5, mult: 100000, hex: '#16a34a' },
-  { nameFr: 'Bleu (6)', nameAr: 'أزرق (6)', val: 6, mult: 1000000, hex: '#2563eb' },
-  { nameFr: 'Violet (7)', nameAr: 'بنفسجي (7)', val: 7, mult: 10000000, hex: '#7c3aed' },
-  { nameFr: 'Gris (8)', nameAr: 'رمادي (8)', val: 8, mult: 1, hex: '#71717a' },
-  { nameFr: 'Blanc (9)', nameAr: 'أبيض (9)', val: 9, mult: 1, hex: '#f4f4f5' },
+  { nameFr: 'Noir (0)', nameAr: 'أسود (0)', nameEn: 'Black (0)', val: 0, mult: 1, hex: '#1c1917' },
+  { nameFr: 'Marron (1)', nameAr: 'بني (1)', nameEn: 'Brown (1)', val: 1, mult: 10, hex: '#78350f' },
+  { nameFr: 'Rouge (2)', nameAr: 'أحمر (2)', nameEn: 'Red (2)', val: 2, mult: 100, hex: '#dc2626' },
+  { nameFr: 'Orange (3)', nameAr: 'برتقالي (3)', nameEn: 'Orange (3)', val: 3, mult: 1000, hex: '#ea580c' },
+  { nameFr: 'Jaune (4)', nameAr: 'أصفر (4)', nameEn: 'Yellow (4)', val: 4, mult: 10000, hex: '#eab308' },
+  { nameFr: 'Vert (5)', nameAr: 'أخضر (5)', nameEn: 'Green (5)', val: 5, mult: 100000, hex: '#16a34a' },
+  { nameFr: 'Bleu (6)', nameAr: 'أزرق (6)', nameEn: 'Blue (6)', val: 6, mult: 1000000, hex: '#2563eb' },
+  { nameFr: 'Violet (7)', nameAr: 'بنفسجي (7)', nameEn: 'Violet (7)', val: 7, mult: 10000000, hex: '#7c3aed' },
+  { nameFr: 'Gris (8)', nameAr: 'رمادي (8)', nameEn: 'Grey (8)', val: 8, mult: 1, hex: '#71717a' },
+  { nameFr: 'Blanc (9)', nameAr: 'أبيض (9)', nameEn: 'White (9)', val: 9, mult: 1, hex: '#f4f4f5' },
 ];
 
 const KIT_PRESETS = [
@@ -125,14 +129,20 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
             1-100 Transistor Circuits · pp. 20–24
           </div>
           <h2 className="text-xl font-bold text-stone-900 dark:text-stone-50 mt-0.5">
-            {lang === 'fr'
-              ? 'Tester un transistor inconnu au multimètre analogique'
-              : 'اختبار ترانزستور مجهول بالأفوميتر التناظري'}
+            {tr(
+              lang,
+              'Tester un transistor inconnu au multimètre analogique',
+              'اختبار ترانزستور مجهول بالأفوميتر التناظري',
+              'Testing an Unknown Transistor with an Analog Multimeter'
+            )}
           </h2>
           <p className="text-xs text-stone-600 dark:text-stone-300 mt-1 leading-relaxed">
-            {lang === 'fr'
-              ? 'Astuce du livre : sur un multimètre analogique en ohmmètre, le fil NOIR est le (+) interne ! En calibre ×10, trouvez la Base ; en ×10k, appuyez avec le doigt sur B et C pour voir l’aiguille dévier presque à fond.'
-              : 'سرّ الكتاب (ص ٢١): في الأفوميتر التناظري يحمل السلك الأسود القطب الموجب (+) الداخلي! على تدريج x10 ابحث عن القاعدة B، وعلى x10k المس القاعدة والمجمّع بإصبعك لتندفع الإبرة.'}
+            {tr(
+              lang,
+              'Astuce du livre : sur un multimètre analogique en ohmmètre, le fil NOIR est le (+) interne ! En calibre ×10, trouvez la Base ; en ×10k, appuyez avec le doigt sur B et C pour voir l’aiguille dévier presque à fond.',
+              'سرّ الكتاب (ص ٢١): في الأفوميتر التناظري يحمل السلك الأسود القطب الموجب (+) الداخلي! على تدريج x10 ابحث عن القاعدة B، وعلى x10k المس القاعدة والمجمّع بإصبعك لتندفع الإبرة.',
+              'Book tip (p. 21): On an analog multimeter set to Ohms, the BLACK lead is internal (+)! On ×10 range, find the Base; on ×10k, press your finger across B and C to see the needle swing nearly full scale.'
+            )}
           </p>
         </div>
 
@@ -152,7 +162,7 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
                   : 'border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300'
               }`}
             >
-              {lang === 'fr' ? `Composant #${i + 1}` : `قطعة مجهولة #${i + 1}`}
+              {tr(lang, `Composant #${i + 1}`, `قطعة مجهولة #${i + 1}`, `Mystery Part #${i + 1}`)}
             </button>
           ))}
         </div>
@@ -184,10 +194,10 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
             {/* Range readout */}
             <text x="110" y="128" textAnchor="middle" fill="#e2e8f0" fontSize="11" fontFamily="monospace">
               {meterDeflection > 0.7
-                ? 'FAIBLE R (Conduit)'
+                ? tr(lang, 'FAIBLE R (Conduit)', 'مقاومة منخفضة (يوصّل)', 'LOW R (Conducting)')
                 : meterDeflection > 0.1
-                ? 'Fuite légère'
-                : 'R = ∞ (Bloqué)'}
+                ? tr(lang, 'Fuite légère', 'تسريب خفيف', 'Slight leakage')
+                : tr(lang, 'R = ∞ (Bloqué)', 'R = ∞ (مقطوع)', 'R = ∞ (Blocked)')}
             </text>
           </svg>
 
@@ -215,7 +225,8 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
               })}
             </svg>
             <div className="text-xs font-mono-num text-stone-500">
-              ● Noir (+ batt.) · <span className="text-rose-600">● Rouge (− batt.)</span>
+              {tr(lang, '● Noir (+ batt.) · ', '● الأسود (+ البطارية) · ', '● Black (+ batt.) · ')}
+              <span className="text-rose-600">{tr(lang, '● Rouge (− batt.)', '● الأحمر (− البطارية)', '● Red (− batt.)')}</span>
             </div>
           </div>
         </div>
@@ -224,7 +235,7 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="flex flex-col gap-1.5">
             <span className="font-semibold text-stone-700 dark:text-stone-300">
-              {lang === 'fr' ? 'Pointe NOIRE (+ interne)' : 'المجسّ الأسود (+ الداخلي)'}
+              {tr(lang, 'Pointe NOIRE (+ interne)', 'المجسّ الأسود (+ الداخلي)', 'BLACK Probe (+ internal)')}
             </span>
             <div className="flex gap-1.5">
               {([1, 2, 3] as PinIdx[]).map((p) => (
@@ -246,7 +257,7 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
 
           <div className="flex flex-col gap-1.5">
             <span className="font-semibold text-rose-700 dark:text-rose-400">
-              {lang === 'fr' ? 'Pointe ROUGE (− interne)' : 'المجسّ الأحمر (− الداخلي)'}
+              {tr(lang, 'Pointe ROUGE (− interne)', 'المجسّ الأحمر (− الداخلي)', 'RED Probe (− internal)')}
             </span>
             <div className="flex gap-1.5">
               {([1, 2, 3] as PinIdx[]).map((p) => (
@@ -294,12 +305,8 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
                 }`}
               >
                 {fingerPress
-                  ? lang === 'fr'
-                    ? 'Doigt appuyé sur C & B'
-                    : 'الإصبع يضغط على C و B'
-                  : lang === 'fr'
-                  ? 'Appuyer avec le doigt (C + B)'
-                  : 'اضغط بإصبعك بين C و B'}
+                  ? tr(lang, 'Doigt appuyé sur C & B', 'الإصبع يضغط على C و B', 'Finger pressing C & B')
+                  : tr(lang, 'Appuyer avec le doigt (C + B)', 'اضغط بإصبعك بين C و B', 'Press finger across C & B')}
               </button>
             )}
           </div>
@@ -309,13 +316,13 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
             onClick={() => setReveal((v) => !v)}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer whitespace-nowrap"
           >
-            {reveal ? (lang === 'fr' ? 'Masquer' : 'إخفاء') : (lang === 'fr' ? 'Révéler le brochage' : 'كشف الأقطاب')}
+            {reveal ? tr(lang, 'Masquer', 'إخفاء', 'Hide') : tr(lang, 'Révéler le brochage', 'كشف الأقطاب', 'Reveal pinout')}
           </button>
         </div>
 
         {reveal && (
           <div className="text-xs font-mono-num bg-amber-50 dark:bg-amber-950/30 border border-amber-400/50 rounded-lg p-3 text-stone-800 dark:text-amber-200">
-            {lang === 'fr' ? MYSTERY_DATA[mystery].labelFr : MYSTERY_DATA[mystery].labelAr}
+            {tr(lang, MYSTERY_DATA[mystery].labelFr, MYSTERY_DATA[mystery].labelAr, MYSTERY_DATA[mystery].labelEn)}
           </div>
         )}
       </section>
@@ -327,12 +334,15 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
             1-100 Transistor Circuits · pp. 13, 132–133
           </div>
           <h2 className="text-xl font-bold text-stone-900 dark:text-stone-50 mt-0.5">
-            {lang === 'fr' ? 'Code couleur des résistances' : 'حاسبة ألوان المقاومات'}
+            {tr(lang, 'Code couleur des résistances', 'حاسبة ألوان المقاومات', 'Resistor Color Code Decoder')}
           </h2>
           <p className="text-xs text-stone-600 dark:text-stone-300 mt-1 leading-relaxed">
-            {lang === 'fr'
-              ? 'Décodez les 4 anneaux des résistances du kit du livre (¼ W) ou cliquez sur une valeur classique.'
-              : 'فكّ رموز ألوان مقاومات حقيبة الكتاب أو اختر إحدى القيم الشهيرة.'}
+            {tr(
+              lang,
+              'Décodez les 4 anneaux des résistances du kit du livre (¼ W) ou cliquez sur une valeur classique.',
+              'فكّ رموز ألوان مقاومات حقيبة الكتاب أو اختر إحدى القيم الشهيرة.',
+              'Decode the 4 color bands of ¼ W kit resistors from the book or click a classic preset value.'
+            )}
           </p>
         </div>
 
@@ -373,7 +383,7 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
         {/* Band Selectors */}
         <div className="grid grid-cols-3 gap-2 text-xs">
           <label className="flex flex-col gap-1">
-            <span className="text-stone-500">{lang === 'fr' ? '1er anneau' : 'الحلقة ١'}</span>
+            <span className="text-stone-500">{tr(lang, '1er anneau', 'الحلقة ١', '1st Band')}</span>
             <select
               value={b1}
               onChange={(e) => setB1(Number(e.target.value))}
@@ -381,13 +391,13 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
             >
               {RESISTOR_COLORS.slice(1).map((c, idx) => (
                 <option key={idx + 1} value={idx + 1}>
-                  {lang === 'fr' ? c.nameFr : c.nameAr}
+                  {tr(lang, c.nameFr, c.nameAr, c.nameEn)}
                 </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-stone-500">{lang === 'fr' ? '2e anneau' : 'الحلقة ٢'}</span>
+            <span className="text-stone-500">{tr(lang, '2e anneau', 'الحلقة ٢', '2nd Band')}</span>
             <select
               value={b2}
               onChange={(e) => setB2(Number(e.target.value))}
@@ -395,13 +405,13 @@ export const ToolsView: React.FC<Props> = ({ lang }) => {
             >
               {RESISTOR_COLORS.map((c, idx) => (
                 <option key={idx} value={idx}>
-                  {lang === 'fr' ? c.nameFr : c.nameAr}
+                  {tr(lang, c.nameFr, c.nameAr, c.nameEn)}
                 </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-stone-500">{lang === 'fr' ? 'Multiplicateur' : 'المضاعِف'}</span>
+            <span className="text-stone-500">{tr(lang, 'Multiplicateur', 'المضاعِف', 'Multiplier')}</span>
             <select
               value={mult}
               onChange={(e) => setMult(Number(e.target.value))}

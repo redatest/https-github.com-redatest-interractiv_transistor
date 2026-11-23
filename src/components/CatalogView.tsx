@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Play, Search } from 'lucide-react';
-import { CatalogCategory, CatalogCircuit, Lang } from '../types';
+import { CatalogCategory, CatalogCircuit, Lang, tr } from '../types';
 
 interface Props {
   circuits: CatalogCircuit[];
@@ -8,14 +8,14 @@ interface Props {
   onLaunchCatalogSim: (circuitId: string) => void;
 }
 
-const CATEGORIES: { id: CatalogCategory; fr: string; ar: string }[] = [
-  { id: 'all', fr: 'Tous', ar: 'الكل' },
-  { id: 'basics', fr: 'Bases', ar: 'الأساسيات' },
-  { id: 'leds', fr: 'LEDs & Clignotants', ar: 'مصابيح ووماضات' },
-  { id: 'sensors', fr: 'Capteurs & Tactile', ar: 'حساسات ولمس' },
-  { id: 'audio', fr: 'Audio & Sirènes', ar: 'صوتيات وصفارات' },
-  { id: 'power', fr: 'Énergie & Solaire', ar: 'طاقة وشحن شمسي' },
-  { id: 'testers', fr: 'Testeurs', ar: 'أجهزة فحص' },
+const CATEGORIES: { id: CatalogCategory; fr: string; ar: string; en: string }[] = [
+  { id: 'all', fr: 'Tous', ar: 'الكل', en: 'All' },
+  { id: 'basics', fr: 'Bases', ar: 'الأساسيات', en: 'Basics' },
+  { id: 'leds', fr: 'LEDs & Clignotants', ar: 'مصابيح ووماضات', en: 'LEDs & Flashers' },
+  { id: 'sensors', fr: 'Capteurs & Tactile', ar: 'حساسات ولمس', en: 'Sensors & Touch' },
+  { id: 'audio', fr: 'Audio & Sirènes', ar: 'صوتيات وصفارات', en: 'Audio & Sirens' },
+  { id: 'power', fr: 'Énergie & Solaire', ar: 'طاقة وشحن شمسي', en: 'Power & Solar' },
+  { id: 'testers', fr: 'Testeurs', ar: 'أجهزة فحص', en: 'Testers' },
 ];
 
 export const CatalogView: React.FC<Props> = ({ circuits, lang, onLaunchCatalogSim }) => {
@@ -44,12 +44,15 @@ export const CatalogView: React.FC<Props> = ({ circuits, lang, onLaunchCatalogSi
             1-100 Transistor Circuits · Colin Mitchell
           </p>
           <h2 className="text-2xl font-bold text-stone-900 dark:text-stone-50 mt-1">
-            {lang === 'fr' ? 'Explorateur de circuits concrets' : 'دليل الدارات التطبيقية من الكتاب'}
+            {tr(lang, 'Explorateur de circuits concrets', 'دليل الدارات التطبيقية من الكتاب', 'Hands-On Circuit Explorer')}
           </h2>
           <p className="text-sm text-stone-600 dark:text-stone-300 mt-1 max-w-2xl">
-            {lang === 'fr'
-              ? 'Parcourez les montages emblématiques du livre avec leur page exacte, leurs composants et lancez directement leur simulation interactive.'
-              : 'تصفّح أشهر دارات الكتاب مع رقم الصفحة والمكوّنات الحقيقية وافتح محاكاتها التفاعلية مباشرة.'}
+            {tr(
+              lang,
+              'Parcourez les montages emblématiques du livre avec leur page exacte, leurs composants et lancez directement leur simulation interactive.',
+              'تصفّح أشهر دارات الكتاب مع رقم الصفحة والمكوّنات الحقيقية وافتح محاكاتها التفاعلية مباشرة.',
+              'Browse iconic circuits from the book with exact page numbers and real components, then launch their interactive simulations.'
+            )}
           </p>
         </div>
 
@@ -59,7 +62,7 @@ export const CatalogView: React.FC<Props> = ({ circuits, lang, onLaunchCatalogSi
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={lang === 'fr' ? 'Chercher (BC547, LDR, p. 50...)' : 'ابحث (BC547، LDR، صفحة 50...)'}
+            placeholder={tr(lang, 'Chercher (BC547, LDR, p. 50...)', 'ابحث (BC547، LDR، صفحة 50...)', 'Search (BC547, LDR, p. 50...)')}
             className="w-full ps-9 pe-3 py-2 text-sm rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
         </div>
@@ -89,7 +92,7 @@ export const CatalogView: React.FC<Props> = ({ circuits, lang, onLaunchCatalogSi
       {/* Circuit Cards Grid */}
       {filtered.length === 0 ? (
         <div className="py-12 text-center text-sm text-stone-500 dark:text-stone-400 border border-dashed border-stone-300 dark:border-stone-700 rounded-xl">
-          {lang === 'fr' ? 'Aucun circuit ne correspond à votre recherche.' : 'لا توجد دارات مطابقة لبحثك.'}
+          {tr(lang, 'Aucun circuit ne correspond à votre recherche.', 'لا توجد دارات مطابقة لبحثك.', 'No circuits match your search.')}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -128,7 +131,7 @@ export const CatalogView: React.FC<Props> = ({ circuits, lang, onLaunchCatalogSi
                     className="px-3 py-1.5 rounded-lg bg-stone-900 hover:bg-stone-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 text-xs font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer whitespace-nowrap transition-colors"
                   >
                     <Play className="w-3 h-3 fill-current" />
-                    <span>{lang === 'fr' ? 'Simuler' : 'محاكاة'}</span>
+                    <span>{tr(lang, 'Simuler', 'محاكاة', 'Simulate')}</span>
                   </button>
                 </div>
               </article>

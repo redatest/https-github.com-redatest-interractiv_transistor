@@ -1,10 +1,15 @@
-export type Lang = 'fr' | 'ar';
+export type Lang = 'fr' | 'ar' | 'en';
 
 export type AppView = 'chapters' | 'catalog' | 'catalog-sim' | 'tools';
 
 export interface BiText {
   fr: string;
   ar: string;
+  en: string;
+}
+
+export function tr(lang: Lang, fr: string, ar: string, en: string): string {
+  return lang === 'fr' ? fr : lang === 'ar' ? ar : en;
 }
 
 export interface BookExample {

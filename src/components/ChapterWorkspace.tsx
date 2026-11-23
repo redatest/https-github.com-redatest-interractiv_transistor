@@ -13,7 +13,7 @@ import {
   AlertCircle,
   BookOpen,
 } from 'lucide-react';
-import { ChapterDef, Lang } from '../types';
+import { ChapterDef, Lang, tr } from '../types';
 import { computeSimulation, fingerResistance, SimParams } from '../utils/physics';
 import { InteractiveBoard3D } from './InteractiveBoard3D';
 import { LiveSchematicScope } from './LiveSchematicScope';
@@ -194,7 +194,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                     : 'bg-stone-200/70 text-stone-700 hover:bg-stone-300/80 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700'
                 }`}
               >
-                {lang === 'fr' ? `Ch. ${c.id}` : `فصل ${c.id}`}
+                {tr(lang, `Ch. ${c.id}`, `فصل ${c.id}`, `Ch. ${c.id}`)}
               </button>
             );
           })}
@@ -207,7 +207,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
             className="px-3 py-1.5 rounded-lg border border-stone-300 dark:border-stone-700 text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
           >
             {muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-            <span>{muted ? (lang === 'fr' ? 'Son coupé' : 'صامت') : (lang === 'fr' ? 'Audio actif' : 'صوت نشط')}</span>
+            <span>{muted ? tr(lang, 'Son coupé', 'صامت', 'Muted') : tr(lang, 'Audio actif', 'صوت نشط', 'Audio on')}</span>
           </button>
 
           <button
@@ -215,7 +215,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
             disabled={currentIdx <= 0}
             onClick={() => handleSelectChapter(chapters[currentIdx - 1].id)}
             className="p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed hover:bg-stone-100 dark:hover:bg-stone-800"
-            aria-label={lang === 'fr' ? 'Chapitre précédent' : 'الفصل السابق'}
+            aria-label={tr(lang, 'Chapitre précédent', 'الفصل السابق', 'Previous chapter')}
           >
             {lang === 'ar' ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
@@ -224,7 +224,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
             disabled={currentIdx >= chapters.length - 1}
             onClick={() => handleSelectChapter(chapters[currentIdx + 1].id)}
             className="p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 disabled:opacity-35 cursor-pointer disabled:cursor-not-allowed hover:bg-stone-100 dark:hover:bg-stone-800"
-            aria-label={lang === 'fr' ? 'Chapitre suivant' : 'الفصل التالي'}
+            aria-label={tr(lang, 'Chapitre suivant', 'الفصل التالي', 'Next chapter')}
           >
             {lang === 'ar' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
@@ -277,7 +277,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
             {/* Concrete Examples Selector from the Book */}
             <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/60 p-4 flex flex-col gap-3">
               <div className="text-xs font-semibold text-stone-500 dark:text-stone-400">
-                {lang === 'fr' ? 'Exemples concrets tirés du livre' : 'أمثلة تطبيقية حقيقية من الكتاب'}
+                {tr(lang, 'Exemples concrets tirés du livre', 'أمثلة تطبيقية حقيقية من الكتاب', 'Real examples from the book')}
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {chapter.examples.map((ex) => {
@@ -316,7 +316,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
             {/* Predict-Observe-Explain Interactive Card */}
             <div className="rounded-xl border border-dashed border-stone-400 dark:border-stone-600 p-4 flex flex-col gap-3 bg-stone-100/50 dark:bg-stone-900/40">
               <div className="text-sm font-semibold text-stone-900 dark:text-stone-100">
-                {lang === 'fr' ? 'Prédis puis vérifie :' : 'توقّع قبل التجربة:'} {chapter.prediction.question[lang]}
+                {tr(lang, 'Prédis puis vérifie :', 'توقّع قبل التجربة:', 'Predict then verify:')} {chapter.prediction.question[lang]}
               </div>
               <div className="flex flex-col gap-1.5">
                 {chapter.prediction.options.map((opt, idx) => {
@@ -378,7 +378,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 }`}
               >
                 <Cpu className="w-3.5 h-3.5" />
-                <span>{lang === 'fr' ? 'Platine 3D' : 'اللوحة 3D'}</span>
+                <span>{tr(lang, 'Platine 3D', 'اللوحة 3D', '3D Board')}</span>
               </button>
               <button
                 type="button"
@@ -390,7 +390,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 }`}
               >
                 <Activity className="w-3.5 h-3.5" />
-                <span>{lang === 'fr' ? 'Schéma & Oscillo' : 'المخطط والراسم'}</span>
+                <span>{tr(lang, 'Schéma & Oscillo', 'المخطط والراسم', 'Schematic & Scope')}</span>
               </button>
               <button
                 type="button"
@@ -402,7 +402,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 }`}
               >
                 <Droplets className="w-3.5 h-3.5" />
-                <span>{lang === 'fr' ? 'Analogie' : 'تشبيه الصمّام'}</span>
+                <span>{tr(lang, 'Analogie', 'تشبيه الصمّام', 'Analogy')}</span>
               </button>
             </div>
 
@@ -443,12 +443,8 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 <div className="flex justify-between font-medium">
                   <span>
                     {params.exampleId === 'plant'
-                      ? lang === 'fr'
-                        ? 'Humidité du sol'
-                        : 'رطوبة التربة'
-                      : lang === 'fr'
-                      ? 'Pression du doigt sur les fils'
-                      : 'قوة الضغط بالإصبع'}
+                      ? tr(lang, 'Humidité du sol', 'رطوبة التربة', 'Soil moisture')
+                      : tr(lang, 'Pression du doigt sur les fils', 'قوة الضغط بالإصبع', 'Finger pressure on leads')}
                   </span>
                   <span className="font-mono-num text-amber-700 dark:text-amber-400">
                     {params.pressure}% · R ≈ {(fingerResistance(params.pressure) / 1000).toFixed(0)} kΩ
@@ -471,7 +467,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 {params.exampleId === 'logic-probe' ? (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs font-medium text-stone-500">
-                      {lang === 'fr' ? 'Signal sur la pointe :' : 'الإشارة على المجسّ:'}
+                      {tr(lang, 'Signal sur la pointe :', 'الإشارة على المجسّ:', 'Signal on probe tip:')}
                     </span>
                     {(['FLOAT', 'LOW', 'HIGH'] as const).map((lv) => (
                       <button
@@ -485,9 +481,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                         }`}
                       >
                         {lv === 'FLOAT'
-                          ? lang === 'fr'
-                            ? 'À vide (Flottant)'
-                            : 'فراغ (بدون تلامس)'
+                          ? tr(lang, 'À vide (Flottant)', 'فراغ (بدون تلامس)', 'Open (Floating)')
                           : lv === 'LOW'
                           ? 'LOW (0 V)'
                           : 'HIGH (5 V)'}
@@ -520,12 +514,12 @@ export const ChapterWorkspace: React.FC<Props> = ({
                             : 'border-stone-300 dark:border-stone-700'
                         }`}
                       >
-                        {lang === 'fr' ? 'Inverser la batterie' : 'اقلب البطارية'}
+                        {tr(lang, 'Inverser la batterie', 'اقلب البطارية', 'Reverse battery')}
                       </button>
                     </div>
                     <label className="flex flex-col gap-1.5 text-sm">
                       <div className="flex justify-between font-medium">
-                        <span>{lang === 'fr' ? 'Pression de test' : 'قوة الضغط'}</span>
+                        <span>{tr(lang, 'Pression de test', 'قوة الضغط', 'Test pressure')}</span>
                         <span className="font-mono-num">{params.pressure}%</span>
                       </div>
                       <input
@@ -552,12 +546,8 @@ export const ChapterWorkspace: React.FC<Props> = ({
                     className="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer whitespace-nowrap"
                   >
                     {params.exampleId === 'courtesy-light'
-                      ? lang === 'fr'
-                        ? 'Fermer la portière'
-                        : 'إغلاق باب السيارة'
-                      : lang === 'fr'
-                      ? 'Toucher les fils (Charger C)'
-                      : 'المس السلكين (شحن المكثف)'}
+                      ? tr(lang, 'Fermer la portière', 'إغلاق باب السيارة', 'Close car door')
+                      : tr(lang, 'Toucher les fils (Charger C)', 'المس السلكين (شحن المكثف)', 'Touch leads (Charge C)')}
                   </button>
                   <button
                     type="button"
@@ -565,14 +555,14 @@ export const ChapterWorkspace: React.FC<Props> = ({
                     className="px-4 py-2 rounded-lg text-xs font-semibold border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>{lang === 'fr' ? 'Décharger le condensateur' : 'تفريغ المكثف'}</span>
+                    <span>{tr(lang, 'Décharger le condensateur', 'تفريغ المكثف', 'Discharge capacitor')}</span>
                   </button>
                 </div>
                 <label className="flex flex-col gap-1.5 text-sm">
                   <div className="flex justify-between font-medium">
-                    <span>{lang === 'fr' ? 'Capacité du condensateur C' : 'سعة المكثف C'}</span>
+                    <span>{tr(lang, 'Capacité du condensateur C', 'سعة المكثف C', 'Capacitance C')}</span>
                     <span className="font-mono-num text-sky-600 dark:text-sky-400">
-                      {params.capValueUF} µF · Charge {Math.round(params.capCharge * 100)}%
+                      {params.capValueUF} µF · {tr(lang, 'Charge', 'الشحن', 'Charge')} {Math.round(params.capCharge * 100)}%
                     </span>
                   </div>
                   <input
@@ -596,12 +586,8 @@ export const ChapterWorkspace: React.FC<Props> = ({
                     <div className="flex justify-between font-medium">
                       <span>
                         {params.exampleId === 'eight-million'
-                          ? lang === 'fr'
-                            ? 'Distance main / objet statique (cm)'
-                            : 'بُعد اليد / الجسم المشحون (cm)'
-                          : lang === 'fr'
-                          ? 'Distance main / câble secteur (cm)'
-                          : 'بُعد اليد / السلك عن الهوائي (cm)'}
+                          ? tr(lang, 'Distance main / objet statique (cm)', 'بُعد اليد / الجسم المشحون (cm)', 'Hand / static object distance (cm)')
+                          : tr(lang, 'Distance main / câble secteur (cm)', 'بُعد اليد / السلك عن الهوائي (cm)', 'Hand / mains wire distance (cm)')}
                       </span>
                       <span className="font-mono-num text-amber-700 dark:text-amber-400">{params.proximityCm} cm</span>
                     </div>
@@ -618,9 +604,12 @@ export const ChapterWorkspace: React.FC<Props> = ({
                   <>
                     {params.exampleId === 'second-simplest' ? (
                       <div className="text-xs font-mono-num px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-500/30 text-amber-800 dark:text-amber-300">
-                        {lang === 'fr'
-                          ? 'Paire Darlington fixe : 2 transistors BC547 (Gain β = 200 × 200 = 40 000×)'
-                          : 'ثنائي دارلنغتون ثابت: ترانزستوران BC547 (تضخيم ×40 000)'}
+                        {tr(
+                          lang,
+                          'Paire Darlington fixe : 2 transistors BC547 (Gain β = 200 × 200 = 40 000×)',
+                          'ثنائي دارلنغتون ثابت: ترانزستوران BC547 (تضخيم ×40 000)',
+                          'Fixed Darlington pair: 2 × BC547 transistors (Gain β = 200 × 200 = 40,000×)'
+                        )}
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
@@ -635,14 +624,20 @@ export const ChapterWorkspace: React.FC<Props> = ({
                                 : 'border-stone-300 dark:border-stone-700'
                             }`}
                           >
-                            {n} {lang === 'fr' ? (n === 1 ? 'transistor (200×)' : `transistors (${Math.pow(200, n).toLocaleString('fr-FR')}×)`) : 'ترانزستور'}
+                            {n}{' '}
+                            {tr(
+                              lang,
+                              n === 1 ? 'transistor (200×)' : `transistors (${Math.pow(200, n).toLocaleString('fr-FR')}×)`,
+                              'ترانزستور',
+                              n === 1 ? 'transistor (200×)' : `transistors (${Math.pow(200, n).toLocaleString('en-US')}×)`
+                            )}
                           </button>
                         ))}
                       </div>
                     )}
                     <label className="flex flex-col gap-1.5 text-sm">
                       <div className="flex justify-between font-medium">
-                        <span>{lang === 'fr' ? 'Effleurement d’entrée' : 'قوة اللمس'}</span>
+                        <span>{tr(lang, 'Effleurement d’entrée', 'قوة اللمس', 'Input touch pressure')}</span>
                         <span className="font-mono-num">{params.pressure}%</span>
                       </div>
                       <input
@@ -671,7 +666,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                         params.latchedOn ? 'bg-amber-500 text-stone-950' : 'bg-stone-200 dark:bg-stone-800'
                       }`}
                     >
-                      {lang === 'fr' ? 'Toucher pastille ON (Verrouiller)' : 'لمس لوح ON (تثبيت)'}
+                      {tr(lang, 'Toucher pastille ON (Verrouiller)', 'لمس لوح ON (تثبيت)', 'Touch ON pad (Latch)')}
                     </button>
                     <button
                       type="button"
@@ -680,7 +675,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                         !params.latchedOn ? 'bg-rose-600 text-white' : 'bg-stone-200 dark:bg-stone-800'
                       }`}
                     >
-                      {lang === 'fr' ? 'Toucher pastille OFF (Couper)' : 'لمس لوح OFF (إطفاء)'}
+                      {tr(lang, 'Toucher pastille OFF (Couper)', 'لمس لوح OFF (إطفاء)', 'Touch OFF pad (Reset)')}
                     </button>
                   </div>
                 )}
@@ -688,7 +683,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 {params.exampleId === 'dark-schmitt' && (
                   <label className="flex flex-col gap-1.5 text-sm">
                     <div className="flex justify-between font-medium">
-                      <span>{lang === 'fr' ? 'Luminosité ambiante sur la LDR' : 'شدة الإضاءة على LDR'}</span>
+                      <span>{tr(lang, 'Luminosité ambiante sur la LDR', 'شدة الإضاءة على LDR', 'Ambient light on LDR')}</span>
                       <span className="font-mono-num">
                         {params.luxLevel}% · {params.schmittState ? 'ON (≤ 30%)' : 'OFF (≥ 55%)'}
                       </span>
@@ -725,7 +720,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                       }}
                       className="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer whitespace-nowrap"
                     >
-                      {lang === 'fr' ? 'Clapper des mains ! (Impulsion 2,4 s)' : 'صفّق بيديك! (إضاءة مؤقتة)'}
+                      {tr(lang, 'Clapper des mains ! (Impulsion 2,4 s)', 'صفّق بيديك! (إضاءة مؤقتة)', 'Clap hands! (2.4 s pulse)')}
                     </button>
                   </div>
                 )}
@@ -733,9 +728,9 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 {params.exampleId === 'night-light' && (
                   <label className="flex flex-col gap-1.5 text-sm">
                     <div className="flex justify-between font-medium">
-                      <span>{lang === 'fr' ? 'Luminosité sur la LDR (Veilleuse 12 V)' : 'شدة الإضاءة على LDR (مصباح ليلي 12V)'}</span>
+                      <span>{tr(lang, 'Luminosité sur la LDR (Veilleuse 12 V)', 'شدة الإضاءة على LDR (مصباح ليلي 12V)', 'Light on LDR (12 V Night Light)')}</span>
                       <span className="font-mono-num">
-                        {params.luxLevel}% · {params.luxLevel <= 40 ? 'Relais COLLÉ (ON)' : 'Relais OUVERT (OFF)'}
+                        {params.luxLevel}% · {params.luxLevel <= 40 ? tr(lang, 'Relais COLLÉ (ON)', 'المرحّل يعمل (ON)', 'Relay CLOSED (ON)') : tr(lang, 'Relais OUVERT (OFF)', 'المرحّل مفتوح (OFF)', 'Relay OPEN (OFF)')}
                       </span>
                     </div>
                     <input
@@ -752,7 +747,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 {params.exampleId === 'motor-pwm' && (
                   <label className="flex flex-col gap-1.5 text-sm">
                     <div className="flex justify-between font-medium">
-                      <span>{lang === 'fr' ? 'Rapport cyclique PWM (Moteur 3 V)' : 'نسبة نبضات PWM (محرك 3V)'}</span>
+                      <span>{tr(lang, 'Rapport cyclique PWM (Moteur 3 V)', 'نسبة نبضات PWM (محرك 3V)', 'PWM duty cycle (3 V Motor)')}</span>
                       <span className="font-mono-num text-amber-700 dark:text-amber-400">
                         {params.pwmDuty}% · {sim.icMA.toFixed(0)} mA
                       </span>
@@ -783,13 +778,13 @@ export const ChapterWorkspace: React.FC<Props> = ({
                               : 'border-stone-300 dark:border-stone-700'
                           }`}
                         >
-                          {lk === 'motor' ? (lang === 'fr' ? 'Moteur DC' : 'محرك') : (lang === 'fr' ? 'Relais + Diode D1' : 'مرحّل + دايود')}
+                          {lk === 'motor' ? tr(lang, 'Moteur DC', 'محرك', 'DC Motor') : tr(lang, 'Relais + Diode D1', 'مرحّل + دايود', 'Relay + Diode D1')}
                         </button>
                       ))}
                     </div>
                     <label className="flex flex-col gap-1.5 text-sm">
                       <div className="flex justify-between font-medium">
-                        <span>{lang === 'fr' ? 'Tension d’entrée V_in (via 10 kΩ)' : 'جهد الدخل V_in'}</span>
+                        <span>{tr(lang, 'Tension d’entrée V_in (via 10 kΩ)', 'جهد الدخل V_in', 'Input voltage V_in (via 10 kΩ)')}</span>
                         <span className="font-mono-num">{params.vinSwitch.toFixed(1)} V</span>
                       </div>
                       <input
@@ -810,7 +805,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
             {chapter.id === 6 && (
               <label className="flex flex-col gap-1.5 text-sm">
                 <div className="flex justify-between font-medium">
-                  <span>{lang === 'fr' ? 'Résistance de rythme R' : 'مقاومة ضبط السرعة R'}</span>
+                  <span>{tr(lang, 'Résistance de rythme R', 'مقاومة ضبط السرعة R', 'Timing resistor R')}</span>
                   <span className="font-mono-num">{params.oscSpeedR.toFixed(1)} kΩ</span>
                 </div>
                 <input
@@ -835,13 +830,13 @@ export const ChapterWorkspace: React.FC<Props> = ({
                       onClick={() => setParams((p) => ({ ...p, pumpPhase: p.pumpPhase === 'A' ? 'B' : 'A' }))}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-300 dark:border-stone-700 cursor-pointer whitespace-nowrap"
                     >
-                      {lang === 'fr' ? `Phase actuelle : ${params.pumpPhase} (Basculer)` : `الطور الحالي: ${params.pumpPhase}`}
+                      {tr(lang, `Phase actuelle : ${params.pumpPhase} (Basculer)`, `الطور الحالي: ${params.pumpPhase}`, `Current phase: ${params.pumpPhase} (Toggle)`)}
                     </button>
                   </div>
                 )}
                 <label className="flex flex-col gap-1.5 text-sm">
                   <div className="flex justify-between font-medium">
-                    <span>{lang === 'fr' ? 'Tension de la pile (1,5 V neuf → 0,8 V usé)' : 'جهد البطارية (1.5V إلى 0.8V)'}</span>
+                    <span>{tr(lang, 'Tension de la pile (1,5 V neuf → 0,8 V usé)', 'جهد البطارية (1.5V إلى 0.8V)', 'Cell voltage (1.5 V fresh → 0.8 V flat)')}</span>
                     <span className="font-mono-num">{params.cellVoltage.toFixed(2)} V</span>
                   </div>
                   <input
@@ -880,7 +875,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                     </div>
                     <label className="flex flex-col gap-1.5 text-sm">
                       <div className="flex justify-between font-medium">
-                        <span>{lang === 'fr' ? 'Tension d’alimentation variable' : 'جهد المصدر المتغيّر'}</span>
+                        <span>{tr(lang, 'Tension d’alimentation variable', 'جهد المصدر المتغيّر', 'Variable supply voltage')}</span>
                         <span className="font-mono-num">{params.supplyV.toFixed(1)} V</span>
                       </div>
                       <input
@@ -897,7 +892,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                   <>
                     <label className="flex flex-col gap-1.5 text-sm">
                       <div className="flex justify-between font-medium">
-                        <span>{lang === 'fr' ? 'Tension batterie V_batt (Hystérésis 12,5–13,7 V)' : 'جهد البطارية V_batt'}</span>
+                        <span>{tr(lang, 'Tension batterie V_batt (Hystérésis 12,5–13,7 V)', 'جهد البطارية V_batt', 'Battery voltage V_batt (Hysteresis 12.5–13.7 V)')}</span>
                         <span className="font-mono-num">{params.battVoltage.toFixed(1)} V</span>
                       </div>
                       <input
@@ -933,15 +928,11 @@ export const ChapterWorkspace: React.FC<Props> = ({
                         }`}
                       >
                         {params.dummyLoadEnabled
-                          ? lang === 'fr'
-                            ? 'Avec charge factice 100 Ω (5 W)'
-                            : 'مع الحِمل الوهمي 100Ω'
-                          : lang === 'fr'
-                          ? 'Sans charge factice'
-                          : 'بدون الحِمل الوهمي'}
+                          ? tr(lang, 'Avec charge factice 100 Ω (5 W)', 'مع الحِمل الوهمي 100Ω', 'With 100 Ω dummy load (5 W)')
+                          : tr(lang, 'Sans charge factice', 'بدون الحِمل الوهمي', 'Without dummy load')}
                       </button>
                       <span className="text-xs font-mono-num text-stone-500">
-                        {lang === 'fr' ? 'Coupure ≥ 13,7 V · Reprise ≤ 12,5 V' : 'فصل ≥ 13.7V · عودة ≤ 12.5V'}
+                        {tr(lang, 'Coupure ≥ 13,7 V · Reprise ≤ 12,5 V', 'فصل ≥ 13.7V · عودة ≤ 12.5V', 'Cutout ≥ 13.7 V · Resume ≤ 12.5 V')}
                       </span>
                     </div>
                   </>
@@ -954,7 +945,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
               <div className="flex flex-col gap-3">
                 <label className="flex flex-col gap-1.5 text-sm">
                   <div className="flex justify-between font-medium">
-                    <span>{lang === 'fr' ? 'Résistance de base R_B' : 'مقاومة القاعدة R_B'}</span>
+                    <span>{tr(lang, 'Résistance de base R_B', 'مقاومة القاعدة R_B', 'Base resistor R_B')}</span>
                     <span className="font-mono-num text-amber-700 dark:text-amber-400">
                       {rbLabel} → V_C = {sim.vc.toFixed(2)} V
                     </span>
@@ -981,7 +972,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
                       }}
                       className="px-4 py-2 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white cursor-pointer whitespace-nowrap"
                     >
-                      {lang === 'fr' ? 'Vérifier V_C = 2,50 V' : 'تحقّق من نصف الجهد'}
+                      {tr(lang, 'Vérifier V_C = 2,50 V', 'تحقّق من نصف الجهد', 'Check V_C = 2.50 V')}
                     </button>
                     <button
                       type="button"
@@ -996,12 +987,8 @@ export const ChapterWorkspace: React.FC<Props> = ({
                       }`}
                     >
                       {params.acSignalOn
-                        ? lang === 'fr'
-                          ? 'Signal AC injecté (Voir Oscillo)'
-                          : 'إشارة AC مفعّلة'
-                        : lang === 'fr'
-                        ? 'Injecter un signal AC'
-                        : 'حقن موجة AC'}
+                        ? tr(lang, 'Signal AC injecté (Voir Oscillo)', 'إشارة AC مفعّلة', 'AC signal injected (See Scope)')
+                        : tr(lang, 'Injecter un signal AC', 'حقن موجة AC', 'Inject AC signal')}
                     </button>
                   </div>
 
@@ -1041,10 +1028,10 @@ export const ChapterWorkspace: React.FC<Props> = ({
               </div>
               <div>
                 <div className="text-stone-500 dark:text-stone-400">
-                  {lang === 'fr' ? 'Gain actif' : 'التضخيم'}
+                  {tr(lang, 'Gain actif', 'التضخيم', 'Active gain')}
                 </div>
                 <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                  ×{sim.betaEff.toLocaleString('fr-FR')}
+                  ×{sim.betaEff.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US')}
                 </div>
               </div>
             </div>

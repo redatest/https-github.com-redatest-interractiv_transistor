@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lang } from '../types';
+import { Lang, tr } from '../types';
 import { getLieDetector2State, getLieDetector5TState, IMAX_9V, SimParams, SimReadout } from '../utils/physics';
 
 interface Props {
@@ -119,7 +119,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
             <circle cx="0" cy="0" r="5" fill="currentColor" />
           </g>
           <text x={padL + gw / 2} y={H - 4} textAnchor="middle" fontSize="9.5" fontFamily="monospace" fill="currentColor">
-            {params.meterRange ?? 'x10'} · {Math.round(defl * 100)}% {lang === 'fr' ? 'déviation' : 'انحراف'}
+            {params.meterRange ?? 'x10'} · {Math.round(defl * 100)}% {tr(lang, 'déviation', 'انحراف', 'deflection')}
           </text>
         </svg>
       );
@@ -152,10 +152,8 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           <path d={path} fill="none" stroke={active ? '#f59e0b' : '#64748b'} strokeWidth="2.3" />
           <text x={padL} y={H - 6} fontSize="9.5" fill={active ? '#f59e0b' : 'currentColor'} opacity="0.9">
             {active
-              ? `HP 8 Ω : f = ${Math.round(freq)} Hz (≤ 300 kΩ)`
-              : lang === 'fr'
-              ? 'Silence (R_peau > 300 kΩ)'
-              : 'سكون (R > 300kΩ)'}
+              ? `${tr(lang, 'HP 8 Ω', 'سماعة 8 Ω', '8 Ω Spkr')} : f = ${Math.round(freq)} Hz (≤ 300 kΩ)`
+              : tr(lang, 'Silence (R_peau > 300 kΩ)', 'سكون (R > 300kΩ)', 'Silent (R_skin > 300 kΩ)')}
           </text>
         </svg>
       );
@@ -182,7 +180,10 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
             VR1 {vr1KOhm.toFixed(0)}k ({(rTrip / 1000).toFixed(0)}k)
           </text>
           <text x={padL} y={H - 6} fontSize="9" fontFamily="monospace" fill={isFalse ? '#ef4444' : '#22c55e'}>
-            {isFalse ? 'FALSE (L2 Rouge ON)' : 'TRUE (L1 Verte ON)'} · R_peau {(rf / 1000).toFixed(0)}kΩ
+            {isFalse
+              ? tr(lang, 'FALSE (L2 Rouge ON)', 'FALSE (L2 أحمر مضيء)', 'FALSE (Red L2 ON)')
+              : tr(lang, 'TRUE (L1 Verte ON)', 'TRUE (L1 أخضر مضيء)', 'TRUE (Green L1 ON)')}{' '}
+            · {tr(lang, 'R_peau', 'R_الجلد', 'R_skin')} {(rf / 1000).toFixed(0)}kΩ
           </text>
         </svg>
       );
@@ -261,7 +262,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           })}
           <line x1={padL} y1={wiperY} x2={padL + gw} y2={wiperY} stroke="#38bdf8" strokeDasharray="4 3" strokeWidth="1.6" />
           <text x={padL + gw - 4} y={Math.max(padT + 10, wiperY - 4)} textAnchor="end" fontSize="8" fontFamily="monospace" fill="#38bdf8">
-            V_curseur {vWiper.toFixed(2)}V
+            {tr(lang, 'V_curseur', 'V_المزلق', 'V_wiper')} {vWiper.toFixed(2)}V
           </text>
         </svg>
       );
@@ -341,12 +342,8 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           />
           <text x={padL + 4} y={H - 6} fontSize="9.5" fill="currentColor" opacity="0.85">
             {clipped && params.acSignalOn
-              ? lang === 'fr'
-                ? 'Écrêtage ! Centrez V_C à 2,5 V'
-                : 'تشوّه قصّ! قرّب V_C إلى 2.5V'
-              : lang === 'fr'
-              ? `Point Q : V_C = ${vc.toFixed(2)} V`
-              : `نقطة التشغيل: V_C = ${vc.toFixed(2)} V`}
+              ? tr(lang, 'Écrêtage ! Centrez V_C à 2,5 V', 'تشوّه قصّ! قرّب V_C إلى 2.5V', 'Clipping! Center V_C near 2.5 V')
+              : tr(lang, `Point Q : V_C = ${vc.toFixed(2)} V`, `نقطة التشغيل: V_C = ${vc.toFixed(2)} V`, `Q-Point: V_C = ${vc.toFixed(2)} V`)}
           </text>
         </svg>
       );
@@ -375,7 +372,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
             V_cap(t)
           </text>
           <text x={padL + 65} y={H - 6} fontSize="9.5" fill="#f59e0b">
-            I_B(t) / {cid === 'courtesy-light' ? 'Plafonnier' : 'LED'}
+            I_B(t) / {cid === 'courtesy-light' ? tr(lang, 'Plafonnier', 'مصباح السقف', 'Dome light') : 'LED'}
           </text>
         </svg>
       );
@@ -460,7 +457,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           <path d={`M ${padL} ${yOn} H ${xThresh} V ${yOff} H ${padL + gw}`} fill="none" stroke="#38bdf8" strokeWidth="2.4" />
           <circle cx={curX} cy={curY} r="5.5" fill="#f59e0b" stroke="#fff" strokeWidth="1.5" />
           <text x={xThresh} y={H - 6} textAnchor="middle" fontSize="8.5" fill="#10b981" fontFamily="monospace">
-            Seuil LDR 40%
+            {tr(lang, 'Seuil LDR 40%', 'عتبة LDR 40%', 'LDR Threshold 40%')}
           </text>
         </svg>
       );
@@ -481,7 +478,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
             3V
           </text>
           <text x={padL} y={H - 6} fontSize="9.5" fill="currentColor" opacity="0.85">
-            PWM {params.pwmDuty}% · I_moy ≈ {sim.icMA.toFixed(0)} mA
+            PWM {params.pwmDuty}% · {tr(lang, 'I_moy', 'I_متوسط', 'I_avg')} ≈ {sim.icMA.toFixed(0)} mA
           </text>
         </svg>
       );
@@ -551,10 +548,10 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           <path d={wave} fill="none" stroke={openFault ? '#ef4444' : '#f59e0b'} strokeWidth="2.4" />
           <text x={padL} y={H - 6} fontSize="9.5" fill={openFault ? '#ef4444' : '#f59e0b'}>
             {openFault
-              ? `Pic non clampé = ${vPeak.toFixed(0)} V !`
+              ? tr(lang, `Pic non clampé = ${vPeak.toFixed(0)} V !`, `نبضة غير مقيدة = ${vPeak.toFixed(0)} V!`, `Unclamped spike = ${vPeak.toFixed(0)} V!`)
               : isBike
-              ? `Train de flashs V_pic = ${vPeak.toFixed(1)} V`
-              : `V_pic = ${vPeak.toFixed(1)} V`}
+              ? tr(lang, `Train de flashs V_pic = ${vPeak.toFixed(1)} V`, `قطار نبضات V_peak = ${vPeak.toFixed(1)} V`, `Flash burst V_peak = ${vPeak.toFixed(1)} V`)
+              : `${tr(lang, 'V_pic', 'V_ذروة', 'V_peak')} = ${vPeak.toFixed(1)} V`}
           </text>
         </svg>
       );
@@ -634,7 +631,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           {IMAX_9V.toFixed(0)}mA
         </text>
         <text x={padL} y={H - 6} fontSize="9.5" fill="currentColor" opacity="0.8">
-          I_C = β·I_B ({lang === 'fr' ? 'pente β' : 'الميل β'}) → {lang === 'fr' ? 'Saturation' : 'تشبّع'}
+          I_C = β·I_B ({tr(lang, 'pente β', 'الميل β', 'slope β')}) → {tr(lang, 'Saturation', 'تشبّع', 'Saturation')}
         </text>
       </svg>
     );
@@ -654,16 +651,18 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           {/* Internal Meter Battery + Galvanometer Loop */}
           <rect x="24" y="42" width="110" height="128" rx="6" fill="none" stroke="currentColor" strokeWidth="1.8" />
           <text x="79" y="60" textAnchor="middle" fontSize="9.5" fontFamily="monospace" fontWeight="700" fill="currentColor">
-            OHMMÈTRE ({range})
+            {tr(lang, 'OHMMÈTRE', 'أوميتر', 'OHMMETER')} ({range})
           </text>
           <text x="79" y="84" textAnchor="middle" fontSize="10" fontFamily="monospace" fill="#10b981" fontWeight="700">
-            Noir = +Batt
+            {tr(lang, 'Noir = +Batt', 'أسود = +Batt', 'Black = +Batt')}
           </text>
           <text x="79" y="102" textAnchor="middle" fontSize="10" fontFamily="monospace" fill="#ef4444" fontWeight="700">
-            Rouge = −Batt
+            {tr(lang, 'Rouge = −Batt', 'أحمر = −Batt', 'Red = −Batt')}
           </text>
           <text x="79" y="148" textAnchor="middle" fontSize="9" fontFamily="monospace" fill="#f59e0b">
-            {sim.conducting ? 'Courant actif!' : 'Bloqué (R = ∞)'}
+            {sim.conducting
+              ? tr(lang, 'Courant actif!', 'تيار نشط!', 'Current active!')
+              : tr(lang, 'Bloqué (R = ∞)', 'مقطوع (R = ∞)', 'Blocked (R = ∞)')}
           </text>
 
           {/* Unknown Transistor Symbol */}
@@ -672,16 +671,16 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           {/* Probe connections */}
           <line x1="134" y1="78" x2="215" y2="78" stroke="#18181b" strokeWidth="2.5" className={sim.conducting ? 'flow-active' : ''} />
           <text x="174" y="72" textAnchor="middle" fontSize="8.5" fontFamily="monospace" fill="currentColor">
-            Noir → P{params.blackPin ?? 2} {rev ? `(${labels[params.blackPin ?? 2]})` : ''}
+            {tr(lang, 'Noir', 'أسود', 'Black')} → P{params.blackPin ?? 2} {rev ? `(${labels[params.blackPin ?? 2]})` : ''}
           </text>
           <line x1="134" y1="134" x2="215" y2="134" stroke="#ef4444" strokeWidth="2.5" className={sim.conducting ? 'flow-active' : ''} />
           <text x="174" y="148" textAnchor="middle" fontSize="8.5" fontFamily="monospace" fill="#ef4444">
-            Rouge → P{params.redPin ?? 1} {rev ? `(${labels[params.redPin ?? 1]})` : ''}
+            {tr(lang, 'Rouge', 'أحمر', 'Red')} → P{params.redPin ?? 1} {rev ? `(${labels[params.redPin ?? 1]})` : ''}
           </text>
 
           {range === 'x10k' && params.fingerCB && (
             <text x="240" y="176" textAnchor="middle" fontSize="9.5" fontFamily="monospace" fontWeight="700" fill="#eab308">
-              R_doigt(C–B) → Gain β activé !
+              {tr(lang, 'R_doigt(C–B) → Gain β activé !', 'مقاومة الإصبع (C–B) ← كسب β نشط!', 'R_finger(C–B) → β gain active!')}
             </text>
           )}
         </g>
@@ -700,7 +699,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
 
           {/* Touch pads + 100k voltage divider to Q1(B) */}
           <circle cx="38" cy="70" r="6" fill="#eab308" />
-          <text x="38" y="56" textAnchor="middle" fontSize="8" fontWeight="700" fill="#eab308">Peau</text>
+          <text x="38" y="56" textAnchor="middle" fontSize="8" fontWeight="700" fill="#eab308">{tr(lang, 'Peau', 'الجلد', 'Skin')}</text>
           <line x1="38" y1="76" x2="38" y2="136" stroke="#0284c7" strokeWidth="2" className={on ? 'flow-active' : ''} />
           <rect x="46" y="129" width="26" height="14" fill="#fbfaf6" stroke="currentColor" strokeWidth="1.5" />
           <text x="59" y="139" textAnchor="middle" fontSize="8" fontFamily="monospace" fill="currentColor">100k</text>
@@ -753,7 +752,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
 
           {/* Touch + VR1 47k + C1 100nF -> TR1 */}
           <circle cx="38" cy="136" r="6" fill="#eab308" />
-          <text x="38" y="122" textAnchor="middle" fontSize="8" fontWeight="700" fill="#eab308">Sondes</text>
+          <text x="38" y="122" textAnchor="middle" fontSize="8" fontWeight="700" fill="#eab308">{tr(lang, 'Sondes', 'المجسات', 'Probes')}</text>
           <line x1="44" y1="136" x2="102" y2="136" stroke="#0284c7" strokeWidth="2" className={isFalse ? 'flow-active' : ''} />
           <rect x="52" y="150" width="32" height="14" fill="#fbfaf6" stroke="#38bdf8" strokeWidth="1.5" />
           <text x="68" y="160" textAnchor="middle" fontSize="7.5" fontFamily="monospace" fill="#0284c7">VR1 {vr1KOhm.toFixed(0)}k</text>
@@ -1039,7 +1038,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
             );
           })}
           <text x="190" y="188" textAnchor="middle" fontSize="9.5" fontFamily="monospace" fill="#10b981" fontWeight="700">
-            Gain β = ×{sim.betaEff.toLocaleString('fr-FR')}
+            Gain β = ×{sim.betaEff.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US')}
           </text>
         </g>
       );
@@ -1246,7 +1245,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           <rect x="122" y="30" width="70" height="58" rx="5" fill="none" stroke="currentColor" strokeDasharray="3 3" strokeWidth="1.4" />
           <circle cx="134" cy="54" r="3" fill="currentColor" />
           <line x1="134" y1="54" x2="178" y2={div ? 40 : 68} stroke="#f59e0b" strokeWidth="3" />
-          <text x="157" y="25" textAnchor="middle" fontSize="9" fontFamily="monospace" fill="currentColor">Relais K1</text>
+          <text x="157" y="25" textAnchor="middle" fontSize="9" fontFamily="monospace" fill="currentColor">{tr(lang, 'Relais K1', 'المرحّل K1', 'Relay K1')}</text>
 
           {/* Top Branch: Dummy Load 100R 5W */}
           <line x1="178" y1="40" x2="245" y2="40" stroke="#f97316" strokeWidth="2" className={div ? 'flow-active' : ''} />
@@ -1430,9 +1429,9 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
           {isSelfBias
             ? 'RL 22k'
             : isRelayLoad
-            ? 'Bobine'
+            ? tr(lang, 'Bobine', 'ملف', 'Coil')
             : isMotorLoad
-            ? 'Moteur'
+            ? tr(lang, 'Moteur', 'محرك', 'Motor')
             : cid === 'courtesy-light'
             ? 'Bulb 12V'
             : '220R'}
@@ -1584,7 +1583,7 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
       {/* Schematic SVG */}
       <div className="xl:col-span-7 schematic-grid rounded-xl border border-stone-200 dark:border-stone-800 p-4 flex flex-col justify-between min-h-[305px]">
         <div className="flex items-center justify-between text-xs font-mono-num text-stone-500 dark:text-stone-400 mb-2">
-          <span>{lang === 'fr' ? 'SCHÉMA ÉLECTRONIQUE EN DIRECT' : 'المخطط الكهربائي الحيّ'}</span>
+          <span>{tr(lang, 'SCHÉMA ÉLECTRONIQUE EN DIRECT', 'المخطط الكهربائي الحيّ', 'LIVE ELECTRONIC SCHEMATIC')}</span>
           <span className="text-sky-600 dark:text-sky-400">
             {isLie5T
               ? '5×BC547'
@@ -1613,9 +1612,9 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
         </svg>
 
         <div className="flex flex-wrap items-center gap-4 text-xs font-mono-num pt-2 border-t border-stone-200/70 dark:border-stone-800">
-          <span className="text-sky-600 dark:text-sky-400">● Base (B): {sim.vbe.toFixed(2)} V</span>
-          <span className="text-rose-600 dark:text-rose-400">● Collecteur (C): {sim.vc.toFixed(2)} V</span>
-          <span className="text-emerald-600 dark:text-emerald-400">● Gain β: ×{sim.betaEff.toLocaleString('fr-FR')}</span>
+          <span className="text-sky-600 dark:text-sky-400">● {tr(lang, 'Base (B):', 'القاعدة (B):', 'Base (B):')} {sim.vbe.toFixed(2)} V</span>
+          <span className="text-rose-600 dark:text-rose-400">● {tr(lang, 'Collecteur (C):', 'المجمّع (C):', 'Collector (C):')} {sim.vc.toFixed(2)} V</span>
+          <span className="text-emerald-600 dark:text-emerald-400">● {tr(lang, 'Gain β:', 'الكسب β:', 'Gain β:')} ×{sim.betaEff.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US')}</span>
         </div>
       </div>
 
@@ -1624,30 +1623,22 @@ export const LiveSchematicScope: React.FC<Props> = ({ params, sim, lang }) => {
         <div className="flex items-center justify-between text-xs font-mono-num text-stone-500 dark:text-stone-400 mb-2">
           <span>
             {isSelfBias || isOsc6 || isBoost7 || isCapScene || isMotorPwm || isLie1
-              ? lang === 'fr'
-                ? 'OSCILLOSCOPE TEMPS RÉEL'
-                : 'راسم الإشارة اللحظي'
+              ? tr(lang, 'OSCILLOSCOPE TEMPS RÉEL', 'راسم الإشارة اللحظي', 'REAL-TIME OSCILLOSCOPE')
               : isDarlington
-              ? lang === 'fr'
-                ? 'MULTIPLICATION DES ÉTAGES'
-                : 'تضاعف المراحل'
+              ? tr(lang, 'MULTIPLICATION DES ÉTAGES', 'تضاعف المراحل', 'STAGE MULTIPLICATION')
               : cid === 'multimeter-tester'
-              ? lang === 'fr'
-                ? 'AIGUILLE DE L’OHMMÈTRE'
-                : 'مؤشر الأوميتر التناظري'
-              : lang === 'fr'
-              ? 'COURBE CARACTÉRISTIQUE'
-              : 'المنحنى المميّز'}
+              ? tr(lang, 'AIGUILLE DE L’OHMMÈTRE', 'مؤشر الأوميتر التناظري', 'ANALOG OHMMETER NEEDLE')
+              : tr(lang, 'COURBE CARACTÉRISTIQUE', 'المنحنى المميّز', 'CHARACTERISTIC CURVE')}
           </span>
           <span className="text-amber-600 dark:text-amber-400">
-            {sim.conducting ? (lang === 'fr' ? 'ACTIF' : 'نشط') : lang === 'fr' ? 'BLOQUÉ' : 'مقطوع'}
+            {sim.conducting ? tr(lang, 'ACTIF', 'نشط', 'ACTIVE') : tr(lang, 'BLOQUÉ', 'مقطوع', 'CUTOFF')}
           </span>
         </div>
 
         <div className="my-auto">{renderCurve()}</div>
 
         <div className="text-xs text-stone-600 dark:text-stone-400 pt-2 border-t border-stone-200/70 dark:border-stone-800 leading-relaxed">
-          {lang === 'fr' ? sim.statusFr : sim.statusAr}
+          {lang === 'fr' ? sim.statusFr : lang === 'en' ? sim.statusEn : sim.statusAr}
         </div>
       </div>
     </div>

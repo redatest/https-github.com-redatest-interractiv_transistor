@@ -88,8 +88,10 @@ export interface SimReadout {
   meterDeflection?: number;
   warningFr?: string;
   warningAr?: string;
+  warningEn?: string;
   statusFr: string;
   statusAr: string;
+  statusEn: string;
 }
 
 export function createDefaultSimParams(overrides: Partial<SimParams> = {}): SimParams {
@@ -207,6 +209,10 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           ic >= iMax * 0.9
             ? `تشبّع كامل على ${vs}V (${ic.toFixed(1)} mA · مقاومة الجلد ${(rf / 1000).toFixed(0)}kΩ)`
             : `تضخيم خطي على ${vs}V (مقاومة الجلد ${(rf / 1000).toFixed(0)}kΩ)`,
+        statusEn:
+          ic >= iMax * 0.9
+            ? `Saturated at ${vs} V (${ic.toFixed(1)} mA max · R_skin ${(rf / 1000).toFixed(0)} kΩ)`
+            : `Linear region at ${vs} V (R_skin ${(rf / 1000).toFixed(0)} kΩ)`,
       };
     }
 
@@ -231,6 +237,7 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         powerMW: vce * ic,
         statusFr: `Paire Super-Alpha 6 V : β = 40 000× · I_C = ${ic.toFixed(1)} mA`,
         statusAr: `زوج دارلنغتون 6V: تضخيم 40,000× · I_C = ${ic.toFixed(1)} mA`,
+        statusEn: `Super-Alpha pair 6 V: β = 40,000× · I_C = ${ic.toFixed(1)} mA`,
       };
     }
 
@@ -263,6 +270,12 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
             : p.proximityCm <= 12
             ? `التقاط عن بُعد ${p.proximityCm} cm`
             : 'خارج نطاق الالتقاط (> 12 cm)',
+        statusEn:
+          p.proximityCm <= 6
+            ? `Strong static field at ${p.proximityCm} cm (β = 8,000,000×)!`
+            : p.proximityCm <= 12
+            ? `Non-contact detection at ${p.proximityCm} cm`
+            : 'Out of range (> 12 cm)',
       };
     }
 
@@ -295,6 +308,12 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
             : p.proximityCm <= 8
             ? `إشارة ${freq}Hz ضعيفة (${p.proximityCm} cm)`
             : `خارج مجال السلك (> 8 cm)`,
+        statusEn:
+          p.proximityCm <= 4
+            ? `${freq} Hz mains cable detected at ${p.proximityCm} cm!`
+            : p.proximityCm <= 8
+            ? `Weak ${freq} Hz hum on antenna (${p.proximityCm} cm)`
+            : `No ${freq} Hz field detected (> 8 cm)`,
       };
     }
 
@@ -322,6 +341,10 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           ic > 0.85
             ? `تربة موصلة (${(rSoil / 1000).toFixed(0)} kΩ): المصباح مضيء (~${ic.toFixed(1)} mA)`
             : `تربة جافة أو قليلة الأملاح (${(rSoil / 1000).toFixed(0)} kΩ): يحتاج سقياً!`,
+        statusEn:
+          ic > 0.85
+            ? `Moist conductive soil (R_soil ≈ ${(rSoil / 1000).toFixed(0)} kΩ): LED ON (~${ic.toFixed(1)} mA)`
+            : `Soil too dry or water too pure (R_soil ≈ ${(rSoil / 1000).toFixed(0)} kΩ): water plant!`,
       };
     }
 
@@ -340,8 +363,10 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           warningFr: 'Défaut Court-Circuit C–E : LED allumée même sans appuyer !',
           warningAr: 'عطل قصر داخلي C–E: المصباح يضيء حتى بدون ضغط!',
+          warningEn: 'C–E Short Fault: LED lights even without touching!',
           statusFr: 'Transistor en court-circuit interne C–E (Défectueux)',
           statusAr: 'الترانزستور تالف (قصر داخلي بين المجمّع والباعث)',
+          statusEn: 'Transistor shorted C–E internally (Faulty)',
         };
       }
       if (fault === 'open') {
@@ -357,8 +382,10 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           warningFr: 'Jonction ouverte : aucune conduction dans aucun sens',
           warningAr: 'وصلة مقطوعة داخلياً: لا يوصّل في أي اتجاه',
+          warningEn: 'Open junction: zero conduction in either direction',
           statusFr: 'Transistor coupé (circuit ouvert interne) — à rejeter',
           statusAr: 'الترانزستور تالف (انقطاع داخلي) — يجب استبداله',
+          statusEn: 'Open-circuit transistor (defective) — discard',
         };
       }
       const ok = (p.transistorType === 'NPN') !== p.batteryReversed;
@@ -382,6 +409,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: ok
           ? `${p.transistorType} سليم وبقطبية صحيحة: المصباح مضاء (${ic.toFixed(1)} mA)`
           : `${p.transistorType} متوقف: اقلب البطارية 9V للتحقق منه!`,
+        statusEn: ok
+          ? `${p.transistorType} good & biased right: LED ON (${ic.toFixed(1)} mA)`
+          : `${p.transistorType} off: flip the 9 V battery to test!`,
       };
     }
 
@@ -409,6 +439,11 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           : isLow
           ? 'إشارة LOW ← يعمل BC557 PNP وتضيء LED الخضراء'
           : 'فراغ (عائم): مجموع العتبات ~5V > 3V ← استهلاك 0.0 mA',
+        statusEn: isHigh
+          ? 'Tip on HIGH (+3 V / +5 V) → BC547 NPN conducts → Red LED ON'
+          : isLow
+          ? 'Tip on LOW (0 V) → BC557 PNP conducts → Green LED ON'
+          : 'Floating tip (High-Z): threshold sum ≈ 5 V > 3 V → 0.0 mA',
       };
     }
 
@@ -442,6 +477,13 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           : p.capTriggered
           ? `تم إغلاق الباب: تخميد تدريجي (${Math.round(rem * 100)}% · ${p.capValueUF}µF)`
           : 'افتح الباب ثم أغلقه لتشغيل التأخير الزمني',
+        statusEn: doorOpen
+          ? 'Door OPEN: 47 µF capacitor discharged → 12 V dome bulb at 100%'
+          : p.capCharge >= 0.98
+          ? 'Capacitor full: dome bulb faded smoothly to OFF (0 mA)'
+          : p.capTriggered
+          ? `Door shut: delay fade active (${Math.round(rem * 100)}% · ${p.capValueUF} µF)`
+          : 'Door shut: open then close door to start fade-out timer',
       };
     }
 
@@ -463,6 +505,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: on
           ? 'المصباح مثبّت في وضع التشغيل عبر مقاومة 4.7MΩ'
           : 'المصباح مطفأ (المس لوح ON لتثبيت التشغيل)',
+        statusEn: on
+          ? 'Lamp latched ON by 4.7 MΩ feedback loop'
+          : 'Lamp OFF (touch ON pad to set the latch)',
       };
     }
 
@@ -490,6 +535,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: active
           ? `تذبذب صوتي ${freqHz.toFixed(0)} Hz على سماعة 8Ω · مقاومة الجلد ${(rf / 1000).toFixed(0)}kΩ`
           : `سكون على 3V: مقاومة الجلد (${(rf / 1000).toFixed(0)}kΩ) تتجاوز حد 300kΩ`,
+        statusEn: active
+          ? `Oscillating at ${freqHz.toFixed(0)} Hz on 8 Ω speaker · R_skin ${(rf / 1000).toFixed(0)} kΩ (≤ 300 kΩ)`
+          : `Silent at 3 V: R_skin (${(rf / 1000).toFixed(0)} kΩ) > 300 kΩ threshold`,
       };
     }
 
@@ -514,6 +562,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: isFalse
           ? `FALSE (الأحمر L2 يضيء · L1 مطفأ) · مقاومة الجلد ${(rf / 1000).toFixed(0)}kΩ ≤ عتبة ${(rTrip / 1000).toFixed(0)}kΩ`
           : `TRUE (الأخضر L1 يضيء · L2 مطفأ) · مقاومة الجلد ${(rf / 1000).toFixed(0)}kΩ > عتبة ${(rTrip / 1000).toFixed(0)}kΩ`,
+        statusEn: isFalse
+          ? `FALSE (Red L2 ON · L1 OFF) · R_skin ${(rf / 1000).toFixed(0)} kΩ ≤ ${(rTrip / 1000).toFixed(0)} kΩ (VR1=${vr1KOhm.toFixed(1)}k)`
+          : `TRUE (Green L1 ON · L2 OFF) · R_skin ${(rf / 1000).toFixed(0)} kΩ > ${(rTrip / 1000).toFixed(0)} kΩ (VR1=${vr1KOhm.toFixed(1)}k)`,
       };
     }
 
@@ -536,6 +587,7 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         staircaseLeds: leds,
         statusFr: `${leds} / 4 LEDs allumées · V_diviseur = ${vBase.toFixed(2)} V (Seuils : 0,6 / 1,2 / 1,8 / 2,4 V)`,
         statusAr: `إضاءة ${leds} من 4 مصابيح · الجهد = ${vBase.toFixed(2)}V (العتبات: 0.6 / 1.2 / 1.8 / 2.4V)`,
+        statusEn: `${leds} / 4 LEDs lit · V_divider = ${vBase.toFixed(2)} V (Thresholds: 0.6 / 1.2 / 1.8 / 2.4 V)`,
       };
     }
 
@@ -557,6 +609,7 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         staircaseLeds: leds,
         statusFr: `${leds} / 3 LEDs allumées (sans diodes) · V_Q1 = ${vBase.toFixed(2)} V (Seuils : 0,95 / 1,55 / 2,15 V)`,
         statusAr: `إضاءة ${leds} من 3 مصابيح (بدون دايودات) · جهد Q1 = ${vBase.toFixed(2)}V (0.95 / 1.55 / 2.15V)`,
+        statusEn: `${leds} / 3 LEDs lit (diode-free) · V_Q1 = ${vBase.toFixed(2)} V (Thresholds: 0.95 / 1.55 / 2.15 V)`,
       };
     }
 
@@ -576,6 +629,7 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         staircaseLeds: leds,
         statusFr: `5 × BC547 : ${leds} / 4 LEDs · V_curseur = ${vWiper.toFixed(2)} V (Pot 100k à ${potPct}% · R_peau ${(rf / 1000).toFixed(0)} kΩ)`,
         statusAr: `٥ ترانزستورات BC547: إضاءة ${leds} من 4 LEDs · جهد المنزلقة ${vWiper.toFixed(2)}V (المقاوم 100k عند ${potPct}%)`,
+        statusEn: `5 × BC547: ${leds} / 4 LEDs · V_wiper = ${vWiper.toFixed(2)} V (100k pot at ${potPct}% · R_skin ${(rf / 1000).toFixed(0)} kΩ)`,
       };
     }
 
@@ -600,6 +654,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: on
           ? `غسق/ظلام (${p.luxLevel}% ≤ 40%) ← المرحّل ${vs}V موصول والإنارة تعمل`
           : `ضوء نهار (${p.luxLevel}% > 40%) ← المرحّل مفصول`,
+        statusEn: on
+          ? `Dusk (${p.luxLevel}% ≤ 40%) → ${vs} V Relay CLOSED · Night Light ON`
+          : `Daylight (${p.luxLevel}% > 40%) → Low LDR resistance · Relay OPEN`,
       };
     }
 
@@ -621,6 +678,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: on
           ? `تجاوز العتبة السفلى (≤ 30%) ← تشغيل ثابت حتى 55%`
           : `تجاوز العتبة العليا (≥ 55%) ← إطفاء حاسم بلا ارتعاش`,
+        statusEn: on
+          ? `Lower threshold crossed (≤ 30%) → Latched ON (until 55%)`
+          : `Upper threshold crossed (≥ 55%) → Clean OFF (zero flicker)`,
       };
     }
 
@@ -644,6 +704,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: on
           ? `تم التقاط التصفيق (حساسية ×${g})! مكثف 10µF يغذّي القاعدة`
           : 'الميكروفون في وضع الاستماع (هدوء)',
+        statusEn: on
+          ? `Clap detected (Sensitivity ×${g})! 10 µF charged via 1N4148`
+          : 'Electret mic listening (Quiet)',
       };
     }
 
@@ -663,6 +726,7 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         freqHz,
         statusFr: `Multivibrateur ${freqHz.toFixed(1)} Hz · ${q1On ? 'Q1 ON (Œil Gauche)' : 'Q2 ON (Œil Droit)'}`,
         statusAr: `وميض متناوب ${freqHz.toFixed(1)} Hz · ${q1On ? 'Q1 مضيء (العين ١)' : 'Q2 مضيء (العين ٢)'}`,
+        statusEn: `Multivibrator ${freqHz.toFixed(1)} Hz · ${q1On ? 'Q1 ON (Left Eye)' : 'Q2 ON (Right Eye)'}`,
       };
     }
 
@@ -682,6 +746,7 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         freqHz,
         statusFr: `Chenillard en anneau ${freqHz.toFixed(1)} Hz · Étage actif : LED ${step}/3`,
         statusAr: `ملاحق حلقي ${freqHz.toFixed(1)} Hz · المرحلة النشطة: LED ${step}/3`,
+        statusEn: `Ring chaser ${freqHz.toFixed(1)} Hz · Active stage: LED ${step}/3`,
       };
     }
 
@@ -707,6 +772,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: isSiren
           ? `وضع الصفّارة المتصاعدة (~${freqHz.toFixed(0)} Hz) على سماعة 8Ω`
           : `وضع النبضات الإيقاعية (${freqHz.toFixed(1)} Hz · R = ${p.oscSpeedR}kΩ)`,
+        statusEn: isSiren
+          ? `Modulated Siren (~${freqHz.toFixed(0)} Hz) on 8 Ω speaker`
+          : `Rhythmic Tick-Tock (${freqHz.toFixed(1)} Hz · R = ${p.oscSpeedR} kΩ)`,
       };
     }
 
@@ -730,6 +798,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: isB
           ? `الطور B (تفريغ متوالٍ): ${p.cellVoltage.toFixed(2)}V + 1.0V = ${vTotal.toFixed(2)}V ← إضاءة LED`
           : `الطور A (شحن 1µF): تخزين الشحنة من بطارية ${p.cellVoltage.toFixed(2)}V`,
+        statusEn: isB
+          ? `Phase B (Series boost): ${p.cellVoltage.toFixed(2)} V + 1.0 V = ${vTotal.toFixed(2)} V → LED ON`
+          : `Phase A (Charging 1 µF): storing energy from ${p.cellVoltage.toFixed(2)} V cell`,
       };
     }
 
@@ -749,8 +820,10 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           warningFr: 'DANGER Circuit Ouvert (p. 40) : LED débranchée → surtension bobine > 48 V sur le collecteur !',
           warningAr: 'تحذير دارة مفتوحة (ص ٤٠): فصل الـ LED يرفع نبضة الملف إلى > 48V وقد يتلف الترانزستور!',
+          warningEn: 'DANGER Open Circuit (p. 40): LED unplugged → coil flyback spike > 48 V on collector!',
           statusFr: 'Surtension non clampée à vide (V_C > 48 V)',
           statusAr: 'نبضة جهد خطرة في غياب الـ LED (V_C > 48V)',
+          statusEn: 'Unclamped open-circuit spike (V_C > 48 V)',
         };
       }
       const flashOn = alive && p.oscPhase % 2 === 0;
@@ -771,6 +844,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: alive
           ? `ملف هوائي 30+30: ومضات > ${peakV.toFixed(1)}V (مصباحان أبيضان على التوالي)`
           : 'البطارية ضعيفة جداً (< 0.90V)',
+        statusEn: alive
+          ? `Air-core coil 30+30t: flashes > ${peakV.toFixed(1)} V (2 white LEDs in series)`
+          : 'Battery too weak (< 0.90 V)',
       };
     }
 
@@ -791,8 +867,10 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           freqHz: 250000,
           warningFr: 'DANGER (p. 103) : Sans LED pour limiter à 3,4 V, la ferrite F29 génère 60 V+ et détruit BC337 !',
           warningAr: 'تحذير (ص ١٠٣): بدون الـ LED لتثبيت الجهد عند 3.4V، يولّد ملف الفيريت >60V ويتلف BC337!',
+          warningEn: 'DANGER (p. 103): Without an LED clamping at 3.4 V, the F29 ferrite hits 60 V+ and blows BC337!',
           statusFr: 'Surtension ferrite non clampée (~62 V crête)',
           statusAr: 'نبضة فائقة الخطورة بدون LED (~62V)',
+          statusEn: 'Unclamped ferrite spike (~62 V peak)',
         };
       }
       const peakV = alive ? 3.4 + (p.cellVoltage - 0.8) * 0.4 : p.cellVoltage;
@@ -815,6 +893,9 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         statusAr: alive
           ? `فيريت F29 (${(freqHz / 1000).toFixed(0)} kHz): نبضات ${peakV.toFixed(1)}V · الكشّاف يعمل`
           : 'البطارية منتهية (< 0.85V)',
+        statusEn: alive
+          ? `F29 ferrite (${(freqHz / 1000).toFixed(0)} kHz): ${peakV.toFixed(1)} V peaks · White torch ON`
+          : 'Dead cell (< 0.85 V)',
       };
     }
 
@@ -842,6 +923,10 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           !p.solarDiverted && !canCharge
             ? `الإشعاع الشمسي ضعيف (${panelV.toFixed(1)}V): دايود المنع يحمي البطارية من التفريغ`
             : undefined,
+        warningEn:
+          !p.solarDiverted && !canCharge
+            ? `Low sunlight (${panelV.toFixed(1)} V ≤ V_batt): blocking diode prevents reverse drain`
+            : undefined,
         statusFr: p.solarDiverted
           ? p.dummyLoadEnabled
             ? `Coupure 13,7 V → Dérivation vers 100 Ω (${pw.toFixed(2)} W dissipés)`
@@ -856,6 +941,13 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
           : canCharge
           ? `اللوح ${panelV.toFixed(1)}V (${sun}%) يشحن البطارية (${p.battVoltage.toFixed(1)}V)`
           : `جهد اللوح منخفض (${panelV.toFixed(1)}V): في انتظار الشمس`,
+        statusEn: p.solarDiverted
+          ? p.dummyLoadEnabled
+            ? `13.7 V Cutoff → Diverted to 100 Ω (${pw.toFixed(2)} W dissipated)`
+            : '13.7 V Cutoff (dummy load unplugged)'
+          : canCharge
+          ? `Panel ${panelV.toFixed(1)} V (${sun}%) → Charging ${p.battVoltage.toFixed(1)} V battery`
+          : `Low solar voltage (${panelV.toFixed(1)} V): awaiting sun`,
       };
     }
 
@@ -885,12 +977,18 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         warningAr: starving
           ? `جهد التغذية (${p.supplyV.toFixed(1)}V) لا يكفي لتثبيت التيار مع ${count} مصابيح على التوالي`
           : undefined,
+        warningEn: starving
+          ? `Insufficient voltage headroom for ${count} series LEDs at ${p.supplyV.toFixed(1)} V`
+          : undefined,
         statusFr: starving
           ? `Hors régulation : ${ic.toFixed(1)} mA (augmentez +V pour ${count} LEDs)`
           : `Régulation verrouillée à ${ic.toFixed(1)} mA · ${count} LED(s) · P_Q2 = ${(vce * ic).toFixed(0)} mW`,
         statusAr: starving
           ? `خارج التنظيم: ${ic.toFixed(1)} mA (ارفع الجهد لـ ${count} مصابيح)`
           : `تيار ثابت ${ic.toFixed(1)} mA · ${count} مصباح · حرارة Q2 = ${(vce * ic).toFixed(0)} mW`,
+        statusEn: starving
+          ? `Out of regulation: ${ic.toFixed(1)} mA (raise +V for ${count} LEDs)`
+          : `Regulated at ${ic.toFixed(1)} mA · ${count} LED(s) · P_Q2 = ${(vce * ic).toFixed(0)} mW`,
       };
     }
 
@@ -917,12 +1015,18 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         warningAr: !spinning
           ? `حمل ميكانيكي ثقيل: ارفع نسبة PWM ≥ ${stallThreshold}% لبدء الدوران`
           : undefined,
+        warningEn: !spinning
+          ? `Heavy shaft load: raise PWM duty ≥ ${stallThreshold}% to start spinning`
+          : undefined,
         statusFr: spinning
           ? `PWM ${p.pwmDuty}% (${heavy ? 'Charge lourde' : 'À vide'}) · I_moy = ${ic.toFixed(0)} mA`
           : `Moteur bloqué sous charge (${p.pwmDuty}% < ${stallThreshold}%)`,
         statusAr: spinning
           ? `نبضات PWM ${p.pwmDuty}% (${heavy ? 'حمل ثقيل' : 'حر'}) · ${ic.toFixed(0)} mA`
           : `المحرك متوقف تحت الحمل (${p.pwmDuty}% < ${stallThreshold}%)`,
+        statusEn: spinning
+          ? `PWM ${p.pwmDuty}% (${heavy ? 'Heavy load' : 'No load'}) · I_avg = ${ic.toFixed(0)} mA`
+          : `Motor stalled under load (${p.pwmDuty}% < ${stallThreshold}%)`,
       };
     }
 
@@ -945,6 +1049,7 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
         staircaseLeds: 0,
         warningFr: clipped ? `Écrêtage détecté avec ±${amp.toFixed(1)} V ! Centrez V_C à 2,50 V` : undefined,
         warningAr: clipped ? `تشوّه قصّ مع إشارة ±${amp.toFixed(1)}V! قرّب V_C إلى 2.50V` : undefined,
+        warningEn: clipped ? `Clipping detected at ±${amp.toFixed(1)} V! Center V_C at 2.50 V` : undefined,
         statusFr:
           Math.abs(vc - 2.5) < 0.12
             ? `Point Q centré (${vc.toFixed(2)} V) · Excursion max ±${amp.toFixed(1)} V propre`
@@ -957,6 +1062,12 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
             : vc < 2.5
             ? `V_C = ${vc.toFixed(2)}V (منخفض جداً → قصّ سفلي)`
             : `V_C = ${vc.toFixed(2)}V (مرتفع جداً → قصّ علوي)`,
+        statusEn:
+          Math.abs(vc - 2.5) < 0.12
+            ? `Q-point centered (${vc.toFixed(2)} V) · Clean ±${amp.toFixed(1)} V swing`
+            : vc < 2.5
+            ? `V_C = ${vc.toFixed(2)} V (too low → bottom clipping risk)`
+            : `V_C = ${vc.toFixed(2)} V (too high → top clipping risk)`,
       };
     }
 
@@ -1035,6 +1146,22 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
             : finger
             ? 'انحراف ضعيف أو معدوم (اعكس طرفي C و E)'
             : 'تدريج x10k: اضغط بإصبعك بين القاعدة والمجمّع لقياس التضخيم!',
+        statusEn:
+          bPin === rPin
+            ? `Probes shorted (P${bPin}): 0 Ω (continuity test)`
+            : mType === 'faulty'
+            ? `Full deflection (${Math.round(defl * 100)}%) both ways: SHORTED JUNCTION`
+            : range === 'x10'
+            ? conducting
+              ? `×10 range: forward junction P${bPin}(+) → P${rPin}(−) (~${Math.round(defl * 100)}%)`
+              : `×10 range: ∞ resistance (reverse/open between P${bPin} and P${rPin})`
+            : conducting
+            ? `×10k + Finger: strong deflection (${Math.round(defl * 100)}%) → Collector = ${mType === 'npn_ebc' ? `P${bPin}` : `P${rPin}`}!`
+            : finger
+            ? defl > 0.1
+              ? 'Very slight kick (C/E polarity reversed!)'
+              : 'No conduction (check C–E polarity)'
+            : '×10k range: bridge B+C with your finger to amplify!',
       };
     }
 
@@ -1072,6 +1199,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           statusFr: ic > 0.8 ? 'Sol conducteur : LED allumée (~2 mA)' : 'Sol sec : quasi aucun courant',
           statusAr: ic > 0.8 ? 'التربة موصلة: يضيء الـ LED (~2mA)' : 'التربة جافة: تيار ضعيف جداً',
+          statusEn: ic > 0.8 ? 'Conductive soil: LED ON (~2 mA)' : 'Dry soil: almost zero current',
         };
       }
       if (p.exampleId === 'staircase') {
@@ -1093,6 +1221,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           staircaseLeds: leds,
           statusFr: `${leds} / 4 LEDs allumées (V_base ≈ ${vBase.toFixed(2)} V)`,
           statusAr: `إضاءة ${leds} من 4 مصابيح (جهد الدخل ≈ ${vBase.toFixed(2)} V)`,
+          statusEn: `${leds} / 4 LEDs lit (V_base ≈ ${vBase.toFixed(2)} V)`,
         };
       }
       const rf = fingerResistance(p.pressure);
@@ -1111,6 +1240,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
         staircaseLeds: 0,
         statusFr: ic >= IMAX_9V * 0.9 ? 'Saturé (luminosité max)' : 'Régime linéaire (I_C = β·I_B)',
         statusAr: ic >= IMAX_9V * 0.9 ? 'تشبّع كامل (أقصى سطوع)' : 'تضخيم خطي (I_C = β·I_B)',
+        statusEn: ic >= IMAX_9V * 0.9 ? 'Saturated (max brightness)' : 'Linear region (I_C = β·I_B)',
       };
     }
 
@@ -1139,6 +1269,11 @@ function computeChapterSimulation(p: SimParams): SimReadout {
             : isLow
             ? 'مستوى LOW ← يعمل PNP (LED أخضر)'
             : 'بدون تلامس: استهلاك 0mA (5V > 3V)',
+          statusEn: isHigh
+            ? 'HIGH level → NPN conducts (Red LED)'
+            : isLow
+            ? 'LOW level → PNP conducts (Green LED)'
+            : 'Open tip: 0 mA (5 V threshold > 3 V)',
         };
       }
       const ok = (p.transistorType === 'NPN') !== p.batteryReversed;
@@ -1162,6 +1297,9 @@ function computeChapterSimulation(p: SimParams): SimReadout {
         statusAr: ok
           ? `${p.transistorType} بقطبية صحيحة: الترانزستور يوصّل`
           : `${p.transistorType} متوقف: يحتاج عكس البطارية`,
+        statusEn: ok
+          ? `${p.transistorType} properly biased: LED ON`
+          : `${p.transistorType} cut off: reverse battery required`,
       };
     }
 
@@ -1191,6 +1329,12 @@ function computeChapterSimulation(p: SimParams): SimReadout {
             : p.capTriggered
             ? 'جاري الشحن: التيار يمر عبر القاعدة ويضيء المصباح'
             : 'في الانتظار: المس الدارة لبدء الشحن',
+        statusEn:
+          p.capCharge >= 0.98
+            ? 'Capacitor full: current blocked (discharge it!)'
+            : p.capTriggered
+            ? 'Charging: current flows into the base'
+            : 'Waiting: touch leads to close circuit',
       };
     }
 
@@ -1233,6 +1377,18 @@ function computeChapterSimulation(p: SimParams): SimReadout {
               : p.proximityCm <= 7
               ? 'إشارة 50Hz ضعيفة عبر الهوائي'
               : 'خارج نطاق الالتقاط (> 8 cm)',
+          statusEn:
+            p.exampleId === 'eight-million'
+              ? p.proximityCm <= 6
+                ? 'Static charge detected (β = 8,000,000)!'
+                : p.proximityCm <= 11
+                ? 'Weak field sensed at a distance'
+                : 'Out of range (> 12 cm)'
+              : p.proximityCm <= 3
+              ? '50 Hz mains field detected!'
+              : p.proximityCm <= 7
+              ? 'Weak 50 Hz hum on antenna'
+              : 'Out of range (> 8 cm)',
         };
       }
       const stagesCount = p.exampleId === 'second-simplest' ? 2 : p.stages;
@@ -1252,6 +1408,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
         staircaseLeds: 0,
         statusFr: `${stagesCount} étage(s) · β = ${gain.toLocaleString('fr-FR')}`,
         statusAr: `${stagesCount} مراحل · التضخيم الكلي = ${gain.toLocaleString('en-US')}`,
+        statusEn: `${stagesCount} stage(s) · β = ${gain.toLocaleString('en-US')}`,
       };
     }
 
@@ -1270,6 +1427,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           statusFr: on ? 'Verrouillé ON via boucle 4M7' : 'Éteint (verrou coupé par OFF)',
           statusAr: on ? 'مثبّت في وضع التشغيل عبر 4M7' : 'مطفأ (تم فصل التثبيت عبر OFF)',
+          statusEn: on ? 'Latched ON via 4M7 feedback loop' : 'OFF (latch cleared by OFF pad)',
         };
       }
       if (p.exampleId === 'dark-schmitt') {
@@ -1286,6 +1444,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           statusFr: on ? 'Nuit / Seuil bas → Éclairage ON' : 'Jour / Seuil haut → Éclairage OFF',
           statusAr: on ? 'ظلام (تحت العتبة) ← المصباح مضاء' : 'إضاءة كافية ← المصباح مطفأ',
+          statusEn: on ? 'Dark / Low threshold → Light ON' : 'Day / High threshold → Light OFF',
         };
       }
       if (p.exampleId === 'clap-sound') {
@@ -1302,6 +1461,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           statusFr: on ? 'Claquement capté ! Pompe 10u active' : 'En écoute (silence)',
           statusAr: on ? 'تم التقاط التصفيق! المكثف 10u يغذّي القاعدة' : 'في وضع الاستماع (هدوء)',
+          statusEn: on ? 'Clap detected! 10u pump active' : 'Listening (quiet)',
         };
       }
       if (p.exampleId === 'night-light') {
@@ -1320,6 +1480,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           statusFr: on ? 'Crépuscule (< 40%) → Relais veilleuse COLLÉ' : 'Jour (> 40%) → Relais ouvert',
           statusAr: on ? 'ظلام (< 40%) ← المرحّل موصول والإنارة تعمل' : 'ضوء نهار (> 40%) ← المرحّل مفصول',
+          statusEn: on ? 'Dusk (< 40%) → Night-light relay CLOSED' : 'Daylight (> 40%) → Relay open',
         };
       }
       if (p.exampleId === 'motor-pwm') {
@@ -1337,6 +1498,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           statusFr: `Impulsions PWM ${p.pwmDuty}% · Couple plein à bas régime (3 V)`,
           statusAr: `نبضات PWM ${p.pwmDuty}% · عزم قوي حتى مع السرعة المنخفضة (3V)`,
+          statusEn: `PWM pulses ${p.pwmDuty}% · Full torque at low speed (3 V)`,
         };
       }
       const ib = Math.max(0, (p.vinSwitch - VBE) / 10000);
@@ -1354,6 +1516,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
         staircaseLeds: 0,
         statusFr: ic <= 0 ? 'Bloqué (V_in < 0,6 V)' : full ? 'Saturé (pleine puissance)' : 'Régime linéaire partiel',
         statusAr: ic <= 0 ? 'مقطوع (V_in < 0.6V)' : full ? 'مشبّع (قدرة كاملة)' : 'توصيل جزئي',
+        statusEn: ic <= 0 ? 'Cut off (V_in < 0.6 V)' : full ? 'Saturated (full power)' : 'Partial linear conduction',
       };
     }
 
@@ -1375,6 +1538,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
         freqHz,
         statusFr: `Oscillation active ≈ ${freqHz.toFixed(1)} Hz`,
         statusAr: `تذبذب نشط ≈ ${freqHz.toFixed(1)} Hz`,
+        statusEn: `Active oscillation ≈ ${freqHz.toFixed(1)} Hz`,
       };
     }
 
@@ -1399,6 +1563,9 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           statusAr: isB
             ? `الطور B: جمع الجهدين = ${vTotal.toFixed(1)} V ← إضاءة الـ LED!`
             : 'الطور A: شحن المكثف 1µF إلى ~1.3V',
+          statusEn: isB
+            ? `Phase B: 1.5 V + 1.0 V = ${vTotal.toFixed(1)} V → LED ON!`
+            : 'Phase A: Charging 1 µF capacitor to ~1.3 V',
         };
       }
       if (p.exampleId === 'bike-flasher') {
@@ -1421,6 +1588,9 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           statusAr: alive
             ? `ملف هوائي (30+30): ومضات > ${peakV.toFixed(1)} V على مصباحين!`
             : 'البطارية ضعيفة (< 0.90V)',
+          statusEn: alive
+            ? `Air coil (30+30t): > ${peakV.toFixed(1)} V flash across 2 LEDs!`
+            : 'Cell too weak (< 0.90 V)',
         };
       }
       const alive = p.cellVoltage >= 0.85;
@@ -1442,6 +1612,9 @@ function computeChapterSimulation(p: SimParams): SimReadout {
         statusAr: alive
           ? `قلب فيريت F29: نبضات ${peakV.toFixed(1)} V ← الكشّاف مضاء`
           : 'البطارية أضعف من حد التشغيل (< 0.85V)',
+        statusEn: alive
+          ? `F29 ferrite: ${peakV.toFixed(1)} V peaks → White LED torch ON`
+          : 'Cell too weak (< 0.85 V)',
       };
     }
 
@@ -1463,6 +1636,7 @@ function computeChapterSimulation(p: SimParams): SimReadout {
           staircaseLeds: 0,
           statusFr: `Courant régulé à ${ic.toFixed(1)} mA (R = ${p.rSense} Ω)`,
           statusAr: `تيار ثابت مضبوط عند ${ic.toFixed(1)} mA (R = ${p.rSense} Ω)`,
+          statusEn: `Current regulated at ${ic.toFixed(1)} mA (R = ${p.rSense} Ω)`,
         };
       }
       const pw = p.solarDiverted && p.dummyLoadEnabled ? (18 * 18) / 100 : 0;
@@ -1487,6 +1661,11 @@ function computeChapterSimulation(p: SimParams): SimReadout {
             ? 'توقف الشحن ← تحويل الطاقة للحِمل الوهمي (3.24W)'
             : 'توقف الشحن (اللوح مفصول)'
           : 'الشحن جارٍ إلى بطارية 12V',
+        statusEn: p.solarDiverted
+          ? p.dummyLoadEnabled
+            ? 'Charging cut off → diverted to 100 Ω dummy load (3.24 W)'
+            : 'Charging cut off (panel open-circuited)'
+          : 'Charging active into 12 V battery',
       };
     }
 
@@ -1519,6 +1698,12 @@ function computeChapterSimulation(p: SimParams): SimReadout {
             : vc < 2.5
             ? 'قريب جداً من 0V (قصّ سفلي)'
             : 'قريب جداً من 5V (قصّ علوي)',
+        statusEn:
+          diff < 0.1
+            ? 'Q-point centered (2.50 V) — Max swing with zero clipping!'
+            : vc < 2.5
+            ? 'Too close to 0 V (bottom clipping)'
+            : 'Too close to 5 V (top clipping)',
       };
     }
   }

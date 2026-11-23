@@ -6,6 +6,7 @@ interface Props {
   circuits: CatalogCircuit[];
   lang: Lang;
   onLaunchCatalogSim: (circuitId: string) => void;
+  track?: 'bjt' | 'mosfet';
 }
 
 const CATEGORIES: { id: CatalogCategory; fr: string; ar: string; en: string }[] = [
@@ -18,7 +19,7 @@ const CATEGORIES: { id: CatalogCategory; fr: string; ar: string; en: string }[] 
   { id: 'testers', fr: 'Testeurs', ar: 'أجهزة فحص', en: 'Testers' },
 ];
 
-export const CatalogView: React.FC<Props> = ({ circuits, lang, onLaunchCatalogSim }) => {
+export const CatalogView: React.FC<Props> = ({ circuits, lang, onLaunchCatalogSim, track = 'bjt' }) => {
   const [cat, setCat] = useState<CatalogCategory>('all');
   const [query, setQuery] = useState('');
 
@@ -40,19 +41,30 @@ export const CatalogView: React.FC<Props> = ({ circuits, lang, onLaunchCatalogSi
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-stone-200 dark:border-stone-800 pb-5">
         <div>
-          <p className="text-xs font-mono-num text-amber-700 dark:text-amber-400">
-            1-100 Transistor Circuits · Colin Mitchell
+          <p className={`text-xs font-mono-num ${track === 'mosfet' ? 'text-sky-700 dark:text-sky-400' : 'text-amber-700 dark:text-amber-400'}`}>
+            {track === 'mosfet'
+              ? tr(lang, 'Filière MOSFET · Montages de puissance & commande', 'مسار MOSFET · دارات القدرة والتحكم', 'MOSFET Track · Power & Switching Circuits')
+              : '1-100 Transistor Circuits · Colin Mitchell'}
           </p>
           <h2 className="text-2xl font-bold text-stone-900 dark:text-stone-50 mt-1">
-            {tr(lang, 'Explorateur de circuits concrets', 'دليل الدارات التطبيقية من الكتاب', 'Hands-On Circuit Explorer')}
+            {track === 'mosfet'
+              ? tr(lang, 'Explorateur de montages MOSFET', 'دليل دارات الموسفيت التطبيقية', 'MOSFET Circuit Explorer')
+              : tr(lang, 'Explorateur de circuits concrets', 'دليل الدارات التطبيقية من الكتاب', 'Hands-On Circuit Explorer')}
           </h2>
           <p className="text-sm text-stone-600 dark:text-stone-300 mt-1 max-w-2xl">
-            {tr(
-              lang,
-              'Parcourez les montages emblématiques du livre avec leur page exacte, leurs composants et lancez directement leur simulation interactive.',
-              'تصفّح أشهر دارات الكتاب مع رقم الصفحة والمكوّنات الحقيقية وافتح محاكاتها التفاعلية مباشرة.',
-              'Browse iconic circuits from the book with exact page numbers and real components, then launch their interactive simulations.'
-            )}
+            {track === 'mosfet'
+              ? tr(
+                  lang,
+                  'Parcourez les montages MOSFET essentiels (N-MOS, P-MOS, CMOS, Boost, Pont en H, charge constante) et lancez directement leur simulation.',
+                  'تصفّح أهم دارات الموسفيت العملية (N-MOS و P-MOS و CMOS و Boost وجسر H) وافتح محاكاتها التفاعلية مباشرة.',
+                  'Browse essential MOSFET circuits (N-MOS, P-MOS, CMOS, Boost, H-Bridge, linear sink) and launch live interactive simulations.'
+                )
+              : tr(
+                  lang,
+                  'Parcourez les montages emblématiques du livre avec leur page exacte, leurs composants et lancez directement leur simulation interactive.',
+                  'تصفّح أشهر دارات الكتاب مع رقم الصفحة والمكوّنات الحقيقية وافتح محاكاتها التفاعلية مباشرة.',
+                  'Browse iconic circuits from the book with exact page numbers and real components, then launch their interactive simulations.'
+                )}
           </p>
         </div>
 
@@ -62,7 +74,11 @@ export const CatalogView: React.FC<Props> = ({ circuits, lang, onLaunchCatalogSi
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={tr(lang, 'Chercher (BC547, LDR, p. 50...)', 'ابحث (BC547، LDR، صفحة 50...)', 'Search (BC547, LDR, p. 50...)')}
+            placeholder={
+              track === 'mosfet'
+                ? tr(lang, 'Chercher (IRLZ44N, P-MOS, Boost...)', 'ابحث (IRLZ44N، P-MOS، Boost...)', 'Search (IRLZ44N, P-MOS, Boost...)')
+                : tr(lang, 'Chercher (BC547, LDR, p. 50...)', 'ابحث (BC547، LDR، صفحة 50...)', 'Search (BC547, LDR, p. 50...)')
+            }
             className="w-full ps-9 pe-3 py-2 text-sm rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
         </div>

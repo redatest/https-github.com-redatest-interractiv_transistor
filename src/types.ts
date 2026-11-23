@@ -1,5 +1,7 @@
 export type Lang = 'fr' | 'ar' | 'en';
 
+export type CourseTrack = 'home' | 'bjt' | 'mosfet';
+
 export type AppView = 'chapters' | 'catalog' | 'catalog-sim' | 'tools';
 
 export interface BiText {

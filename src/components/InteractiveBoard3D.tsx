@@ -191,6 +191,54 @@ const PART_INFO: Record<string, InspectedPart> = {
   },
 };
 
+type BjtPotentialTone = 'high' | 'ctrl' | 'load' | 'return' | 'danger' | 'idle';
+
+const BJT_POTENTIAL_STYLES: Record<BjtPotentialTone, { border: string; text: string; symbol: string }> = {
+  high: { border: '#fbbf24', text: '#fef08a', symbol: '▲' },
+  ctrl: { border: '#38bdf8', text: '#bae6fd', symbol: '●' },
+  load: { border: '#fb923c', text: '#fed7aa', symbol: '▸' },
+  return: { border: '#2dd4bf', text: '#99f6e4', symbol: '▼' },
+  danger: { border: '#fb7185', text: '#fecdd3', symbol: '⚡' },
+  idle: { border: '#64748b', text: '#cbd5e1', symbol: '○' },
+};
+
+const BjtVoltageNodeBadge: React.FC<{ x: number; y: number; text: string; tone: BjtPotentialTone }> = ({
+  x,
+  y,
+  text,
+  tone,
+}) => {
+  const cfg = BJT_POTENTIAL_STYLES[tone];
+  const label = `${cfg.symbol} ${text}`;
+  const w = Math.max(40, label.length * 5.0 + 10);
+  return (
+    <g className="pointer-events-none">
+      <rect
+        x={x - w / 2}
+        y={y - 7.5}
+        width={w}
+        height="15"
+        rx="3.5"
+        fill="#09111a"
+        fillOpacity="0.92"
+        stroke={cfg.border}
+        strokeWidth="1.2"
+      />
+      <text
+        x={x}
+        y={y + 2.8}
+        textAnchor="middle"
+        fill={cfg.text}
+        fontSize="7.6"
+        fontFamily="monospace"
+        fontWeight="700"
+      >
+        {label}
+      </text>
+    </g>
+  );
+};
+
 interface TransistorProps {
   cx: number;
   topY: number;
@@ -583,17 +631,34 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     <path
                       d={`M 94 222 L 94 270 L ${bX} 270 L ${bX} 206`}
                       fill="none"
-                      stroke="#94a3b8"
-                      strokeWidth="2"
-                      strokeDasharray={sim.conducting ? '6 6' : undefined}
-                      className={sim.conducting ? 'flow-active' : ''}
+                      stroke={sim.conducting ? '#fbbf24' : '#94a3b8'}
+                      strokeWidth="2.4"
+                      className={sim.conducting ? 'flow-pulse-high' : ''}
                     />
                     <path
                       d={`M 184 222 L 184 258 L ${rX} 258 L ${rX} 192`}
                       fill="none"
-                      stroke="#dc2626"
-                      strokeWidth="4"
-                      className={sim.conducting ? 'flow-active' : ''}
+                      stroke="#991b1b"
+                      strokeWidth="4.2"
+                    />
+                    <path
+                      d={`M 184 222 L 184 258 L ${rX} 258 L ${rX} 192`}
+                      fill="none"
+                      stroke={sim.conducting ? '#2dd4bf' : '#ef4444'}
+                      strokeWidth="2.2"
+                      className={sim.conducting ? 'flow-pulse-return' : ''}
+                    />
+                    <BjtVoltageNodeBadge
+                      x={286}
+                      y={270}
+                      text={sim.conducting ? 'BLK +3.0V' : 'BLK +V'}
+                      tone={sim.conducting ? 'high' : 'idle'}
+                    />
+                    <BjtVoltageNodeBadge
+                      x={286}
+                      y={251}
+                      text={sim.conducting ? 'RED 0.0V' : 'RED OPEN'}
+                      tone={sim.conducting ? 'return' : 'idle'}
                     />
 
                     {/* Probe Clips on Selected Pins */}
@@ -626,22 +691,22 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                 return (
                   <g>
                     {/* Top +3V Rail */}
-                    <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
-                    {active && <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />}
+                    <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    {active && <path d="M 88 38 L 468 38" stroke="#fbbf24" strokeWidth="3.8" fill="none" className="flow-pulse-high" />}
                     <text x="104" y="31" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       +3 V
                     </text>
 
                     {/* Bottom 0V Rail */}
-                    <path d="M 56 108 L 56 268 L 468 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
-                    {active && <path d="M 56 108 L 56 268 L 468 268" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />}
-                    <text x="72" y="262" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    <path d="M 56 108 L 56 268 L 468 268" stroke="#2dd4bf" strokeWidth="4.5" opacity="0.3" fill="none" />
+                    {active && <path d="M 56 108 L 56 268 L 468 268" stroke="#2dd4bf" strokeWidth="3.8" fill="none" className="flow-pulse-return" />}
+                    <text x="72" y="262" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       0 V (−)
                     </text>
 
                     {/* Touch Pads -> 100k -> Q1 Base */}
-                    <path d="M 102 214 L 185 214 L 185 188" stroke="#5ab0ff" strokeWidth="3.2" opacity={active ? 0.95 : 0.35} fill="none" className={active ? 'flow-active' : ''} />
-                    <path d="M 185 214 L 185 268" stroke="#6fe39a" strokeWidth="2.5" opacity="0.35" fill="none" />
+                    <path d="M 102 214 L 185 214 L 185 188" stroke="#38bdf8" strokeWidth="3.2" opacity={active ? 0.95 : 0.35} fill="none" className={active ? 'flow-pulse-ctrl' : ''} />
+                    <path d="M 185 214 L 185 268" stroke="#2dd4bf" strokeWidth="2.5" opacity="0.35" fill="none" />
                     <rect x="128" y="205" width="40" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
                     <text x="148" y="217" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontFamily="monospace" fontWeight="700">
                       100k
@@ -652,30 +717,33 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     </text>
 
                     {/* Q1(E) -> 0V */}
-                    <path d={`M ${q1X - 26} ${padY} L ${q1X - 26} 268`} stroke="#6fe39a" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+                    <path d={`M ${q1X - 26} ${padY} L ${q1X - 26} 268`} stroke="#2dd4bf" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-pulse-return' : ''} />
 
                     {/* Q1(C) -> 1k -> Q2(B) */}
-                    <path d={`M ${q1X + 26} ${padY} L ${q1X + 26} 226 L ${q2X} 226 L ${q2X} ${padY}`} stroke="#ff6b5a" strokeWidth="3.5" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+                    <path d={`M ${q1X + 26} ${padY} L ${q1X + 26} 226 L ${q2X} 226 L ${q2X} ${padY}`} stroke="#fb923c" strokeWidth="3.5" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-pulse-load' : ''} />
                     <rect x="242" y="217" width="36" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
                     <text x="260" y="229" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontFamily="monospace" fontWeight="700">
                       1k
                     </text>
 
                     {/* Q2(E) -> +3V */}
-                    <path d={`M ${q2X - 26} 38 L ${q2X - 26} ${padY}`} stroke="#ffd24a" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+                    <path d={`M ${q2X - 26} 38 L ${q2X - 26} ${padY}`} stroke="#fbbf24" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-pulse-high' : ''} />
 
                     {/* Q2(C) -> HP 8 Ohm -> 0V */}
-                    <path d={`M ${q2X + 26} ${padY} L ${q2X + 26} 226 L 404 226 L 404 148 L 422 148`} stroke="#ff6b5a" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
-                    <path d="M 448 176 L 448 268" stroke="#6fe39a" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+                    <path d={`M ${q2X + 26} ${padY} L ${q2X + 26} 226 L 404 226 L 404 148 L 422 148`} stroke="#fb923c" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-pulse-load' : ''} />
+                    <path d="M 448 176 L 448 268" stroke="#2dd4bf" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-pulse-return' : ''} />
 
                     {/* Feedback Cap 10n from Q2(C) to Q1(B) */}
-                    <path d={`M ${q2X + 26} 250 L ${q1X} 250 L ${q1X} ${padY}`} stroke="#38bdf8" strokeWidth="3" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+                    <path d={`M ${q2X + 26} 250 L ${q1X} 250 L ${q1X} ${padY}`} stroke="#38bdf8" strokeWidth="3" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-pulse-ctrl' : ''} />
                     <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
                       <rect x="246" y="241" width="44" height="17" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
                       <text x="268" y="253" textAnchor="middle" fill="#fff" fontSize="8.5" fontFamily="monospace" fontWeight="700">
                         10n
                       </text>
                     </g>
+
+                    <BjtVoltageNodeBadge x={138} y={193} text={`B1:${active ? '0.6V' : '0.2V'}`} tone={active ? 'ctrl' : 'idle'} />
+                    <BjtVoltageNodeBadge x={260} y={205} text={`C1:${active ? '2.4V' : '3.0V'}`} tone={active ? 'load' : 'high'} />
 
                     {/* Battery 3V */}
                     <rect x="34" y="38" width="54" height="70" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
@@ -717,14 +785,14 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                 return (
                   <g>
                     {/* Top +9V Rail */}
-                    <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
-                    <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    <path d="M 88 38 L 468 38" stroke="#fbbf24" strokeWidth="3.8" fill="none" className="flow-pulse-high" />
                     <text x="102" y="30" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">+9 V</text>
 
                     {/* Bottom 0V Ground Rail */}
-                    <path d="M 54 106 L 54 270 L 468 270" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
-                    <path d="M 54 106 L 54 270 L 468 270" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />
-                    <text x="72" y="264" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">0 V (−)</text>
+                    <path d="M 54 106 L 54 270 L 468 270" stroke="#2dd4bf" strokeWidth="4.5" opacity="0.32" fill="none" />
+                    <path d="M 54 106 L 54 270 L 468 270" stroke="#2dd4bf" strokeWidth="3.8" fill="none" className="flow-pulse-return" />
+                    <text x="72" y="264" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">0 V (−)</text>
 
                     {/* Battery 9V */}
                     <rect x="34" y="38" width="54" height="68" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
@@ -732,7 +800,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     <text x="61" y="88" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">9V</text>
 
                     {/* Touch Pads + VR1 (47k) + C1 (100nF) -> TR1(B) */}
-                    <path d={`M 88 216 L ${trXs[0]} 216 L ${trXs[0]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={isFalse ? 0.95 : 0.45} fill="none" className={isFalse ? 'flow-active' : ''} />
+                    <path d={`M 88 216 L ${trXs[0]} 216 L ${trXs[0]} ${padY}`} stroke="#38bdf8" strokeWidth="3.2" opacity={isFalse ? 0.95 : 0.45} fill="none" className={isFalse ? 'flow-pulse-ctrl' : ''} />
                     <path d={`M 110 154 L ${trXs[0]} 154 L ${trXs[0]} ${padY}`} stroke="#38bdf8" strokeWidth="2.5" opacity="0.5" fill="none" />
                     <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
                       <rect x="64" y="196" width="42" height="38" rx="5" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
@@ -753,19 +821,19 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     </g>
 
                     {/* TR1(C) -> TR2(B) invert link + R3 10k pull-up */}
-                    <path d={`M ${trXs[0] + 26} 38 L ${trXs[0] + 26} ${padY}`} stroke="#ff6b5a" strokeWidth="3" opacity={isFalse ? 0.95 : 0.35} fill="none" className={isFalse ? 'flow-active' : ''} />
+                    <path d={`M ${trXs[0] + 26} 38 L ${trXs[0] + 26} ${padY}`} stroke="#fb923c" strokeWidth="3.2" opacity={isFalse ? 0.95 : 0.35} fill="none" className={isFalse ? 'flow-pulse-load' : ''} />
                     <rect x={trXs[0] + 15} y="82" width="22" height="20" rx="3" fill="#e7d6ac" stroke="#78350f" />
                     <text x={trXs[0] + 26} y="95" textAnchor="middle" fill="#1c1917" fontSize="8" fontFamily="monospace" fontWeight="700">10k</text>
-                    <path d={`M ${trXs[0] + 26} ${padY} L ${trXs[0] + 26} 232 L ${trXs[1]} 232 L ${trXs[1]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={tr2On ? 0.95 : 0.25} fill="none" className={tr2On ? 'flow-active' : ''} />
+                    <path d={`M ${trXs[0] + 26} ${padY} L ${trXs[0] + 26} 232 L ${trXs[1]} 232 L ${trXs[1]} ${padY}`} stroke="#38bdf8" strokeWidth="3.2" opacity={tr2On ? 0.95 : 0.25} fill="none" className={tr2On ? 'flow-pulse-ctrl' : ''} />
 
                     {/* TR2(C) -> L1 TRUE (Green) & 47k link to TR3(B) */}
-                    <path d={`M ${trXs[1] + 26} 38 L ${trXs[1] + 26} ${padY}`} stroke="#22c55e" strokeWidth="3.8" opacity={tr2On ? 0.95 : 0.22} fill="none" className={tr2On ? 'flow-active' : ''} />
-                    <path d={`M ${trXs[1] + 26} ${padY} L ${trXs[1] + 26} 232 L ${trXs[2]} 232 L ${trXs[2]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={tr3On ? 0.95 : 0.25} fill="none" className={tr3On ? 'flow-active' : ''} />
+                    <path d={`M ${trXs[1] + 26} 38 L ${trXs[1] + 26} ${padY}`} stroke="#2dd4bf" strokeWidth="3.8" opacity={tr2On ? 0.95 : 0.22} fill="none" className={tr2On ? 'flow-pulse-return' : ''} />
+                    <path d={`M ${trXs[1] + 26} ${padY} L ${trXs[1] + 26} 232 L ${trXs[2]} 232 L ${trXs[2]} ${padY}`} stroke="#38bdf8" strokeWidth="3.2" opacity={tr3On ? 0.95 : 0.25} fill="none" className={tr3On ? 'flow-pulse-ctrl' : ''} />
                     <rect x="336" y="223" width="34" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
                     <text x="353" y="235" textAnchor="middle" fill="#1c1917" fontSize="8" fontFamily="monospace" fontWeight="700">47k</text>
 
                     {/* TR3(C) -> L2 FALSE (Red) */}
-                    <path d={`M ${trXs[2] + 26} 38 L ${trXs[2] + 26} ${padY}`} stroke="#ef4444" strokeWidth="3.8" opacity={tr3On ? 0.95 : 0.22} fill="none" className={tr3On ? 'flow-active' : ''} />
+                    <path d={`M ${trXs[2] + 26} 38 L ${trXs[2] + 26} ${padY}`} stroke="#fb7185" strokeWidth="3.8" opacity={tr3On ? 0.95 : 0.22} fill="none" className={tr3On ? 'flow-pulse-danger' : ''} />
 
                     {/* All 3 Emitters -> 0V */}
                     {trXs.map((cx, i) => {
@@ -774,14 +842,18 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                         <path
                           key={`e-${i}`}
                           d={`M ${cx - 26} ${padY} L ${cx - 26} 270`}
-                          stroke="#6fe39a"
+                          stroke="#2dd4bf"
                           strokeWidth="3.8"
                           opacity={on ? 0.95 : 0.25}
                           fill="none"
-                          className={on ? 'flow-active' : ''}
+                          className={on ? 'flow-pulse-return' : ''}
                         />
                       );
                     })}
+
+                    <BjtVoltageNodeBadge x={136} y={204} text={`B1:${sim.vbe.toFixed(2)}V`} tone={isFalse ? 'ctrl' : 'idle'} />
+                    <BjtVoltageNodeBadge x={235} y={248} text={`C1:${isFalse ? '0.2V' : '8.4V'}`} tone={isFalse ? 'load' : 'high'} />
+                    <BjtVoltageNodeBadge x={353} y={252} text={`C2:${tr2On ? '0.2V' : '7.1V'}`} tone={tr2On ? 'return' : 'high'} />
 
                     {/* L1 TRUE (Green) & L2 FALSE (Red) */}
                     <circle cx={trXs[1] + 26} cy="64" r="16" fill={tr2On ? '#22c55e' : '#052e16'} stroke="#86efac" strokeWidth="2.4" filter={tr2On ? 'url(#ledGlow)' : undefined} />
@@ -808,14 +880,14 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                 return (
                   <g>
                     {/* Top +9V Rail */}
-                    <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
-                    {leds > 0 && <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />}
+                    <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    {leds > 0 && <path d="M 88 38 L 478 38" stroke="#fbbf24" strokeWidth="3.8" fill="none" className="flow-pulse-high" />}
                     <text x="102" y="30" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">+9 V</text>
 
                     {/* Bottom 0V Rail */}
-                    <path d="M 54 106 L 54 270 L 478 270" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
-                    {leds > 0 && <path d="M 54 106 L 54 270 L 478 270" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />}
-                    <text x="72" y="264" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">0 V (−)</text>
+                    <path d="M 54 106 L 54 270 L 478 270" stroke="#2dd4bf" strokeWidth="4.5" opacity="0.32" fill="none" />
+                    {leds > 0 && <path d="M 54 106 L 54 270 L 478 270" stroke="#2dd4bf" strokeWidth="3.8" fill="none" className="flow-pulse-return" />}
+                    <text x="72" y="264" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">0 V (−)</text>
 
                     {/* Battery 9V */}
                     <rect x="34" y="38" width="54" height="68" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
@@ -823,14 +895,15 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     <text x="61" y="88" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">9V</text>
 
                     {/* Touch Pad -> Q1(B) */}
-                    <path d={`M 88 228 L ${qX[0]} 228 L ${qX[0]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={sim.ibUA > 0.1 ? 0.95 : 0.35} fill="none" className={sim.ibUA > 0.1 ? 'flow-active' : ''} />
+                    <path d={`M 88 228 L ${qX[0]} 228 L ${qX[0]} ${padY}`} stroke="#38bdf8" strokeWidth="3.2" opacity={sim.ibUA > 0.1 ? 0.95 : 0.35} fill="none" className={sim.ibUA > 0.1 ? 'flow-pulse-ctrl' : ''} />
                     <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
                       <circle cx="72" cy="228" r="15" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
                       <text x="72" y="205" textAnchor="middle" fill="#fef08a" fontSize="8.5" fontWeight="700">Touch</text>
                     </g>
+                    <BjtVoltageNodeBadge x={108} y={248} text={`B1:${sim.vbe.toFixed(2)}V`} tone={sim.ibUA > 0.1 ? 'ctrl' : 'idle'} />
 
                     {/* Q1(C) -> +9V, Q1..Q3 cascade via 10k (NO DIODES) */}
-                    <path d={`M ${qX[0] + 26} 38 L ${qX[0] + 26} ${padY}`} stroke="#ff6b5a" strokeWidth="3" opacity={leds > 0 ? 0.9 : 0.25} fill="none" />
+                    <path d={`M ${qX[0] + 26} 38 L ${qX[0] + 26} ${padY}`} stroke="#fb923c" strokeWidth="3" opacity={leds > 0 ? 0.9 : 0.25} fill="none" className={leds > 0 ? 'flow-pulse-load' : ''} />
                     {[0, 1, 2].map((i) => {
                       const fromE = qX[i] - 26;
                       const toB = qX[i + 1];
@@ -840,10 +913,10 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           <path
                             d={`M ${fromE} ${padY} L ${fromE} 236 L ${toB} 236 L ${toB} ${padY}`}
                             stroke="#38bdf8"
-                            strokeWidth="2.8"
+                            strokeWidth="3"
                             opacity={activeLink ? 0.95 : 0.28}
                             fill="none"
-                            className={activeLink ? 'flow-active' : ''}
+                            className={activeLink ? 'flow-pulse-ctrl' : ''}
                           />
                           <rect x={(fromE + toB) / 2 - 14} y="227" width="28" height="16" rx="3" fill="#e7d6ac" stroke="#78350f" />
                           <text x={(fromE + toB) / 2} y="238" textAnchor="middle" fill="#1c1917" fontSize="8" fontFamily="monospace" fontWeight="700">
@@ -862,8 +935,8 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       const ledColors = ['#22c55e', '#f59e0b', '#ef4444'];
                       return (
                         <g key={`l4-led-${idx}`}>
-                          <path d={`M ${pinC} 38 L ${pinC} ${padY}`} stroke="#ff6b5a" strokeWidth="3.5" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
-                          <path d={`M ${pinE} ${padY} L ${pinE} 270`} stroke="#6fe39a" strokeWidth="3.2" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
+                          <path d={`M ${pinC} 38 L ${pinC} ${padY}`} stroke={idx === 3 ? '#fb7185' : '#fb923c'} strokeWidth="3.6" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? (idx === 3 ? 'flow-pulse-danger' : 'flow-pulse-load') : ''} />
+                          <path d={`M ${pinE} ${padY} L ${pinE} 270`} stroke="#2dd4bf" strokeWidth="3.4" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-pulse-return' : ''} />
                           <circle cx={pinC} cy="62" r="13" fill={lit ? ledColors[idx - 1] : '#1c1917'} stroke="#fde047" strokeWidth="2" filter={lit ? 'url(#ledGlow)' : undefined} />
                           <text x={pinC} y="66" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="700">L{idx}</text>
                           <rect x={pinC - 13} y="82" width="26" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
@@ -908,14 +981,14 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                 return (
                   <g>
                     {/* Top +9V Rail */}
-                    <path d="M 80 34 L 486 34" stroke="#ffd24a" strokeWidth="4.2" opacity="0.4" fill="none" />
-                    {q1Active && <path d="M 80 34 L 486 34" stroke="#ffd24a" strokeWidth="3.2" fill="none" className="flow-active" />}
+                    <path d="M 80 34 L 486 34" stroke="#ffd24a" strokeWidth="4.2" opacity="0.35" fill="none" />
+                    {q1Active && <path d="M 80 34 L 486 34" stroke="#fbbf24" strokeWidth="3.6" fill="none" className="flow-pulse-high" />}
                     <text x="94" y="27" fill="#fde047" fontSize="9" fontFamily="monospace" fontWeight="700">+9 V</text>
 
                     {/* Bottom 0V Rail */}
-                    <path d="M 48 98 L 48 272 L 486 272" stroke="#6fe39a" strokeWidth="4.2" opacity="0.35" fill="none" />
-                    {leds > 0 && <path d="M 48 98 L 48 272 L 486 272" stroke="#6fe39a" strokeWidth="3.2" fill="none" className="flow-active" />}
-                    <text x="64" y="266" fill="#86efac" fontSize="9" fontFamily="monospace" fontWeight="700">0 V (−)</text>
+                    <path d="M 48 98 L 48 272 L 486 272" stroke="#2dd4bf" strokeWidth="4.2" opacity="0.32" fill="none" />
+                    {leds > 0 && <path d="M 48 98 L 48 272 L 486 272" stroke="#2dd4bf" strokeWidth="3.6" fill="none" className="flow-pulse-return" />}
+                    <text x="64" y="266" fill="#99f6e4" fontSize="9" fontFamily="monospace" fontWeight="700">0 V (−)</text>
 
                     {/* Battery 9V */}
                     <rect x="28" y="34" width="52" height="64" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
@@ -933,19 +1006,19 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     </g>
                     <path
                       d={`M 83 166 L 83 200 L ${qX[0]} 200 L ${qX[0]} ${padY}`}
-                      stroke="#5ab0ff"
-                      strokeWidth="2.8"
+                      stroke="#38bdf8"
+                      strokeWidth="3"
                       opacity={q1Active ? 0.95 : 0.35}
                       fill="none"
-                      className={q1Active ? 'flow-active' : ''}
+                      className={q1Active ? 'flow-pulse-ctrl' : ''}
                     />
 
                     {/* Q1(C) -> +9V */}
-                    <path d={`M ${qX[0] + 18} 34 L ${qX[0] + 18} ${padY}`} stroke="#ff6b5a" strokeWidth="3" opacity={q1Active ? 0.95 : 0.3} fill="none" className={q1Active ? 'flow-active' : ''} />
+                    <path d={`M ${qX[0] + 18} 34 L ${qX[0] + 18} ${padY}`} stroke="#fb923c" strokeWidth="3.2" opacity={q1Active ? 0.95 : 0.3} fill="none" className={q1Active ? 'flow-pulse-load' : ''} />
 
                     {/* Q1(E) -> 100k Pot -> 0V */}
-                    <path d={`M ${qX[0] - 18} ${padY} L ${qX[0] - 18} 214 L 114 214`} stroke="#6fe39a" strokeWidth="2.8" opacity={q1Active ? 0.95 : 0.35} fill="none" />
-                    <path d="M 114 248 L 114 272" stroke="#6fe39a" strokeWidth="2.8" opacity="0.6" fill="none" />
+                    <path d={`M ${qX[0] - 18} ${padY} L ${qX[0] - 18} 214 L 114 214`} stroke="#2dd4bf" strokeWidth="2.8" opacity={q1Active ? 0.95 : 0.35} fill="none" className={q1Active ? 'flow-pulse-return' : ''} />
+                    <path d="M 114 248 L 114 272" stroke="#2dd4bf" strokeWidth="2.8" opacity="0.6" fill="none" />
                     <g data-comp="POT100K" onClick={() => setInspected('POT100K')} className="cursor-pointer">
                       <circle cx="114" cy="231" r="16" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="1.8" />
                       <g transform={`translate(114, 231) rotate(${potAngle})`}>
@@ -960,11 +1033,12 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     <path
                       d={`M 130 231 L ${qX[1]} 231`}
                       stroke="#38bdf8"
-                      strokeWidth="2.8"
+                      strokeWidth="3"
                       opacity={vWiper > 0.3 ? 0.95 : 0.3}
                       fill="none"
-                      className={leds >= 1 ? 'flow-active' : ''}
+                      className={leds >= 1 ? 'flow-pulse-ctrl' : ''}
                     />
+                    <BjtVoltageNodeBadge x={170} y={248} text={`Vw:${vWiper.toFixed(1)}V`} tone={vWiper > 0.3 ? 'ctrl' : 'idle'} />
 
                     {/* 3 pairs of 1N4148 diodes between Q2->Q3, Q3->Q4, Q4->Q5 */}
                     {[1, 2, 3].map((stageIdx) => {
@@ -974,7 +1048,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       const mid = (x1 + x2) / 2;
                       return (
                         <g key={`d5t-${stageIdx}`} data-comp="DIODE1N4148" onClick={() => setInspected('DIODE1N4148')} className="cursor-pointer">
-                          <line x1={x1} y1="231" x2={x2} y2="231" stroke="#38bdf8" strokeWidth="2.5" opacity={activePair ? 0.95 : 0.3} className={activePair ? 'flow-active' : ''} />
+                          <line x1={x1} y1="231" x2={x2} y2="231" stroke="#38bdf8" strokeWidth="2.8" opacity={activePair ? 0.95 : 0.3} className={activePair ? 'flow-pulse-ctrl' : ''} />
                           {/* Diode pair 2x 1N4148 */}
                           <rect x={mid - 20} y="222" width="40" height="17" rx="3" fill="#0f172a" stroke={activePair ? '#fbbf24' : '#64748b'} strokeWidth="1.4" />
                           <polygon points={`${mid - 14},225 ${mid - 14},236 ${mid - 4},230.5`} fill={activePair ? '#fbbf24' : '#94a3b8'} />
@@ -996,15 +1070,15 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       return (
                         <g key={`ld5t-stage-${idx}`}>
                           {/* 10k series from bus y=231 to Base pad */}
-                          <line x1={pinB} y1="231" x2={pinB} y2={padY} stroke="#5ab0ff" strokeWidth="2.4" opacity={lit ? 0.95 : 0.3} />
+                          <line x1={pinB} y1="231" x2={pinB} y2={padY} stroke="#38bdf8" strokeWidth="2.4" opacity={lit ? 0.95 : 0.3} />
                           <rect x={pinB - 11} y="204" width="22" height="14" rx="2.5" fill="#e7d6ac" stroke="#78350f" />
                           <text x={pinB} y="214" textAnchor="middle" fill="#1c1917" fontSize="6.8" fontFamily="monospace" fontWeight="700">10k</text>
                           {/* 10k pull-down Base -> 0V (offset slightly left to E rail) */}
-                          <line x1={pinB - 8} y1="196" x2={pinE} y2="196" stroke="#6fe39a" strokeWidth="1.6" opacity="0.55" />
+                          <line x1={pinB - 8} y1="196" x2={pinE} y2="196" stroke="#2dd4bf" strokeWidth="1.6" opacity="0.55" />
                           {/* Emitter -> 0V */}
-                          <path d={`M ${pinE} ${padY} L ${pinE} 272`} stroke="#6fe39a" strokeWidth="3" opacity={lit ? 0.95 : 0.25} fill="none" className={lit ? 'flow-active' : ''} />
+                          <path d={`M ${pinE} ${padY} L ${pinE} 272`} stroke="#2dd4bf" strokeWidth="3.2" opacity={lit ? 0.95 : 0.25} fill="none" className={lit ? 'flow-pulse-return' : ''} />
                           {/* Collector -> 100R -> LED -> +9V */}
-                          <path d={`M ${pinC} 34 L ${pinC} ${padY}`} stroke="#ff6b5a" strokeWidth="3.2" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
+                          <path d={`M ${pinC} 34 L ${pinC} ${padY}`} stroke={idx === 4 ? '#fb7185' : '#fb923c'} strokeWidth="3.4" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? (idx === 4 ? 'flow-pulse-danger' : 'flow-pulse-load') : ''} />
                           <circle cx={pinC} cy="56" r="11.5" fill={lit ? ledColors[idx - 1] : '#1c1917'} stroke="#fde047" strokeWidth="1.8" filter={lit ? 'url(#ledGlow)' : undefined} />
                           <text x={pinC} y="59.5" textAnchor="middle" fill="#fff" fontSize="7.5" fontWeight="700">L{idx}</text>
                           <rect x={pinC - 12} y="74" width="24" height="15" rx="2.5" fill="#e7d6ac" stroke="#78350f" />
@@ -1047,24 +1121,25 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
 
                 return (
                   <g>
-                    <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
-                    {leds > 0 && <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />}
+                    <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    {leds > 0 && <path d="M 88 38 L 478 38" stroke="#fbbf24" strokeWidth="3.8" fill="none" className="flow-pulse-high" />}
                     <text x="102" y="30" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">+9 V</text>
 
-                    <path d="M 54 106 L 54 270 L 478 270" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
-                    {leds > 0 && <path d="M 54 106 L 54 270 L 478 270" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />}
-                    <text x="72" y="264" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">0 V (−)</text>
+                    <path d="M 54 106 L 54 270 L 478 270" stroke="#2dd4bf" strokeWidth="4.5" opacity="0.32" fill="none" />
+                    {leds > 0 && <path d="M 54 106 L 54 270 L 478 270" stroke="#2dd4bf" strokeWidth="3.8" fill="none" className="flow-pulse-return" />}
+                    <text x="72" y="264" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">0 V (−)</text>
 
                     <rect x="34" y="38" width="54" height="68" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
                     <text x="61" y="66" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700" fontFamily="monospace">+ −</text>
                     <text x="61" y="88" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">9V</text>
 
                     {/* Touch -> Q1(B) */}
-                    <path d={`M 88 232 L ${qX[0]} 232 L ${qX[0]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={sim.ibUA > 0.1 ? 0.95 : 0.35} fill="none" className={sim.ibUA > 0.1 ? 'flow-active' : ''} />
+                    <path d={`M 88 232 L ${qX[0]} 232 L ${qX[0]} ${padY}`} stroke="#38bdf8" strokeWidth="3.2" opacity={sim.ibUA > 0.1 ? 0.95 : 0.35} fill="none" className={sim.ibUA > 0.1 ? 'flow-pulse-ctrl' : ''} />
                     <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
                       <circle cx="72" cy="232" r="15" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
                       <text x="72" y="209" textAnchor="middle" fill="#fef08a" fontSize="8.5" fontWeight="700">Touch</text>
                     </g>
+                    <BjtVoltageNodeBadge x={108} y={249} text={`B1:${sim.vbe.toFixed(2)}V`} tone={sim.ibUA > 0.1 ? 'ctrl' : 'idle'} />
 
                     {/* 3 × 1N4148 Diode Steps across Q1..Q4 bases */}
                     {[0, 1, 2].map((i) => {
@@ -1074,7 +1149,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       const mid = (x1 + x2) / 2;
                       return (
                         <g key={`sc-d-${i}`} data-comp="DIODE1N4148" onClick={() => setInspected('DIODE1N4148')} className="cursor-pointer">
-                          <path d={`M ${x1} 232 L ${x2} 232 L ${x2} ${padY}`} stroke="#38bdf8" strokeWidth="2.6" opacity={activeStep ? 0.95 : 0.3} fill="none" className={activeStep ? 'flow-active' : ''} />
+                          <path d={`M ${x1} 232 L ${x2} 232 L ${x2} ${padY}`} stroke="#38bdf8" strokeWidth="2.8" opacity={activeStep ? 0.95 : 0.3} fill="none" className={activeStep ? 'flow-pulse-ctrl' : ''} />
                           <rect x={mid - 16} y="223" width="32" height="16" rx="3" fill="#0f172a" stroke={activeStep ? '#fbbf24' : '#64748b'} />
                           <polygon points={`${mid - 6},226 ${mid - 6},236 ${mid + 5},231`} fill={activeStep ? '#fbbf24' : '#94a3b8'} />
                           <line x1={mid + 6} y1="226" x2={mid + 6} y2="236" stroke="#e2e8f0" strokeWidth="1.5" />
@@ -1089,8 +1164,8 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       const lit = leds >= i + 1;
                       return (
                         <g key={`sc-led-${i}`}>
-                          <path d={`M ${pinC} 38 L ${pinC} ${padY}`} stroke="#ff6b5a" strokeWidth="3.5" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
-                          <path d={`M ${pinE} ${padY} L ${pinE} 270`} stroke="#6fe39a" strokeWidth="3.2" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
+                          <path d={`M ${pinC} 38 L ${pinC} ${padY}`} stroke={i === 3 ? '#fb7185' : '#fb923c'} strokeWidth="3.6" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? (i === 3 ? 'flow-pulse-danger' : 'flow-pulse-load') : ''} />
+                          <path d={`M ${pinE} ${padY} L ${pinE} 270`} stroke="#2dd4bf" strokeWidth="3.4" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-pulse-return' : ''} />
                           <circle cx={pinC} cy="62" r="13" fill={lit ? ledColors[i] : '#1c1917'} stroke="#fde047" strokeWidth="2" filter={lit ? 'url(#ledGlow)' : undefined} />
                           <text x={pinC} y="66" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="700">L{i + 1}</text>
                           <rect x={pinC - 13} y="82" width="26" height="16" rx="3" fill="#e7d6ac" stroke="#78350f" />
@@ -1143,10 +1218,10 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     {sim.conducting && (
                       <path
                         d="M 88 46 L 448 46"
-                        stroke="#ffd24a"
-                        strokeWidth="3.5"
+                        stroke="#fbbf24"
+                        strokeWidth="3.8"
                         fill="none"
-                        className="flow-active"
+                        className="flow-pulse-high"
                         markerMid="url(#arrGold)"
                       />
                     )}
@@ -1155,25 +1230,31 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     </text>
 
                     {/* Bottom 0V Ground Rail (routed clean around ANT/Touch at x=50) */}
-                    <path d={`M ${lastEX} 266 L 52 266 L 52 108`} stroke="#6fe39a" strokeWidth="4.5" opacity="0.32" fill="none" />
+                    <path d={`M ${lastEX} 266 L 52 266 L 52 108`} stroke="#2dd4bf" strokeWidth="4.5" opacity="0.3" fill="none" />
                     {sim.conducting && (
                       <path
                         d={`M ${lastEX} 266 L 52 266 L 52 108`}
-                        stroke="#6fe39a"
-                        strokeWidth="3.5"
+                        stroke="#2dd4bf"
+                        strokeWidth="3.8"
                         fill="none"
-                        className="flow-active"
+                        className="flow-pulse-return"
                       />
                     )}
-                    <text x="68" y="260" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    <text x="68" y="260" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       0 V (−)
                     </text>
 
                     {/* Collector Bus at y=90 fed by LED cathode -> enters each active Q(C) pad */}
-                    <path d="M 448 64 L 448 90 L 201 90" stroke="#ff6b5a" strokeWidth="4" opacity="0.32" fill="none" />
+                    <path d="M 448 64 L 448 90 L 201 90" stroke="#fb923c" strokeWidth="4" opacity="0.32" fill="none" />
                     {sim.conducting && (
-                      <path d="M 448 64 L 448 90 L 201 90" stroke="#ff6b5a" strokeWidth="3.5" fill="none" className="flow-active" />
+                      <path d="M 448 64 L 448 90 L 201 90" stroke="#fb923c" strokeWidth="3.8" fill="none" className="flow-pulse-load" />
                     )}
+                    <BjtVoltageNodeBadge
+                      x={258}
+                      y={76}
+                      text={`C:${sim.conducting ? '0.2V' : cid ? '6.0V' : '9.0V'}`}
+                      tone={sim.conducting ? 'load' : 'high'}
+                    />
 
                     {/* Individual C traces dropping from y=90 to C pad (x+26, 188) */}
                     {qX.map((cx, i) => {
@@ -1183,7 +1264,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                         <g key={`c-${i}`} opacity={onStage ? 1 : 0.2}>
                           <path
                             d={`M ${pinC} 90 L ${cx + 46} 90 L ${cx + 46} ${padY} L ${pinC} ${padY}`}
-                            stroke="#ff6b5a"
+                            stroke="#fb923c"
                             strokeWidth="3.5"
                             opacity="0.35"
                             fill="none"
@@ -1191,10 +1272,10 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           {sim.conducting && onStage && (
                             <path
                               d={`M ${pinC} 90 L ${cx + 46} 90 L ${cx + 46} ${padY} L ${pinC} ${padY}`}
-                              stroke="#ff6b5a"
-                              strokeWidth="3"
+                              stroke="#fb923c"
+                              strokeWidth="3.2"
                               fill="none"
-                              className="flow-active"
+                              className="flow-pulse-load"
                             />
                           )}
                         </g>
@@ -1202,17 +1283,23 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     })}
 
                     {/* Input Sensor -> Q1 Base (B = 175, 188) */}
-                    <path d="M 106 218 L 175 218 L 175 188" stroke="#5ab0ff" strokeWidth="2.5" opacity="0.4" fill="none" />
+                    <path d="M 106 218 L 175 218 L 175 188" stroke="#38bdf8" strokeWidth="2.5" opacity="0.35" fill="none" />
                     {(sim.conducting || sim.ibUA > 0) && (
                       <path
                         d="M 106 218 L 175 218 L 175 188"
-                        stroke="#5ab0ff"
-                        strokeWidth="2.2"
+                        stroke="#38bdf8"
+                        strokeWidth="2.8"
                         fill="none"
-                        className="flow-active"
+                        className="flow-pulse-ctrl"
                         markerEnd="url(#arrBlue)"
                       />
                     )}
+                    <BjtVoltageNodeBadge
+                      x={136}
+                      y={240}
+                      text={`B1:${sim.conducting ? (activeStages * 0.6).toFixed(1) : '0.0'}V`}
+                      tone={sim.conducting ? 'ctrl' : 'idle'}
+                    />
                     <text x="134" y="212" textAnchor="middle" fill="#7dd3fc" fontSize="8" fontFamily="monospace">
                       {sim.ibUA.toFixed(2)}µA
                     </text>
@@ -1232,12 +1319,12 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                               stroke="#38bdf8"
                               strokeWidth={2.8 + i * 1.2}
                               fill="none"
-                              className="flow-active"
+                              className="flow-pulse-ctrl"
                               markerMid="url(#arrBlue)"
                             />
                           )}
                           {linkActive && (
-                            <text x={(fromE + toB) / 2} y="244" textAnchor="middle" fill="#bae6fd" fontSize="8.2" fontFamily="monospace">
+                            <text x={(fromE + toB) / 2} y="245" textAnchor="middle" fill="#bae6fd" fontSize="8" fontFamily="monospace">
                               E{i + 1}→B{i + 2} (×{i === 0 ? '200' : '40k'})
                             </text>
                           )}
@@ -1246,14 +1333,14 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     })}
 
                     {/* Final Active Emitter -> 0V Ground */}
-                    <path d={`M ${lastEX} ${padY} L ${lastEX} 266`} stroke="#6fe39a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    <path d={`M ${lastEX} ${padY} L ${lastEX} 266`} stroke="#2dd4bf" strokeWidth="4.5" opacity="0.35" fill="none" />
                     {sim.conducting && (
                       <path
                         d={`M ${lastEX} ${padY} L ${lastEX} 266`}
-                        stroke="#6fe39a"
+                        stroke="#2dd4bf"
                         strokeWidth="4"
                         fill="none"
-                        className="flow-active"
+                        className="flow-pulse-return"
                         markerEnd="url(#arrGreen)"
                       />
                     )}
@@ -1356,15 +1443,16 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                 return (
                   <g>
                     {/* Top +9V Rail */}
-                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
-                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    <path d="M 48 34 L 470 34" stroke="#fbbf24" strokeWidth="3.8" fill="none" className="flow-pulse-high" />
                     <text x="52" y="27" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       +9 V
                     </text>
 
                     {/* Bottom 0V Ground Rail */}
-                    <path d="M 48 268 L 470 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
-                    <text x="52" y="263" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    <path d="M 48 268 L 470 268" stroke="#2dd4bf" strokeWidth="4.5" opacity="0.32" fill="none" />
+                    <path d="M 48 268 L 470 268" stroke="#2dd4bf" strokeWidth="3.4" fill="none" className="flow-pulse-return" />
+                    <text x="52" y="263" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       0 V (−)
                     </text>
 
@@ -1378,10 +1466,10 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           <path
                             d={`M ${fromC} ${padY} L ${fromC} 228 L ${toB} 228 L ${toB} ${padY}`}
                             stroke="#38bdf8"
-                            strokeWidth="3"
+                            strokeWidth="3.2"
                             opacity={nextOn ? 0.95 : 0.28}
                             fill="none"
-                            className={nextOn ? 'flow-active' : ''}
+                            className={nextOn ? 'flow-pulse-ctrl' : ''}
                           />
                           <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
                             <rect x={(fromC + toB) / 2 - 19} y="218" width="38" height="18" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
@@ -1393,14 +1481,17 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                       );
                     })}
 
+                    <BjtVoltageNodeBadge x={198} y={207} text={`C1:${activeIdx === 0 ? '0.2V' : '9.0V'}`} tone={activeIdx === 0 ? 'load' : 'high'} />
+                    <BjtVoltageNodeBadge x={342} y={207} text={`C2:${activeIdx === 1 ? '0.2V' : '9.0V'}`} tone={activeIdx === 1 ? 'load' : 'high'} />
+
                     {/* Wrap-around ring from Q3(C) -> Q1(B) */}
                     <path
                       d={`M ${qX[2] + 26} ${padY} L ${qX[2] + 26} 250 L ${qX[0]} 250 L ${qX[0]} ${padY}`}
-                      stroke="#ffd24a"
-                      strokeWidth="3"
+                      stroke="#fbbf24"
+                      strokeWidth="3.2"
                       opacity={activeIdx === 0 ? 0.95 : 0.28}
                       fill="none"
-                      className={activeIdx === 0 ? 'flow-active' : ''}
+                      className={activeIdx === 0 ? 'flow-pulse-high' : ''}
                     />
                     <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
                       <rect x="241" y="241" width="38" height="18" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
@@ -1421,32 +1512,32 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           {/* +9V -> LED -> 470R -> Collector C */}
                           <path
                             d={`M ${pinC} 34 L ${pinC} ${padY}`}
-                            stroke="#ff6b5a"
+                            stroke="#fb923c"
                             strokeWidth="4"
-                            opacity={isOn ? 0.9 : 0.22}
+                            opacity={isOn ? 0.95 : 0.22}
                             fill="none"
-                            className={isOn ? 'flow-active' : ''}
+                            className={isOn ? 'flow-pulse-load' : ''}
                             markerMid={isOn ? 'url(#arrRed)' : undefined}
                           />
 
                           {/* Base bias resistor from +9V -> B */}
                           <path
                             d={`M ${pinB} 34 L ${pinB} ${padY}`}
-                            stroke="#5ab0ff"
-                            strokeWidth="2.5"
+                            stroke="#38bdf8"
+                            strokeWidth="2.8"
                             opacity={isOn ? 0.95 : 0.25}
                             fill="none"
-                            className={isOn ? 'flow-active' : ''}
+                            className={isOn ? 'flow-pulse-ctrl' : ''}
                           />
 
                           {/* Emitter E -> 0V Ground */}
                           <path
                             d={`M ${pinE} ${padY} L ${pinE} 268`}
-                            stroke="#6fe39a"
+                            stroke="#2dd4bf"
                             strokeWidth="4"
                             opacity={isOn ? 0.95 : 0.22}
                             fill="none"
-                            className={isOn ? 'flow-active' : ''}
+                            className={isOn ? 'flow-pulse-return' : ''}
                           />
 
                           {/* LED on Collector line */}
@@ -1506,15 +1597,16 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                 return (
                   <g>
                     {/* Top +9V Rail */}
-                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
-                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    <path d="M 48 34 L 470 34" stroke="#fbbf24" strokeWidth="3.8" fill="none" className="flow-pulse-high" />
                     <text x="52" y="27" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       +9 V
                     </text>
 
                     {/* Bottom 0V Ground Rail */}
-                    <path d="M 48 268 L 470 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
-                    <text x="52" y="263" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    <path d="M 48 268 L 470 268" stroke="#2dd4bf" strokeWidth="4.5" opacity="0.32" fill="none" />
+                    <path d="M 48 268 L 470 268" stroke="#2dd4bf" strokeWidth="3.4" fill="none" className="flow-pulse-return" />
+                    <text x="52" y="263" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       0 V (−)
                     </text>
 
@@ -1522,10 +1614,10 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     <path
                       d={`M ${q1X + 26} ${padY} L ${q1X + 26} 228 L ${q2X} 228 L ${q2X} ${padY}`}
                       stroke="#38bdf8"
-                      strokeWidth="3"
+                      strokeWidth="3.2"
                       opacity={q2On ? 0.95 : 0.25}
                       fill="none"
-                      className={q2On ? 'flow-active' : ''}
+                      className={q2On ? 'flow-pulse-ctrl' : ''}
                     />
                     <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
                       <rect x="234" y="218" width="52" height="19" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
@@ -1537,11 +1629,11 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     {/* Cross-coupling C2: Q2(C = 406) -> Q1(B = 140) */}
                     <path
                       d={`M ${q2X + 26} ${padY} L ${q2X + 26} 250 L ${q1X} 250 L ${q1X} ${padY}`}
-                      stroke="#ffd24a"
-                      strokeWidth="3"
+                      stroke="#fbbf24"
+                      strokeWidth="3.2"
                       opacity={q1On ? 0.95 : 0.25}
                       fill="none"
-                      className={q1On ? 'flow-active' : ''}
+                      className={q1On ? 'flow-pulse-high' : ''}
                     />
                     <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
                       <rect x="234" y="240" width="52" height="19" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
@@ -1549,6 +1641,9 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                         C2 100µ
                       </text>
                     </g>
+
+                    <BjtVoltageNodeBadge x={200} y={207} text={`C1:${q1On ? '0.2V' : '8.8V'}`} tone={q1On ? 'load' : 'high'} />
+                    <BjtVoltageNodeBadge x={320} y={207} text={`C2:${q2On ? '0.2V' : '8.8V'}`} tone={q2On ? 'load' : 'high'} />
 
                     {/* Stage 1 & Stage 2 */}
                     {[
@@ -1563,30 +1658,30 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                           {/* +9V -> LED -> 470R -> Collector C */}
                           <path
                             d={`M ${pinC} 34 L ${pinC} ${padY}`}
-                            stroke="#ff6b5a"
+                            stroke="#fb923c"
                             strokeWidth="4"
                             opacity={on ? 0.95 : 0.22}
                             fill="none"
-                            className={on ? 'flow-active' : ''}
+                            className={on ? 'flow-pulse-load' : ''}
                             markerMid={on ? 'url(#arrRed)' : undefined}
                           />
                           {/* +9V -> R_B -> Base B */}
                           <path
                             d={`M ${pinB} 34 L ${pinB} ${padY}`}
-                            stroke="#5ab0ff"
+                            stroke="#38bdf8"
                             strokeWidth="2.8"
                             opacity={on ? 0.95 : 0.25}
                             fill="none"
-                            className={on ? 'flow-active' : ''}
+                            className={on ? 'flow-pulse-ctrl' : ''}
                           />
                           {/* Emitter E -> 0V */}
                           <path
                             d={`M ${pinE} ${padY} L ${pinE} 268`}
-                            stroke="#6fe39a"
+                            stroke="#2dd4bf"
                             strokeWidth="4"
                             opacity={on ? 0.95 : 0.22}
                             fill="none"
-                            className={on ? 'flow-active' : ''}
+                            className={on ? 'flow-pulse-return' : ''}
                           />
 
                           {/* LED */}
@@ -1643,30 +1738,31 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                 return (
                   <g>
                     {/* Top +9V Rail */}
-                    <path d="M 48 38 L 468 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
-                    <path d="M 48 38 L 468 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    <path d="M 48 38 L 468 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    <path d="M 48 38 L 468 38" stroke="#fbbf24" strokeWidth="3.8" fill="none" className="flow-pulse-high" />
                     <text x="54" y="31" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       +9 V
                     </text>
 
                     {/* Bottom 0V Rail */}
-                    <path d="M 48 268 L 468 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
-                    <text x="54" y="263" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    <path d="M 48 268 L 468 268" stroke="#2dd4bf" strokeWidth="4.5" opacity="0.32" fill="none" />
+                    <path d="M 48 268 L 468 268" stroke="#2dd4bf" strokeWidth="3.4" fill="none" className="flow-pulse-return" />
+                    <text x="54" y="263" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       0 V (−)
                     </text>
 
                     {/* Q1 (NPN) Emitter E -> 0V */}
                     <path
                       d={`M ${q1X - 26} ${padY} L ${q1X - 26} 268`}
-                      stroke="#6fe39a"
+                      stroke="#2dd4bf"
                       strokeWidth="4"
-                      className={pulse ? 'flow-active' : ''}
+                      className={pulse ? 'flow-pulse-return' : ''}
                       opacity={pulse ? 0.95 : 0.3}
                       fill="none"
                     />
 
                     {/* Timing resistor R from +9V -> Q1 Base B */}
-                    <path d={`M ${q1X} 38 L ${q1X} ${padY}`} stroke="#5ab0ff" strokeWidth="3" className="flow-active" fill="none" />
+                    <path d={`M ${q1X} 38 L ${q1X} ${padY}`} stroke="#38bdf8" strokeWidth="3.2" className="flow-pulse-ctrl" fill="none" />
                     <rect x={q1X - 18} y="72" width="36" height="22" rx="4" fill="#e7d6ac" stroke="#78350f" />
                     <text x={q1X} y="87" textAnchor="middle" fill="#1c1917" fontSize="9" fontFamily="monospace" fontWeight="700">
                       {params.oscSpeedR.toFixed(0)}k
@@ -1675,22 +1771,20 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     {/* Direct coupling Q1 Collector C -> Q2 PNP Base B */}
                     <path
                       d={`M ${q1X + 26} ${padY} L ${q1X + 26} 226 L ${q2X} 226 L ${q2X} ${padY}`}
-                      stroke="#ff6b5a"
-                      strokeWidth="3.5"
-                      className={pulse ? 'flow-active' : ''}
+                      stroke="#fb923c"
+                      strokeWidth="3.6"
+                      className={pulse ? 'flow-pulse-load' : ''}
                       opacity={pulse ? 0.95 : 0.35}
                       fill="none"
                     />
-                    <text x="246" y="220" textAnchor="middle" fill="#fca5a5" fontSize="8.2" fontFamily="monospace">
-                      Q1(C) → Q2(B)
-                    </text>
+                    <BjtVoltageNodeBadge x={246} y={214} text={`C1:${pulse ? '8.3V' : '9.0V'}`} tone={pulse ? 'load' : 'high'} />
 
                     {/* Q2 (PNP) Emitter E connected directly to +9V Rail! */}
                     <path
                       d={`M ${q2X - 26} 38 L ${q2X - 26} ${padY}`}
-                      stroke="#ffd24a"
+                      stroke="#fbbf24"
                       strokeWidth="4"
-                      className={pulse ? 'flow-active' : ''}
+                      className={pulse ? 'flow-pulse-high' : ''}
                       opacity={pulse ? 0.95 : 0.35}
                       fill="none"
                     />
@@ -1698,17 +1792,17 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     {/* Q2 (PNP) Collector C -> Speaker 8 Ohm -> 0V (cleanly in/out of speaker) */}
                     <path
                       d={`M ${q2X + 26} ${padY} L ${q2X + 26} 226 L 398 226 L 398 148 L 416 148`}
-                      stroke="#ff6b5a"
+                      stroke="#fb923c"
                       strokeWidth="4"
-                      className={pulse ? 'flow-active' : ''}
+                      className={pulse ? 'flow-pulse-load' : ''}
                       opacity={pulse ? 0.95 : 0.35}
                       fill="none"
                     />
                     <path
                       d="M 444 176 L 444 268"
-                      stroke="#6fe39a"
+                      stroke="#2dd4bf"
                       strokeWidth="4"
-                      className={pulse ? 'flow-active' : ''}
+                      className={pulse ? 'flow-pulse-return' : ''}
                       opacity={pulse ? 0.95 : 0.35}
                       fill="none"
                     />
@@ -1717,8 +1811,8 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     <path
                       d={`M ${q2X + 26} 250 L ${q1X} 250 L ${q1X} ${padY}`}
                       stroke="#38bdf8"
-                      strokeWidth="3"
-                      className="flow-active"
+                      strokeWidth="3.2"
+                      className="flow-pulse-ctrl"
                       fill="none"
                     />
                     <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
@@ -1777,61 +1871,75 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                   <g>
                     {/* Solar +18V -> Relay Common */}
                     <path d="M 118 76 L 195 76" stroke="#ffd24a" strokeWidth="5" opacity="0.35" fill="none" />
-                    <path d="M 118 76 L 195 76" stroke="#ffd24a" strokeWidth="4" fill="none" className="flow-active" />
+                    <path d="M 118 76 L 195 76" stroke="#fbbf24" strokeWidth="4.2" fill="none" className="flow-pulse-high" />
+                    <BjtVoltageNodeBadge
+                      x={156}
+                      y={58}
+                      text={`+${(8 + ((params.sunIntensity ?? 90) / 100) * 10).toFixed(1)}V`}
+                      tone="high"
+                    />
 
                     {/* Relay NO -> Dummy Load 100R 5W (active when solarDiverted) */}
-                    <path d="M 278 62 L 368 62" stroke="#ff9a3c" strokeWidth="5" opacity="0.32" fill="none" />
+                    <path d="M 278 62 L 368 62" stroke="#fb923c" strokeWidth="5" opacity="0.32" fill="none" />
                     {q1On && params.dummyLoadEnabled && (
-                      <path d="M 278 62 L 368 62" stroke="#ff9a3c" strokeWidth="4" fill="none" className="flow-active" />
+                      <path d="M 278 62 L 368 62" stroke="#fb923c" strokeWidth="4.2" fill="none" className="flow-pulse-load" />
                     )}
+                    <BjtVoltageNodeBadge x={324} y={46} text={q1On ? 'DUMP 18V' : '0.0V'} tone={q1On ? 'load' : 'idle'} />
 
                     {/* Relay NC -> 12V Battery + (active when charging) */}
-                    <path d="M 278 104 L 410 104 L 410 162" stroke="#6fe39a" strokeWidth="5" opacity="0.32" fill="none" />
+                    <path d="M 278 104 L 410 104 L 410 162" stroke="#2dd4bf" strokeWidth="5" opacity="0.32" fill="none" />
                     {!q1On && (
                       <path
                         d="M 278 104 L 410 104 L 410 162"
-                        stroke="#6fe39a"
-                        strokeWidth="4"
+                        stroke="#2dd4bf"
+                        strokeWidth="4.2"
                         fill="none"
-                        className="flow-active"
+                        className="flow-pulse-return"
                         markerMid="url(#arrGreen)"
                       />
                     )}
+                    <BjtVoltageNodeBadge
+                      x={338}
+                      y={122}
+                      text={`BAT:${params.battVoltage.toFixed(1)}V`}
+                      tone={!q1On ? 'return' : 'idle'}
+                    />
 
                     {/* Sense Line: Battery + -> Zener/1k Pot -> Q1 Base (B = 225, 214) */}
                     <path
                       d={`M 358 192 L 316 192 L 316 246 L ${qX} 246 L ${qX} ${padY}`}
-                      stroke="#5ab0ff"
+                      stroke="#38bdf8"
                       strokeWidth="3.5"
                       opacity={q1On ? 0.95 : 0.45}
                       fill="none"
-                      className={q1On ? 'flow-active' : ''}
+                      className={q1On ? 'flow-pulse-ctrl' : ''}
                     />
                     <rect x="285" y="237" width="38" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
                     <text x="304" y="249" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontFamily="monospace" fontWeight="700">
                       1k
                     </text>
+                    <BjtVoltageNodeBadge x={314} y={214} text={`B:${q1On ? '0.65V' : '0.45V'}`} tone={q1On ? 'ctrl' : 'idle'} />
 
                     {/* Q1 Collector (C = 251, 214) -> Relay Coil Bottom */}
                     <path
                       d={`M 251 120 L 251 135 L 280 135 L 280 ${padY} L 251 ${padY}`}
-                      stroke="#ff6b5a"
+                      stroke="#fb923c"
                       strokeWidth="3.8"
                       opacity={q1On ? 0.95 : 0.25}
                       fill="none"
-                      className={q1On ? 'flow-active' : ''}
+                      className={q1On ? 'flow-pulse-load' : ''}
                     />
 
                     {/* Bottom 0V (-) Ground Rail connecting Solar -, Q1(E), Battery - */}
                     <path
                       d={`M 80 144 L 80 268 L 412 268 L 412 226 M ${qX - 26} ${padY} L ${qX - 26} 268`}
-                      stroke="#6fe39a"
+                      stroke="#2dd4bf"
                       strokeWidth="4"
                       opacity={q1On ? 0.85 : 0.38}
                       fill="none"
-                      className={q1On ? 'flow-active' : ''}
+                      className={q1On ? 'flow-pulse-return' : ''}
                     />
-                    <text x="128" y="262" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    <text x="128" y="262" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       0 V (−)
                     </text>
 
@@ -1949,31 +2057,31 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                 return (
                   <g>
                     {/* Top +V Variable Supply Rail */}
-                    <path d="M 94 40 L 435 40" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    <path d="M 94 40 L 435 40" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
                     {sim.conducting && (
-                      <path d="M 94 40 L 435 40" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                      <path d="M 94 40 L 435 40" stroke="#fbbf24" strokeWidth="3.8" fill="none" className="flow-pulse-high" />
                     )}
                     <text x="115" y="32" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       +V = {params.supplyV.toFixed(1)} V
                     </text>
 
                     {/* Bottom 0V Rail */}
-                    <path d="M 64 110 L 64 268 L 329 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    <path d="M 64 110 L 64 268 L 329 268" stroke="#2dd4bf" strokeWidth="4.5" opacity="0.32" fill="none" />
                     {sim.conducting && (
-                      <path d="M 64 110 L 64 268 L 329 268" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />
+                      <path d="M 64 110 L 64 268 L 329 268" stroke="#2dd4bf" strokeWidth="3.8" fill="none" className="flow-pulse-return" />
                     )}
-                    <text x="88" y="262" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    <text x="88" y="262" fill="#99f6e4" fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       0 V (−)
                     </text>
 
                     {/* +V -> 1/2/3 Series LEDs -> Q2 Collector (C = 381) */}
                     <path
                       d={`M 381 40 L 381 ${padY}`}
-                      stroke="#ff6b5a"
+                      stroke="#fb923c"
                       strokeWidth="4"
                       opacity={sim.conducting ? 0.95 : 0.25}
                       fill="none"
-                      className={sim.conducting ? 'flow-active' : ''}
+                      className={sim.conducting ? 'flow-pulse-load' : ''}
                       markerMid={sim.conducting ? 'url(#arrRed)' : undefined}
                     />
                     {Array.from({ length: params.ledSeriesCount ?? 1 }).map((_, li) => {
@@ -1996,24 +2104,32 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     <text x="415" y="76" fill="#fff" fontSize="10" fontWeight="700">
                       {(params.ledSeriesCount ?? 1) > 1 ? `${params.ledSeriesCount}×LED` : 'LED'}
                     </text>
+                    <BjtVoltageNodeBadge
+                      x={435}
+                      y={128}
+                      text={`C2:${(vSense + sim.vce).toFixed(1)}V`}
+                      tone={sim.conducting ? 'load' : 'high'}
+                    />
 
                     {/* +V -> 10k Bias Resistor -> Q2 Base (B = 355) & Q1 Collector (C = 191) */}
-                    <path d={`M 260 40 L 260 226 L ${q2X} 226 L ${q2X} ${padY}`} stroke="#5ab0ff" strokeWidth="3" className="flow-active" fill="none" />
-                    <path d={`M 260 226 L ${q1X + 26} 226 L ${q1X + 26} ${padY}`} stroke="#ff6b5a" strokeWidth="3" className="flow-active" fill="none" />
+                    <path d={`M 260 40 L 260 226 L ${q2X} 226 L ${q2X} ${padY}`} stroke="#38bdf8" strokeWidth="3.2" className="flow-pulse-ctrl" fill="none" />
+                    <path d={`M 260 226 L ${q1X + 26} 226 L ${q1X + 26} ${padY}`} stroke="#fb923c" strokeWidth="3.2" className="flow-pulse-load" fill="none" />
                     <rect x="242" y="72" width="36" height="22" rx="4" fill="#e7d6ac" stroke="#78350f" />
                     <text x="260" y="87" textAnchor="middle" fill="#1c1917" fontSize="9" fontFamily="monospace" fontWeight="700">
                       10k
                     </text>
+                    <BjtVoltageNodeBadge x={260} y={210} text={`B2:${(vSense + 0.6).toFixed(2)}V`} tone="ctrl" />
 
                     {/* Q2 Emitter (E = 329) -> R_sense -> 0V AND feedback node to Q1 Base (B = 165) */}
-                    <path d={`M ${q2X - 26} ${padY} L ${q2X - 26} 268`} stroke="#6fe39a" strokeWidth="4" className="flow-active" fill="none" />
+                    <path d={`M ${q2X - 26} ${padY} L ${q2X - 26} 268`} stroke="#2dd4bf" strokeWidth="4" className="flow-pulse-return" fill="none" />
                     <path
                       d={`M ${q2X - 26} 244 L ${q1X} 244 L ${q1X} ${padY}`}
-                      stroke="#5ab0ff"
-                      strokeWidth="3"
-                      className="flow-active"
+                      stroke="#38bdf8"
+                      strokeWidth="3.2"
+                      className="flow-pulse-ctrl"
                       fill="none"
                     />
+                    <BjtVoltageNodeBadge x={232} y={244} text={`Vs:${vSense.toFixed(2)}V`} tone="ctrl" />
                     <g data-comp="RSENSE" onClick={() => setInspected('RSENSE')} className="cursor-pointer">
                       <rect x="303" y="246" width="52" height="19" rx="4" fill="#d97706" stroke="#fde68a" />
                       <text x="329" y="259" textAnchor="middle" fill="#fff" fontSize="9" fontFamily="monospace" fontWeight="700">
@@ -2022,7 +2138,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     </g>
 
                     {/* Q1 Emitter (E = 139) -> 0V */}
-                    <path d={`M ${q1X - 26} ${padY} L ${q1X - 26} 268`} stroke="#6fe39a" strokeWidth="3.5" className="flow-active" fill="none" />
+                    <path d={`M ${q1X - 26} ${padY} L ${q1X - 26} 268`} stroke="#2dd4bf" strokeWidth="3.6" className="flow-pulse-return" fill="none" />
 
                     {/* Variable Battery Block */}
                     <rect x="38" y="38" width="58" height="72" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
@@ -2132,31 +2248,37 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     {sim.conducting && (
                       <path
                         d="M 96 62 L 420 62"
-                        stroke="#ffd24a"
-                        strokeWidth="3.8"
+                        stroke={isReversedBat ? '#fb7185' : '#fbbf24'}
+                        strokeWidth="4"
                         fill="none"
-                        className={revFlow ? 'flow-active-rev' : 'flow-active'}
+                        className={isReversedBat ? 'flow-pulse-danger' : revFlow ? 'flow-pulse-high-rev' : 'flow-pulse-high'}
                       />
                     )}
-                    <text x="112" y="52" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                    <text x="112" y="52" fill={isReversedBat ? '#fda4af' : '#fde047'} fontSize="9.5" fontFamily="monospace" fontWeight="700">
                       {isReversedBat ? '− Rail' : `+${batLabel} Rail`}
                     </text>
 
                     {/* Collector / Output Load Path */}
                     <path
                       d={`M 420 62 L 420 218 L ${pinC} 218 L ${pinC} ${padY}`}
-                      stroke="#ff6b5a"
+                      stroke="#fb923c"
                       strokeWidth="4.5"
-                      opacity="0.32"
+                      opacity="0.3"
                       fill="none"
                     />
-                    {sim.conducting && (
+                    {(sim.conducting || (isCoilScene && params.openCircuitFault)) && (
                       <path
                         d={`M 420 62 L 420 218 L ${pinC} 218 L ${pinC} ${padY}`}
-                        stroke="#ff6b5a"
-                        strokeWidth="3.8"
+                        stroke={isCoilScene && params.openCircuitFault ? '#fb7185' : '#fb923c'}
+                        strokeWidth="4"
                         fill="none"
-                        className={revFlow ? 'flow-active-rev' : 'flow-active'}
+                        className={
+                          isCoilScene && params.openCircuitFault
+                            ? 'flow-pulse-danger'
+                            : revFlow
+                            ? 'flow-pulse-load-rev'
+                            : 'flow-pulse-load'
+                        }
                         markerMid="url(#arrRed)"
                       />
                     )}
@@ -2164,18 +2286,18 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     {/* Emitter Path */}
                     <path
                       d={`M ${pinE} ${padY} L ${pinE} 264 L 66 264 L 66 112`}
-                      stroke="#6fe39a"
+                      stroke="#2dd4bf"
                       strokeWidth="4.5"
-                      opacity="0.32"
+                      opacity="0.3"
                       fill="none"
                     />
                     {sim.conducting && (
                       <path
                         d={`M ${pinE} ${padY} L ${pinE} 264 L 66 264 L 66 112`}
-                        stroke="#6fe39a"
-                        strokeWidth="3.8"
+                        stroke="#2dd4bf"
+                        strokeWidth="4"
                         fill="none"
-                        className={revFlow ? 'flow-active-rev' : 'flow-active'}
+                        className={revFlow ? 'flow-pulse-return-rev' : 'flow-pulse-return'}
                         markerMid="url(#arrGreen)"
                       />
                     )}
@@ -2183,30 +2305,58 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                     {/* Base Path */}
                     <path
                       d={`M 70 228 L ${pinB} 228 L ${pinB} ${padY}`}
-                      stroke="#5ab0ff"
+                      stroke="#38bdf8"
                       strokeWidth="4"
-                      opacity="0.32"
+                      opacity="0.3"
                       fill="none"
                     />
                     {(sim.conducting || sim.ibUA > 0.1) && (
                       <path
                         d={`M 70 228 L ${pinB} 228 L ${pinB} ${padY}`}
-                        stroke="#5ab0ff"
-                        strokeWidth="3.2"
+                        stroke="#38bdf8"
+                        strokeWidth="3.5"
                         fill="none"
-                        className={revFlow ? 'flow-active-rev' : 'flow-active'}
+                        className={revFlow ? 'flow-pulse-ctrl-rev' : 'flow-pulse-ctrl'}
                         markerEnd="url(#arrBlue)"
                       />
                     )}
+
+                    {/* Live Potential Badges on Base, Collector, and Emitter Connections */}
+                    <BjtVoltageNodeBadge
+                      x={226}
+                      y={214}
+                      text={`B:${(isReversedBat ? 9 - sim.vbe : sim.vbe).toFixed(2)}V`}
+                      tone={sim.conducting || sim.ibUA > 0.1 ? 'ctrl' : 'idle'}
+                    />
+                    <BjtVoltageNodeBadge
+                      x={368}
+                      y={204}
+                      text={`C:${sim.vc.toFixed(1)}V`}
+                      tone={
+                        (isCoilScene && params.openCircuitFault) || sim.vc > 20
+                          ? 'danger'
+                          : sim.conducting
+                          ? 'load'
+                          : 'high'
+                      }
+                    />
+                    <BjtVoltageNodeBadge
+                      x={188}
+                      y={252}
+                      text={`E:${isReversedBat ? '9.0V' : '0.0V'}`}
+                      tone={sim.conducting ? 'return' : 'idle'}
+                    />
 
                     {/* Extra Joule Thief / Bike Flasher feedback coil link C -> B */}
                     {isCoilScene && (
                       <path
                         d={`M 326 62 L 326 104 L ${pinB} 104 L ${pinB} ${padY}`}
                         stroke="#fbbf24"
-                        strokeWidth="2.6"
-                        strokeDasharray="5 4"
+                        strokeWidth="2.8"
                         fill="none"
+                        className={
+                          params.openCircuitFault ? 'flow-pulse-danger' : sim.conducting ? 'flow-pulse-high' : ''
+                        }
                         opacity={sim.conducting || params.openCircuitFault ? 0.95 : 0.35}
                       />
                     )}
@@ -2217,8 +2367,8 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                         <path
                           d={`M ${pinC} ${padY} L 355 ${padY} L 355 62`}
                           stroke="#38bdf8"
-                          strokeWidth="2.8"
-                          className={params.pumpPhase === 'B' ? 'flow-active' : ''}
+                          strokeWidth="3"
+                          className={params.pumpPhase === 'B' ? 'flow-pulse-ctrl' : ''}
                           opacity={params.pumpPhase === 'B' ? 0.95 : 0.35}
                           fill="none"
                         />
@@ -2561,6 +2711,33 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
             <span>{tr(lang, 'Glisser pour pivoter · Cliquer un composant', 'اسحب للتدوير · انقر أي مكوّن', 'Drag to rotate · Click any part')}</span>
           </div>
         </div>
+      </div>
+
+      {/* Compact Color-Pulse & Potential Level Legend */}
+      <div
+        className="rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-100/80 dark:bg-stone-900/50 px-3 py-1.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] font-mono-num text-stone-700 dark:text-stone-300"
+        dir="ltr"
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-3 h-1 rounded-full bg-amber-500" />
+          <span>▲ {tr(lang, '+V Alimentation', '+V تغذية', '+V Rail')}</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-3 h-1 rounded-full bg-sky-500" />
+          <span>● {tr(lang, 'B Signal Base', 'B إشارة القاعدة', 'B Base Signal')}</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-3 h-1 rounded-full bg-orange-500" />
+          <span>▸ {tr(lang, 'C Charge (I_C)', 'C حِمل (I_C)', 'C Load (I_C)')}</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-3 h-1 rounded-full bg-teal-500" />
+          <span>▼ {tr(lang, '0V Retour Émetteur', '0V عودة الباعث', '0V Return')}</span>
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-3 h-1 rounded-full bg-rose-500" />
+          <span>⚡ {tr(lang, 'Pic / Défaut', 'ذروة / عطل', 'Spike / Fault')}</span>
+        </span>
       </div>
 
       {/* Component Inspector Strip */}

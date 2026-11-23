@@ -97,6 +97,138 @@
   animation: currentFlowReverse var(--flow-speed, 0.9s) linear infinite;
 }
 
+/* Color-pulsing current & voltage-level trace animations */
+@keyframes pulseHighRail {
+  0%, 100% {
+    stroke: #f59e0b;
+    filter: drop-shadow(0 0 1.5px rgba(245, 158, 11, 0.45));
+  }
+  50% {
+    stroke: #fef08a;
+    filter: drop-shadow(0 0 5px rgba(254, 240, 138, 0.95));
+  }
+}
+
+@keyframes pulseCtrlSignal {
+  0%, 100% {
+    stroke: #0ea5e9;
+    filter: drop-shadow(0 0 1.5px rgba(14, 165, 233, 0.45));
+  }
+  50% {
+    stroke: #bae6fd;
+    filter: drop-shadow(0 0 5px rgba(186, 230, 253, 0.95));
+  }
+}
+
+@keyframes pulseLoadSwitch {
+  0%, 100% {
+    stroke: #f97316;
+    filter: drop-shadow(0 0 1.5px rgba(249, 115, 22, 0.45));
+  }
+  50% {
+    stroke: #fed7aa;
+    filter: drop-shadow(0 0 5px rgba(254, 215, 170, 0.95));
+  }
+}
+
+@keyframes pulseReturnGnd {
+  0%, 100% {
+    stroke: #14b8a6;
+    filter: drop-shadow(0 0 1.5px rgba(20, 184, 166, 0.4));
+  }
+  50% {
+    stroke: #99f6e4;
+    filter: drop-shadow(0 0 4.5px rgba(153, 246, 228, 0.9));
+  }
+}
+
+@keyframes pulseDangerSpike {
+  0%, 100% {
+    stroke: #e11d48;
+    filter: drop-shadow(0 0 2px rgba(225, 29, 72, 0.55));
+  }
+  50% {
+    stroke: #fecdd3;
+    filter: drop-shadow(0 0 6.5px rgba(254, 205, 211, 1));
+  }
+}
+
+.flow-pulse-high {
+  stroke-dasharray: 6 6;
+  animation:
+    currentFlow var(--flow-speed, 0.9s) linear infinite,
+    pulseHighRail 1.25s ease-in-out infinite;
+}
+
+.flow-pulse-high-rev {
+  stroke-dasharray: 6 6;
+  animation:
+    currentFlowReverse var(--flow-speed, 0.9s) linear infinite,
+    pulseHighRail 1.25s ease-in-out infinite;
+}
+
+.flow-pulse-ctrl {
+  stroke-dasharray: 5 5;
+  animation:
+    currentFlow var(--flow-speed, 0.9s) linear infinite,
+    pulseCtrlSignal 1.15s ease-in-out infinite;
+}
+
+.flow-pulse-ctrl-rev {
+  stroke-dasharray: 5 5;
+  animation:
+    currentFlowReverse var(--flow-speed, 0.9s) linear infinite,
+    pulseCtrlSignal 1.15s ease-in-out infinite;
+}
+
+.flow-pulse-load {
+  stroke-dasharray: 6 6;
+  animation:
+    currentFlow var(--flow-speed, 0.9s) linear infinite,
+    pulseLoadSwitch 1.05s ease-in-out infinite;
+}
+
+.flow-pulse-load-rev {
+  stroke-dasharray: 6 6;
+  animation:
+    currentFlowReverse var(--flow-speed, 0.9s) linear infinite,
+    pulseLoadSwitch 1.05s ease-in-out infinite;
+}
+
+.flow-pulse-return {
+  stroke-dasharray: 6 6;
+  animation:
+    currentFlow var(--flow-speed, 0.9s) linear infinite,
+    pulseReturnGnd 1.3s ease-in-out infinite;
+}
+
+.flow-pulse-return-rev {
+  stroke-dasharray: 6 6;
+  animation:
+    currentFlowReverse var(--flow-speed, 0.9s) linear infinite,
+    pulseReturnGnd 1.3s ease-in-out infinite;
+}
+
+.flow-pulse-danger {
+  stroke-dasharray: 5 4;
+  animation:
+    currentFlow 0.55s linear infinite,
+    pulseDangerSpike 0.65s ease-in-out infinite;
+}
+
+/* Static live potential breathing (when voltage is present at ~0 DC current, e.g. MOSFET Gate) */
+.potential-pulse-ctrl {
+  animation: pulseCtrlSignal 1.6s ease-in-out infinite;
+}
+
+.potential-pulse-high {
+  animation: pulseHighRail 1.6s ease-in-out infinite;
+}
+
+.potential-pulse-danger {
+  animation: pulseDangerSpike 0.8s ease-in-out infinite;
+}
+
 @keyframes fanSpin {
   from {
     transform: rotate(0deg);
@@ -136,7 +268,20 @@
 @media (prefers-reduced-motion: reduce) {
   .flow-active,
   .flow-active-rev,
+  .flow-pulse-high,
+  .flow-pulse-high-rev,
+  .flow-pulse-ctrl,
+  .flow-pulse-ctrl-rev,
+  .flow-pulse-load,
+  .flow-pulse-load-rev,
+  .flow-pulse-return,
+  .flow-pulse-return-rev,
+  .flow-pulse-danger,
+  .potential-pulse-ctrl,
+  .potential-pulse-high,
+  .potential-pulse-danger,
   .fan-spin,
+  .fan-spin-rev,
   .speaker-pulse {
     animation: none !important;
   }

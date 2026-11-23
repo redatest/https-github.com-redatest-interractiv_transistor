@@ -5,6 +5,8 @@ import { CHAPTERS } from './data/chapters';
 import { CATALOG_CIRCUITS } from './data/catalog';
 import { MOSFET_CHAPTERS } from './data/mosfetChapters';
 import { MOSFET_CATALOG } from './data/mosfetCatalog';
+import { KIRCHHOFF_CHAPTERS } from './data/kirchhoffChapters';
+import { KIRCHHOFF_CATALOG } from './data/kirchhoffCatalog';
 import { TrackSelectorView } from './components/TrackSelectorView';
 import { ChapterWorkspace } from './components/ChapterWorkspace';
 import { CatalogView } from './components/CatalogView';
@@ -13,11 +15,15 @@ import { ToolsView } from './components/ToolsView';
 import { MosfetWorkspace } from './components/MosfetWorkspace';
 import { MosfetCatalogLabView } from './components/MosfetCatalogLabView';
 import { MosfetToolsView } from './components/MosfetToolsView';
+import { KirchhoffWorkspace } from './components/KirchhoffWorkspace';
+import { KirchhoffCatalogLabView } from './components/KirchhoffCatalogLabView';
+import { KirchhoffToolsView } from './components/KirchhoffToolsView';
 
 export default function App() {
   const [track, setTrack] = useState<CourseTrack>('home');
   const [bjtView, setBjtView] = useState<AppView>('chapters');
   const [mosfetView, setMosfetView] = useState<AppView>('chapters');
+  const [kirchhoffView, setKirchhoffView] = useState<AppView>('chapters');
   const [lang, setLang] = useState<Lang>('fr');
   const [dark, setDark] = useState<boolean>(false);
   const [teacherMode, setTeacherMode] = useState<boolean>(false);
@@ -33,6 +39,11 @@ export default function App() {
   const [activeMosfetExampleId, setActiveMosfetExampleId] = useState<string | undefined>(undefined);
   const [activeMosfetCatalogId, setActiveMosfetCatalogId] = useState<string>(MOSFET_CATALOG[0].id);
 
+  // Kirchhoff selection states
+  const [activeKirchhoffChapterId, setActiveKirchhoffChapterId] = useState<number>(1);
+  const [activeKirchhoffExampleId, setActiveKirchhoffExampleId] = useState<string | undefined>(undefined);
+  const [activeKirchhoffCatalogId, setActiveKirchhoffCatalogId] = useState<string>(KIRCHHOFF_CATALOG[0].id);
+
   useEffect(() => {
     const root = document.documentElement;
     root.lang = lang;
@@ -40,16 +51,18 @@ export default function App() {
     root.classList.toggle('dark', dark);
   }, [lang, dark]);
 
-  const activeView = track === 'mosfet' ? mosfetView : bjtView;
+  const activeView = track === 'mosfet' ? mosfetView : track === 'kirchhoff' ? kirchhoffView : bjtView;
   const setActiveView = (nextView: AppView) => {
     if (track === 'mosfet') {
       setMosfetView(nextView);
+    } else if (track === 'kirchhoff') {
+      setKirchhoffView(nextView);
     } else {
       setBjtView(nextView);
     }
   };
 
-  const handleEnterTrack = (target: 'bjt' | 'mosfet') => {
+  const handleEnterTrack = (target: 'bjt' | 'mosfet' | 'kirchhoff') => {
     setTrack(target);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -64,6 +77,11 @@ export default function App() {
     setActiveMosfetExampleId(exampleId);
   };
 
+  const handleSelectKirchhoffChapter = (chapterId: number, exampleId?: string) => {
+    setActiveKirchhoffChapterId(chapterId);
+    setActiveKirchhoffExampleId(exampleId);
+  };
+
   const handleLaunchBjtCatalogSim = (circuitId: string) => {
     setTeacherMode(false);
     setActiveCatalogId(circuitId);
@@ -75,6 +93,13 @@ export default function App() {
     setTeacherMode(false);
     setActiveMosfetCatalogId(circuitId);
     setMosfetView('catalog-sim');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleLaunchKirchhoffCatalogSim = (circuitId: string) => {
+    setTeacherMode(false);
+    setActiveKirchhoffCatalogId(circuitId);
+    setKirchhoffView('catalog-sim');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -93,7 +118,12 @@ export default function App() {
     });
   };
 
-  const currentCatalogCount = track === 'mosfet' ? MOSFET_CATALOG.length : CATALOG_CIRCUITS.length;
+  const currentCatalogCount =
+    track === 'mosfet'
+      ? MOSFET_CATALOG.length
+      : track === 'kirchhoff'
+      ? KIRCHHOFF_CATALOG.length
+      : CATALOG_CIRCUITS.length;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fbf8f2] dark:bg-stone-950 text-stone-900 dark:text-stone-100 transition-colors">
@@ -106,7 +136,15 @@ export default function App() {
             onClick={() => setTrack('home')}
             className="flex items-center gap-2.5 text-start cursor-pointer whitespace-nowrap shrink-0"
           >
-            <BookOpen className={`w-5 h-5 shrink-0 ${track === 'mosfet' ? 'text-sky-600 dark:text-sky-400' : 'text-amber-600 dark:text-amber-400'}`} />
+            <BookOpen
+              className={`w-5 h-5 shrink-0 ${
+                track === 'mosfet'
+                  ? 'text-sky-600 dark:text-sky-400'
+                  : track === 'kirchhoff'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-amber-600 dark:text-amber-400'
+              }`}
+            />
             <span className="font-bold text-base tracking-tight text-stone-900 dark:text-stone-50">
               {tr(lang, 'Le Livre Vivant', 'الكتاب الحيّ', 'The Living Book')}
             </span>
@@ -142,6 +180,13 @@ export default function App() {
                 >
                   {tr(lang, 'Cours MOSFET', 'مسار MOSFET', 'MOSFET Course')}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => handleEnterTrack('kirchhoff')}
+                  className="py-2 text-sm font-medium border-b-2 border-transparent text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  {tr(lang, 'Mailles & Nœuds', 'الحلقات والعقد', 'Kirchhoff KVL/KCL')}
+                </button>
               </>
             ) : (
               <>
@@ -152,6 +197,8 @@ export default function App() {
                     activeView === 'chapters'
                       ? track === 'mosfet'
                         ? 'border-sky-600 text-stone-950 dark:border-sky-400 dark:text-stone-50'
+                        : track === 'kirchhoff'
+                        ? 'border-emerald-600 text-stone-950 dark:border-emerald-400 dark:text-stone-50'
                         : 'border-amber-600 text-stone-950 dark:border-amber-400 dark:text-stone-50'
                       : 'border-transparent text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100'
                   }`}
@@ -168,6 +215,8 @@ export default function App() {
                     activeView === 'catalog' || activeView === 'catalog-sim'
                       ? track === 'mosfet'
                         ? 'border-sky-600 text-stone-950 dark:border-sky-400 dark:text-stone-50'
+                        : track === 'kirchhoff'
+                        ? 'border-emerald-600 text-stone-950 dark:border-emerald-400 dark:text-stone-50'
                         : 'border-amber-600 text-stone-950 dark:border-amber-400 dark:text-stone-50'
                       : 'border-transparent text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100'
                   }`}
@@ -189,6 +238,8 @@ export default function App() {
                     activeView === 'tools'
                       ? track === 'mosfet'
                         ? 'border-sky-600 text-stone-950 dark:border-sky-400 dark:text-stone-50'
+                        : track === 'kirchhoff'
+                        ? 'border-emerald-600 text-stone-950 dark:border-emerald-400 dark:text-stone-50'
                         : 'border-amber-600 text-stone-950 dark:border-amber-400 dark:text-stone-50'
                       : 'border-transparent text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100'
                   }`}
@@ -226,27 +277,37 @@ export default function App() {
             <span>
               {track === 'mosfet'
                 ? tr(lang, 'Filière MOSFET · Effet de Champ & Puissance', 'مسار MOSFET · تأثير المجال والقدرة', 'MOSFET Track · Field-Effect & Power')
+                : track === 'kirchhoff'
+                ? tr(lang, 'Filière Kirchhoff · Loi des Mailles (KVL) & des Nœuds (KCL)', 'مسار كيرشوف · قانونا الحلقات والعقد', 'Kirchhoff Track · KVL & KCL Circuit Analysis')
                 : track === 'bjt'
                 ? `1-100 Transistor Circuits · Colin Mitchell · ${tr(lang, 'BJT Bipolaire', 'BJT ثنائي القطب', 'BJT Bipolar')}`
-                : tr(lang, 'Électronique Interactive · BJT & MOSFET', 'الإلكترونيات التفاعلية · BJT و MOSFET', 'Interactive Electronics · BJT & MOSFET')}
+                : tr(lang, 'Électronique Interactive · BJT, MOSFET & Kirchhoff', 'الإلكترونيات التفاعلية · BJT و MOSFET وكيرشوف', 'Interactive Electronics · BJT, MOSFET & Kirchhoff')}
             </span>
 
             {track !== 'home' && (
               <div className="flex items-center rounded-md border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 p-0.5">
-                {(['bjt', 'mosfet'] as const).map((t) => (
+                {(
+                  [
+                    { id: 'bjt', label: 'BJT' },
+                    { id: 'mosfet', label: 'MOSFET' },
+                    { id: 'kirchhoff', label: tr(lang, 'Mailles & Nœuds', 'كيرشوف', 'Kirchhoff') },
+                  ] as const
+                ).map((t) => (
                   <button
-                    key={t}
+                    key={t.id}
                     type="button"
-                    onClick={() => setTrack(t)}
+                    onClick={() => setTrack(t.id)}
                     className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase cursor-pointer transition-colors ${
-                      track === t
-                        ? t === 'mosfet'
+                      track === t.id
+                        ? t.id === 'mosfet'
                           ? 'bg-sky-600 text-white'
+                          : t.id === 'kirchhoff'
+                          ? 'bg-emerald-700 text-white'
                           : 'bg-amber-600 text-white'
                         : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
                     }`}
                   >
-                    {t}
+                    {t.label}
                   </button>
                 ))}
               </div>
@@ -313,6 +374,8 @@ export default function App() {
             bjtCatalogCount={CATALOG_CIRCUITS.length}
             mosfetChapterCount={MOSFET_CHAPTERS.length}
             mosfetCatalogCount={MOSFET_CATALOG.length}
+            kirchhoffChapterCount={KIRCHHOFF_CHAPTERS.length}
+            kirchhoffCatalogCount={KIRCHHOFF_CATALOG.length}
             onSelectTrack={handleEnterTrack}
           />
         )}
@@ -396,6 +459,46 @@ export default function App() {
             {mosfetView === 'tools' && <MosfetToolsView lang={lang} />}
           </>
         )}
+
+        {track === 'kirchhoff' && (
+          <>
+            {kirchhoffView === 'chapters' && (
+              <KirchhoffWorkspace
+                chapters={KIRCHHOFF_CHAPTERS}
+                activeChapterId={activeKirchhoffChapterId}
+                activeExampleId={activeKirchhoffExampleId}
+                onSelectChapter={handleSelectKirchhoffChapter}
+                lang={lang}
+                teacherMode={teacherMode}
+                muted={muted}
+                onToggleMute={() => setMuted((m) => !m)}
+              />
+            )}
+
+            {kirchhoffView === 'catalog' && (
+              <CatalogView
+                circuits={KIRCHHOFF_CATALOG}
+                lang={lang}
+                onLaunchCatalogSim={handleLaunchKirchhoffCatalogSim}
+                track="kirchhoff"
+              />
+            )}
+
+            {kirchhoffView === 'catalog-sim' && (
+              <KirchhoffCatalogLabView
+                circuits={KIRCHHOFF_CATALOG}
+                activeCircuitId={activeKirchhoffCatalogId}
+                onSelectCircuit={setActiveKirchhoffCatalogId}
+                onBackToCatalog={() => setKirchhoffView('catalog')}
+                lang={lang}
+                muted={muted}
+                onToggleMute={() => setMuted((m) => !m)}
+              />
+            )}
+
+            {kirchhoffView === 'tools' && <KirchhoffToolsView lang={lang} />}
+          </>
+        )}
       </main>
 
       {/* Minimal Academic Footer */}
@@ -408,6 +511,13 @@ export default function App() {
                   'Cours interactif MOSFET : grille isolée, R_DS(on), CMOS, Boost & Pont en H',
                   'دورة MOSFET التفاعلية: البوابة المعزولة، R_DS(on)، CMOS، Boost وجسر H',
                   'Interactive MOSFET Course: Insulated Gate, R_DS(on), CMOS, Boost & H-Bridge'
+                )
+              : track === 'kirchhoff'
+              ? tr(
+                  lang,
+                  'Cours interactif Kirchhoff : loi des mailles (KVL), loi des nœuds (KCL), Millman & pont de Wheatstone',
+                  'دورة كيرشوف التفاعلية: قانون الحلقات (KVL) وقانون العقد (KCL) وميلمان وجسر ويتستون',
+                  'Interactive Kirchhoff Course: KVL Loops, KCL Nodes, Millman & Wheatstone Bridge'
                 )
               : tr(
                   lang,
@@ -424,11 +534,18 @@ export default function App() {
                   `${MOSFET_CHAPTERS.length} فصول · ${MOSFET_CATALOG.length} دارة تطبيقية · فاحص وحاسبة الحرارة`,
                   `${MOSFET_CHAPTERS.length} chapters · ${MOSFET_CATALOG.length} MOSFET circuits · Gate Tester & Thermal Calc`
                 )
+              : track === 'kirchhoff'
+              ? tr(
+                  lang,
+                  `${KIRCHHOFF_CHAPTERS.length} chapitres · ${KIRCHHOFF_CATALOG.length} montages Kirchhoff · Résolveur & Défi`,
+                  `${KIRCHHOFF_CHAPTERS.length} فصول · ${KIRCHHOFF_CATALOG.length} دارة كيرشوف · حلّال وتمارين`,
+                  `${KIRCHHOFF_CHAPTERS.length} chapters · ${KIRCHHOFF_CATALOG.length} Kirchhoff circuits · Solver & Quiz`
+                )
               : tr(
                   lang,
-                  `${CHAPTERS.length} chapitres · ${CATALOG_CIRCUITS.length} montages BJT · ${MOSFET_CHAPTERS.length} chapitres MOSFET`,
-                  `${CHAPTERS.length} فصول BJT · ${CATALOG_CIRCUITS.length} دارة · ${MOSFET_CHAPTERS.length} فصول MOSFET`,
-                  `${CHAPTERS.length} BJT chapters · ${CATALOG_CIRCUITS.length} circuits · ${MOSFET_CHAPTERS.length} MOSFET chapters`
+                  `${CHAPTERS.length} chapitres BJT · ${MOSFET_CHAPTERS.length} chapitres MOSFET · ${KIRCHHOFF_CHAPTERS.length} chapitres Kirchhoff`,
+                  `${CHAPTERS.length} فصول BJT · ${MOSFET_CHAPTERS.length} فصول MOSFET · ${KIRCHHOFF_CHAPTERS.length} فصول كيرشوف`,
+                  `${CHAPTERS.length} BJT · ${MOSFET_CHAPTERS.length} MOSFET · ${KIRCHHOFF_CHAPTERS.length} Kirchhoff chapters`
                 )}
           </span>
         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, BookOpen, Cpu } from 'lucide-react';
+import { ArrowRight, BookOpen, Cpu, GitFork } from 'lucide-react';
 import { Lang, tr } from '../types';
 
 interface Props {
@@ -8,7 +8,9 @@ interface Props {
   bjtCatalogCount: number;
   mosfetChapterCount: number;
   mosfetCatalogCount: number;
-  onSelectTrack: (track: 'bjt' | 'mosfet') => void;
+  kirchhoffChapterCount: number;
+  kirchhoffCatalogCount: number;
+  onSelectTrack: (track: 'bjt' | 'mosfet' | 'kirchhoff') => void;
 }
 
 export const TrackSelectorView: React.FC<Props> = ({
@@ -17,6 +19,8 @@ export const TrackSelectorView: React.FC<Props> = ({
   bjtCatalogCount,
   mosfetChapterCount,
   mosfetCatalogCount,
+  kirchhoffChapterCount,
+  kirchhoffCatalogCount,
   onSelectTrack,
 }) => {
   return (
@@ -34,23 +38,23 @@ export const TrackSelectorView: React.FC<Props> = ({
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-stone-900 dark:text-stone-50 mt-2 leading-tight">
           {tr(
             lang,
-            'Choisissez votre filière d’apprentissage des transistors',
-            'اختر مسارك لتعلّم الترانزستورات',
-            'Choose Your Transistor Learning Track'
+            'Choisissez votre filière d’apprentissage en électronique',
+            'اختر مسارك لتعلّم الإلكترونيات',
+            'Choose Your Electronics Learning Track'
           )}
         </h1>
         <p className="text-sm sm:text-base text-stone-600 dark:text-stone-300 mt-3 leading-relaxed">
           {tr(
             lang,
-            'Explorez la physique concrète des composants avec platine PCB 3D, schémas normalisés avec oscilloscope en direct, analogie hydraulique, catalogue de montages réels et outils de diagnostic au multimètre.',
-            'تعلّم فيزياء الترانزستور عملياً عبر لوحة PCB ثلاثية الأبعاد، ومخططات مع راسم إشارة حيّ، وتشبيه مائي، ودليل دارات حقيقية، وأدوات الفحص بالأفوميتر.',
-            'Explore component physics through 3D PCBs, live IEEE schematics & oscilloscopes, hydraulic valve analogies, real circuit catalogs, and multimeter lab tools.'
+            'Explorez la physique concrète des circuits et composants avec platine PCB 3D, schémas normalisés, analogie hydraulique, catalogue de montages réels et outils de diagnostic.',
+            'تعلّم فيزياء الدارات والمكوّنات عملياً عبر لوحة PCB ثلاثية الأبعاد، ومخططات قياسية، وتشبيه مائي، ودليل دارات حقيقية، وأدوات الفحص.',
+            'Explore circuit physics through 3D PCBs, IEEE schematics, hydraulic analogies, real circuit catalogs, and interactive lab tools.'
           )}
         </p>
       </section>
 
-      {/* Two Primary Track Cards */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Three Primary Track Cards */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* TRACK 1: BJT */}
         <article className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/75 overflow-hidden flex flex-col justify-between transition-colors hover:border-amber-500/60">
           <div>
@@ -216,12 +220,89 @@ export const TrackSelectorView: React.FC<Props> = ({
             </button>
           </div>
         </article>
+        {/* TRACK 3: KIRCHHOFF (MAILLES & NOEUDS) */}
+        <article className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/75 overflow-hidden flex flex-col justify-between transition-colors hover:border-emerald-500/60">
+          <div>
+            <div className="workbench-mat border-b border-stone-800/50 p-5 flex items-center justify-between gap-4">
+              <div className="text-stone-100">
+                <div className="text-xs font-mono-num text-emerald-300">
+                  {tr(lang, 'FILIÈRE 03 · KIRCHHOFF', 'المسار 03 · كيرشوف', 'TRACK 03 · KIRCHHOFF')}
+                </div>
+                <h2 className="text-2xl font-bold mt-1">
+                  {tr(lang, 'Mailles & Nœuds', 'الحلقات والعقد', 'Loops & Nodes')}
+                </h2>
+                <p className="text-xs font-mono-num text-stone-300 mt-1" dir="ltr">
+                  KVL ∑U = 0 · KCL ∑I = 0 · Millman
+                </p>
+              </div>
+
+              {/* Clean KVL/KCL Loop & Node Emblem */}
+              <svg viewBox="0 0 110 100" className="w-24 h-24 shrink-0" direction="ltr" aria-hidden="true">
+                <circle cx="55" cy="50" r="38" fill="#0f172a" stroke="#10b981" strokeWidth="2" />
+                <rect x="26" y="28" width="58" height="44" rx="4" fill="none" stroke="#34d399" strokeWidth="2.2" />
+                <line x1="55" y1="28" x2="55" y2="72" stroke="#38bdf8" strokeWidth="2.2" />
+                <circle cx="55" cy="28" r="4.5" fill="#fbbf24" />
+                <circle cx="55" cy="72" r="4.5" fill="#2dd4bf" />
+                <path d="M 35 55 A 7 7 0 1 1 46 55" fill="none" stroke="#fbbf24" strokeWidth="1.6" />
+                <path d="M 64 55 A 7 7 0 1 1 75 55" fill="none" stroke="#38bdf8" strokeWidth="1.6" />
+                <text x="55" y="20" textAnchor="middle" fontSize="8" fontFamily="monospace" fontWeight="700" fill="#fbbf24">Nœud A</text>
+              </svg>
+            </div>
+
+            <div className="p-5 flex flex-col gap-4">
+              <p className="text-sm text-stone-700 dark:text-stone-200 leading-relaxed">
+                {tr(
+                  lang,
+                  'Les lois fondamentales de l’analyse de circuits : loi des mailles (∑U = 0), pont diviseur en charge, sources en opposition, loi des nœuds (∑I = 0), piège des LEDs parallèles, théorème de Millman, pont de Wheatstone et pile r_i.',
+                  'قواعد تحليل الدارات الأساسية: قانون الحلقات (∑U = 0)، المقسّم المحمّل، قانون العقد (∑I = 0)، فخ مصابيح LED، ميلمان، جسر ويتستون والبطارية r_i.',
+                  'Core circuit laws: Kirchhoff’s Voltage Law (∑U = 0), loaded voltage dividers, opposing sources, KCL current conservation, parallel LED traps, Millman 2-mesh solver, Wheatstone bridge, and battery r_i.'
+                )}
+              </p>
+
+              <dl className="grid grid-cols-3 gap-3 pt-3 border-t border-stone-200 dark:border-stone-800 text-xs">
+                <div>
+                  <dt className="text-stone-500 dark:text-stone-400">{tr(lang, 'Lois', 'القوانين', 'Laws')}</dt>
+                  <dd className="font-mono-num font-bold text-stone-900 dark:text-stone-100 mt-0.5">
+                    KVL & KCL
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-stone-500 dark:text-stone-400">{tr(lang, 'Chapitres', 'الفصول', 'Chapters')}</dt>
+                  <dd className="font-mono-num font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                    {kirchhoffChapterCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-stone-500 dark:text-stone-400">{tr(lang, 'Montages', 'الدارات', 'Circuits')}</dt>
+                  <dd className="font-mono-num font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
+                    {kirchhoffCatalogCount}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <div className="p-5 pt-0 flex items-center justify-between gap-3">
+            <span className="text-xs font-mono-num text-stone-500 dark:text-stone-400">
+              {tr(lang, 'Résolveur 2 mailles · Défis', 'حلّال الحلقات · تمارين', '2-Mesh Solver · Puzzles')}
+            </span>
+            <button
+              type="button"
+              onClick={() => onSelectTrack('kirchhoff')}
+              className="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 transition-colors"
+            >
+              <GitFork className="w-4 h-4 shrink-0" />
+              <span>{tr(lang, 'Ouvrir Mailles & Nœuds', 'دخول مسار كيرشوف', 'Open Kirchhoff Track')}</span>
+              <ArrowRight className={`w-4 h-4 shrink-0 ${lang === 'ar' ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        </article>
       </section>
 
       {/* Concise Side-by-Side Comparison Strip */}
       <section className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-5">
         <h3 className="text-sm font-bold text-stone-900 dark:text-stone-50 mb-3">
-          {tr(lang, 'Repère comparatif rapide : BJT vs MOSFET', 'مقارنة سريعة: BJT مقابل MOSFET', 'Quick Reference: BJT vs MOSFET')}
+          {tr(lang, 'Repère comparatif rapide : BJT vs MOSFET vs Kirchhoff', 'مقارنة سريعة بين المسارات الثلاثة', 'Quick Reference: BJT vs MOSFET vs Kirchhoff')}
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-start border-collapse">
@@ -229,24 +310,28 @@ export const TrackSelectorView: React.FC<Props> = ({
               <tr className="border-b border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400">
                 <th className="py-2 pe-4 font-semibold">{tr(lang, 'Critère', 'المعيار', 'Criterion')}</th>
                 <th className="py-2 pe-4 font-semibold text-amber-700 dark:text-amber-400">BJT (BC547 / 2N3055)</th>
-                <th className="py-2 font-semibold text-sky-700 dark:text-sky-400">MOSFET (IRLZ44N / IRF9540)</th>
+                <th className="py-2 pe-4 font-semibold text-sky-700 dark:text-sky-400">MOSFET (IRLZ44N / IRF9540)</th>
+                <th className="py-2 font-semibold text-emerald-700 dark:text-emerald-400">Kirchhoff (KVL / KCL)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-200/70 dark:divide-stone-800/70 text-stone-700 dark:text-stone-300">
               <tr>
-                <td className="py-2.5 pe-4 font-medium">{tr(lang, 'Broches', 'الأقطاب', 'Pins')}</td>
+                <td className="py-2.5 pe-4 font-medium">{tr(lang, 'Objet', 'المحور', 'Focus')}</td>
                 <td className="py-2.5 pe-4 font-mono-num">Base (B) · Collector (C) · Emitter (E)</td>
-                <td className="py-2.5 font-mono-num">Gate (G) · Drain (D) · Source (S)</td>
+                <td className="py-2.5 pe-4 font-mono-num">Gate (G) · Drain (D) · Source (S)</td>
+                <td className="py-2.5 font-mono-num">{tr(lang, 'Mailles (∑U = 0) & Nœuds (∑I = 0)', 'الحلقات (∑U = 0) والعقد (∑I = 0)', 'Loops (∑U = 0) & Nodes (∑I = 0)')}</td>
               </tr>
               <tr>
-                <td className="py-2.5 pe-4 font-medium">{tr(lang, 'Mécanisme', 'آلية القيادة', 'Drive Mechanism')}</td>
+                <td className="py-2.5 pe-4 font-medium">{tr(lang, 'Mécanisme', 'المبدأ', 'Core Principle')}</td>
                 <td className="py-2.5 pe-4">{tr(lang, 'Courant permanent I_B (V_BE ≈ 0,7 V)', 'تيار مستمر بالقاعدة (V_BE ≈ 0.7V)', 'Continuous Base current I_B (V_BE ≈ 0.7 V)')}</td>
-                <td className="py-2.5">{tr(lang, 'Champ électrique sans courant (V_GS > V_th, I_G ≈ 0)', 'مجال كهربائي بالجهد بدون تيار مستمر (I_G ≈ 0)', 'Electric field voltage drive (V_GS > V_th, I_G ≈ 0)')}</td>
+                <td className="py-2.5 pe-4">{tr(lang, 'Champ électrique sans courant (V_GS > V_th, I_G ≈ 0)', 'مجال كهربائي بالجهد بدون تيار مستمر (I_G ≈ 0)', 'Electric field voltage drive (V_GS > V_th, I_G ≈ 0)')}</td>
+                <td className="py-2.5">{tr(lang, 'Conservation énergie (U) & charges (I)', 'حفظ الطاقة (الجهد) والشحنة (التيار)', 'Conservation of energy (V) & charge (I)')}</td>
               </tr>
               <tr>
-                <td className="py-2.5 pe-4 font-medium">{tr(lang, 'Pertes en commutation', 'الفقد في التبديل', 'Switch Losses')}</td>
-                <td className="py-2.5 pe-4 font-mono-num">V_CE(sat) ≈ 0,2 – 1,0 V</td>
-                <td className="py-2.5 font-mono-num">R_DS(on) ≈ 4 – 50 mΩ ({tr(lang, 'quasi nul', 'ضئيل جداً', 'ultra-low')})</td>
+                <td className="py-2.5 pe-4 font-medium">{tr(lang, 'Outils labo', 'أدوات المختبر', 'Lab Tools')}</td>
+                <td className="py-2.5 pe-4 font-mono-num">{tr(lang, 'Multimètre ×10/×10k · Code couleurs', 'فاحص BJT · ألوان المقاومات', 'BJT Tester · Color Code')}</td>
+                <td className="py-2.5 pe-4 font-mono-num">{tr(lang, 'Verrouillage G · Calcul thermique', 'فاحص قفل البوابة · حاسبة الحرارة', 'Gate Latch · Thermal Calc')}</td>
+                <td className="py-2.5 font-mono-num">{tr(lang, 'Résolveur Millman · Défi inconnue', 'حلّال ميلمان · تحدّي المجهول', 'Millman Solver · Unknown Quiz')}</td>
               </tr>
             </tbody>
           </table>

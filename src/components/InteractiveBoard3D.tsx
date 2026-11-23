@@ -440,12 +440,12 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
                 </feMerge>
               </filter>
               <linearGradient id="pcbGrad" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#0f6b46" />
-                <stop offset="100%" stopColor="#094a2f" />
+                <stop offset="0%" stopColor="#1d8f5d" />
+                <stop offset="100%" stopColor="#147147" />
               </linearGradient>
               <linearGradient id="pcbEdge" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#063420" />
-                <stop offset="100%" stopColor="#031d12" />
+                <stop offset="0%" stopColor="#0f5637" />
+                <stop offset="100%" stopColor="#0a3c26" />
               </linearGradient>
               {/* Directional current markers */}
               <marker id="arrRed" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
@@ -484,7 +484,7 @@ export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = 
             ].map(([cx, cy], idx) => (
               <g key={idx}>
                 <circle cx={cx} cy={cy} r="6.5" fill="#c8a951" />
-                <circle cx={cx} cy={cy} r="3.2" fill="#133b3f" />
+                <circle cx={cx} cy={cy} r="3.2" fill="#2a6b70" />
               </g>
             ))}
 

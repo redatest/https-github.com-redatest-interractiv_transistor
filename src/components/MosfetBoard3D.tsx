@@ -215,7 +215,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
               transform: 'rotateX(12deg) rotateZ(-1.5deg)',
               transformStyle: 'preserve-3d',
             }}
-            className="w-full max-w-[560px] rounded-xl bg-gradient-to-br from-[#0f4734] via-[#0c3b2c] to-[#08291f] border-2 border-[#1e6a4e] shadow-[0_22px_36px_rgba(0,0,0,0.55)] p-3"
+            className="w-full max-w-[560px] rounded-xl bg-gradient-to-br from-[#1f8a5e] via-[#18734d] to-[#125d3e] border-2 border-[#42b883] shadow-[0_20px_34px_rgba(0,0,0,0.42)] p-3"
           >
             <svg viewBox="0 0 520 265" className="w-full h-auto select-none" direction="ltr">
               <defs>
@@ -235,18 +235,18 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                 [14, 251],
                 [506, 251],
               ].map(([cx, cy], idx) => (
-                <circle key={idx} cx={cx} cy={cy} r="6" fill="#061913" stroke="#d4af37" strokeWidth="2" />
+                <circle key={idx} cx={cx} cy={cy} r="6" fill="#2a6b70" stroke="#e2c044" strokeWidth="2" />
               ))}
 
               {/* Copper Supply & Ground Rails */}
-              <path d="M 38 36 H 482" stroke={params.batteryReversed ? '#e11d48' : '#b87333'} strokeWidth="5" opacity="0.78" />
-              <path d="M 38 230 H 482" stroke="#64748b" strokeWidth="5" opacity="0.78" />
-              <text x="42" y="28" fill={params.batteryReversed ? '#fb7185' : '#fbbf24'} fontSize="10" fontFamily="monospace" fontWeight="700">
+              <path d="M 38 36 H 482" stroke={params.batteryReversed ? '#e11d48' : '#d4af37'} strokeWidth="5" opacity="0.88" />
+              <path d="M 38 230 H 482" stroke="#cbd5e1" strokeWidth="5" opacity="0.85" />
+              <text x="42" y="28" fill={params.batteryReversed ? '#fda4af' : '#fde047'} fontSize="10" fontFamily="monospace" fontWeight="700">
                 {params.batteryReversed
                   ? '−12V REVERSED!'
                   : `+${isCMOS ? '5.0' : isBoost ? params.boostVin.toFixed(1) : params.vdd.toFixed(0)}V RAIL`}
               </text>
-              <text x="42" y="247" fill="#94a3b8" fontSize="10" fontFamily="monospace" fontWeight="700">
+              <text x="42" y="247" fill="#e2e8f0" fontSize="10" fontFamily="monospace" fontWeight="700">
                 GND (0 V)
               </text>
 
@@ -269,7 +269,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   <g onClick={() => setSelectedPart('mosfet')} className="cursor-pointer">
                     <rect x="305" y="76" width="78" height="58" rx="4" fill="#18181b" stroke="#71717a" strokeWidth="2" />
                     <rect x="305" y="58" width="78" height="18" rx="2" fill="#cbd5e1" />
-                    <circle cx="344" cy="67" r="4.5" fill="#0f4734" />
+                    <circle cx="344" cy="67" r="4.5" fill="#18734d" />
                     <text x="344" y="108" textAnchor="middle" fill="#38bdf8" fontSize="11" fontFamily="monospace" fontWeight="700">
                       {params.testerType === 'pmos_gds' ? 'IRF9540' : 'IRLZ44N'}
                     </text>
@@ -639,7 +639,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   {/* Main TO-220 MOSFET with explicit copper solder pads & G / D / S pin names */}
                   <g onClick={() => setSelectedPart('mosfet')} className="cursor-pointer">
                     <rect x="236" y="76" width="76" height="22" rx="2" fill="#cbd5e1" stroke="#64748b" />
-                    <circle cx="274" cy="87" r="5" fill="#0f4734" />
+                    <circle cx="274" cy="87" r="5" fill="#18734d" />
                     <rect
                       x="236"
                       y="98"

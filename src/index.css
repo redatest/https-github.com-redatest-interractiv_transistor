@@ -35,12 +35,22 @@
 
 /* Workbench cutting mat background for 3D PCB stage */
 .workbench-mat {
-  background-color: #133b3f;
+  background-color: #2a6b70;
   background-image:
-    linear-gradient(rgba(218, 205, 138, 0.16) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(218, 205, 138, 0.16) 1px, transparent 1px),
-    linear-gradient(rgba(218, 205, 138, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(218, 205, 138, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(255, 250, 228, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 250, 228, 0.22) 1px, transparent 1px),
+    linear-gradient(rgba(255, 250, 228, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 250, 228, 0.09) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 10px 10px, 10px 10px;
+}
+
+.dark .workbench-mat {
+  background-color: #1e4e54;
+  background-image:
+    linear-gradient(rgba(232, 224, 185, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 224, 185, 0.16) 1px, transparent 1px),
+    linear-gradient(rgba(232, 224, 185, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 224, 185, 0.07) 1px, transparent 1px);
   background-size: 40px 40px, 40px 40px, 10px 10px, 10px 10px;
 }
 

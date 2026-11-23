@@ -1,0 +1,2506 @@
+import React, { useState, useRef } from 'react';
+import { RotateCcw, MousePointerClick } from 'lucide-react';
+import { Lang } from '../types';
+import { SimParams, SimReadout, getLieDetector2State, getLieDetector5TState } from '../utils/physics';
+
+interface Props {
+  params: SimParams;
+  sim: SimReadout;
+  lang: Lang;
+  wide?: boolean;
+  onQuickAction?: (action: string) => void;
+}
+
+interface InspectedPart {
+  name: string;
+  roleFr: string;
+  roleAr: string;
+}
+
+const PART_INFO: Record<string, InspectedPart> = {
+  Q1: {
+    name: 'BC547 / BC337 (NPN)',
+    roleFr: 'Transistor NPN : lorsque V_B dépasse V_E d’environ 0,6 V, un faible courant I_B commande un fort courant I_C de C vers E.',
+    roleAr: 'ترانزستور NPN: عندما يتجاوز جهد القاعدة V_B جهد الباعث V_E بنحو 0.6V، يفتح تياراً كبيراً من المجمّع C إلى الباعث E.',
+  },
+  Q2: {
+    name: 'Transistor de puissance / 2e étage (Q2)',
+    roleFr: 'Amplifie ou commute le courant issu du 1er étage : sa jonction Base-Émetteur suit le potentiel du transistor pilote.',
+    roleAr: 'الترانزستور الثاني Q2: يضخّم أو يعكس إشارة المرحلة الأولى، ويتبع جهده عند الأقطاب (C, B, E) حالة الترانزستور الأول.',
+  },
+  PNP: {
+    name: 'BC557 / BC327 (PNP)',
+    roleFr: 'Transistor PNP : l’émetteur E est au (+) ; lorsque V_B descend à ~0,6 V sous V_E, le courant sort de B et circule de E vers C.',
+    roleAr: 'ترانزستور PNP: يتصل الباعث E بالقطب الموجب (+)؛ وعندما ينخفض V_B بمقدار 0.6V عن V_E يمر التيار من E إلى C.',
+  },
+  R220: {
+    name: 'R2 · 220 Ω (Rouge-Rouge-Marron)',
+    roleFr: 'Résistance de limitation : protège la LED en plafonnant le courant à ~31,8 mA sous 9 V.',
+    roleAr: 'مقاومة حماية: تحدّ من تيار الـ LED عند ~31.8mA لتمنع احتراقه.',
+  },
+  RSENSE: {
+    name: 'R_sense (22 Ω / 47 Ω / 120 Ω)',
+    roleFr: 'Résistance de mesure en émetteur : dès que U = I_C × R_sense atteint 0,62 V, Q1 entre en conduction et bride Q2.',
+    roleAr: 'مقاومة استشعار التيار: ما إن يبلغ الجهد عبرها 0.62V حتى يفتح الترانزستور Q1 ليمنع زيادة تيار Q2.',
+  },
+  CAP: {
+    name: 'Condensateur électrolytique / couplage',
+    roleFr: 'Stocke la charge électrique et transmet les variations brusques de tension d’un collecteur C vers la base B voisine.',
+    roleAr: 'مكثف توقيت/ربط: يخزّن الشحنة وينقل التغيّرات اللحظية في الجهد من مجمّع C إلى قاعدة B المجاورة.',
+  },
+  LDR: {
+    name: 'LDR ORP12 (Photorésistance)',
+    roleFr: 'Sa résistance chute à la lumière (< 1 kΩ) et grimpe dans le noir (> 1 MΩ), modifiant la tension sur la base B.',
+    roleAr: 'مقاومة ضوئية: تنخفض مقاومتها في الضوء وترتفع جداً في الظلام، مما يغيّر الجهد عند القاعدة B.',
+  },
+  RELAY: {
+    name: 'Relais 12 V + Diode 1N4148',
+    roleFr: 'Bobine reliée entre +V et le collecteur C de Q1 ; la diode D1 absorbe la surtension inverse à l’ouverture.',
+    roleAr: 'مرحّل كهرومغناطيسي موصول بين الموجب والمجمّع C؛ الدايود D1 يمتص نبضة الارتداد عند فصل الملف.',
+  },
+  COIL: {
+    name: 'Bobine élévatrice bifilaire (Air / Ferrite)',
+    roleFr: 'L’enroulement L1 alimente le collecteur C et L2 réinjecte l’impulsion vers la base B pour générer des pics > 3,4 V.',
+    roleAr: 'ملف رفع الجهد المزدوج: L1 يغذي المجمّع C و L2 يغذّي القاعدة B عكسياً لتوليد نبضات تفوق 3.4V.',
+  },
+  SOLAR: {
+    name: 'Panneau solaire 18 V (28 cellules)',
+    roleFr: 'Chaque cellule fournit ~0,6 V (28 × 0,6 ≈ 16,8–18 V) pour dépasser les 13,7 V de la batterie.',
+    roleAr: 'لوح شمسي 18V (٢٨ خلية × 0.6V) ليتجاوز جهد البطارية (13.7V) أثناء الشحن.',
+  },
+  DUMMY: {
+    name: 'Charge factice 100 Ω / 5 W',
+    roleFr: 'Dissipateur thermique : absorbe P = 18²/100 = 3,24 W quand Q1 active le relais K1 à 13,7 V.',
+    roleAr: 'حِمل وهمي 100Ω: يبدّد قدرة 3.24W على شكل حرارة عندما يفعّل Q1 المرحّل عند 13.7V.',
+  },
+  FB4M7: {
+    name: 'Résistance de maintien 4,7 MΩ',
+    roleFr: 'Boucle de rétroaction positive : maintient le potentiel de la base B au-dessus de 0,6 V après le retrait du doigt.',
+    roleAr: 'مقاومة التغذية الراجعة 4M7: تحافظ على جهد القاعدة B فوق 0.6V بعد رفع الإصبع عن لوح ON.',
+  },
+  STATIC: {
+    name: 'Plaque / Antenne électrostatique (×8 000 000)',
+    roleFr: 'Capte des nano-ampères induits sans contact grâce à la cascade de 3 transistors (Q1→Q2→Q3).',
+    roleAr: 'لوح استشعار الشحنة الساكنة: يلتقط تيارات متناهية الصغر دون لمس بفضل تضخيم المراحل الثلاث.',
+  },
+  PWM: {
+    name: 'Oscillateur PWM (BC557 + BC338)',
+    roleFr: 'Envoie des impulsions 3 V à plein courant mais à largeur variable : le moteur garde tout son couple même à faible vitesse.',
+    roleAr: 'مذبذب نبضات PWM: يغذّي المحرك بنبضات سريعة كاملة الجهد (3V) ليحافظ على عزمه في السرعات البطيئة.',
+  },
+  METER: {
+    name: 'Multimètre Analogique (Ohmmètre ×10 / ×10k)',
+    roleFr: 'En position ohmmètre analogique, le cordon NOIR porte le (+) de la pile interne et le cordon ROUGE le (−).',
+    roleAr: 'في وضع الأوميتر التناظري يحمل السلك الأسود القطب الموجب (+) للبطارية الداخلية والسلك الأحمر القطب السالب (−).',
+  },
+  DOME: {
+    name: 'Plafonnier 12 V + BD679 Darlington',
+    roleFr: 'Alimenté en 12 V automobile : la charge du 47 µF ralentit progressivement le courant de base jusqu’à l’extinction douce.',
+    roleAr: 'مصباح سيارة 12V: شحن المكثف 47µF يخفض تيار القاعدة تدريجياً حتى ينطفئ المصباح بنعومة.',
+  },
+  VR1: {
+    name: 'Potentiomètre d’ajustement VR1 (47 kΩ)',
+    roleFr: 'Règle le seuil de déclenchement de TR1 : détermine à partir de quelle baisse de résistance cutanée le circuit bascule de TRUE à FALSE.',
+    roleAr: 'مقاوم معايرة VR1 (47kΩ): يضبط عتبة حساسية TR1 للانتقال من المصباح الأخضر TRUE إلى الأحمر FALSE.',
+  },
+  SPEAKER: {
+    name: 'Haut-parleur 8 Ω + R_fb 1 kΩ',
+    roleFr: 'Convertit les impulsions de commutation du BC557 en clics lents ou en tonalité continue dont la hauteur suit la conductivité de la peau.',
+    roleAr: 'سماعة 8Ω: تحوّل نبضات التبديل بين BC547 و BC557 إلى نقرات أو نغمة صوتية يتغير ترددها حسب مقاومة الجلد.',
+  },
+  TOUCH: {
+    name: 'Électrodes tactiles (Résistance de peau)',
+    roleFr: 'Vos doigts ferment le pont diviseur d’entrée : une peau moite ou pressée fort abaisse R_peau et injecte davantage de courant dans Q1.',
+    roleAr: 'أقطاب اللمس: يُغلق إصبعك الدارة؛ كلما زاد الضغط أو الرطوبة انخفضت المقاومة وزاد تيار القاعدة.',
+  },
+  POT100K: {
+    name: 'Potentiomètre 100 kΩ (Sensibilité émetteur Q1)',
+    roleFr: 'Divise la tension de sortie de l’émetteur Q1 avant d’attaquer la rampe Q2–Q5 : permet de calibrer la sensibilité selon l’humidité des doigts.',
+    roleAr: 'مقاوم متغير 100kΩ على باعث Q1: يضبط حساسية الدارة ويقسّم الجهد المتجه نحو مراحل الإضاءة Q2–Q5.',
+  },
+  DIODE1N4148: {
+    name: 'Paires de diodes 1N4148 (6 × 1N4148)',
+    roleFr: 'Chaque paire de 1N4148 en série introduit une chute de ~1,3 V vers l’étage suivant, décalant nettement l’allumage progressif de LED2, LED3 puis LED4.',
+    roleAr: 'دايودات 1N4148 على التوالي: يضيف كل زوج منها عتبة ~1.3V قبل الترانزستور التالي لتتدرج المصابيح واحداً تلو الآخر.',
+  },
+};
+
+interface TransistorProps {
+  cx: number;
+  topY: number;
+  label: string;
+  sub: string;
+  compId?: string;
+  active: boolean;
+  dimmed?: boolean;
+  vE?: string;
+  vB?: string;
+  vC?: string;
+  isPnp?: boolean;
+  compact?: boolean;
+  onSelect: (id: string) => void;
+}
+
+const TransistorTO92: React.FC<TransistorProps> = ({
+  cx,
+  topY,
+  label,
+  sub,
+  compId = 'Q1',
+  active,
+  dimmed = false,
+  vE,
+  vB,
+  vC,
+  isPnp = false,
+  compact = false,
+  onSelect,
+}) => {
+  const padY = topY + 74;
+  const dx = compact ? 18 : 26;
+  const bodyW = compact ? 58 : 84;
+  const pinE = cx - dx;
+  const pinB = cx;
+  const pinC = cx + dx;
+
+  return (
+    <g
+      data-comp={compId}
+      onClick={() => onSelect(compId)}
+      opacity={dimmed ? 0.28 : 1}
+      className="cursor-pointer"
+    >
+      {/* Conducting halo behind package */}
+      {active && !dimmed && (
+        <rect
+          x={cx - bodyW / 2 - 4}
+          y={topY - 4}
+          width={bodyW + 8}
+          height={58}
+          rx="10"
+          fill="none"
+          stroke={isPnp ? '#38bdf8' : '#fbbf24'}
+          strokeWidth="1.6"
+          strokeDasharray="4 3"
+          opacity="0.7"
+        />
+      )}
+
+      {/* Metallic legs extending to copper pads */}
+      <line x1={pinE} y1={topY + 48} x2={pinE} y2={padY} stroke="#cbd5e1" strokeWidth={compact ? 3.2 : 4} />
+      <line x1={pinB} y1={topY + 48} x2={pinB} y2={padY} stroke="#cbd5e1" strokeWidth={compact ? 3.2 : 4} />
+      <line x1={pinC} y1={topY + 48} x2={pinC} y2={padY} stroke="#cbd5e1" strokeWidth={compact ? 3.2 : 4} />
+
+      {/* Copper Solder Pads */}
+      <circle cx={pinE} cy={padY} r={compact ? 5.2 : 6.5} fill="#d4af37" stroke="#1c1917" strokeWidth="1.2" />
+      <circle cx={pinE} cy={padY} r="2.2" fill="#22c55e" />
+
+      <circle cx={pinB} cy={padY} r={compact ? 5.2 : 6.5} fill="#d4af37" stroke="#1c1917" strokeWidth="1.2" />
+      <circle cx={pinB} cy={padY} r="2.2" fill="#38bdf8" />
+
+      <circle cx={pinC} cy={padY} r={compact ? 5.2 : 6.5} fill="#d4af37" stroke="#1c1917" strokeWidth="1.2" />
+      <circle cx={pinC} cy={padY} r="2.2" fill="#ef4444" />
+
+      {/* Transistor Package Body */}
+      <rect
+        x={cx - bodyW / 2}
+        y={topY}
+        width={bodyW}
+        height={50}
+        rx="7"
+        fill="#18181b"
+        stroke={active ? '#fbbf24' : '#71717a'}
+        strokeWidth="2"
+      />
+      <text x={cx} y={topY + 21} textAnchor="middle" fill="#f4f4f5" fontSize={compact ? '10' : '11.5'} fontWeight="700" fontFamily="monospace">
+        {label}
+      </text>
+      <text x={cx} y={topY + 37} textAnchor="middle" fill="#a1a1aa" fontSize={compact ? '8' : '9'} fontFamily="monospace">
+        {sub}
+      </text>
+
+      {/* Pin E, B, C crisp badges right next to the metallic pins */}
+      <text x={pinE - (compact ? 6 : 9)} y={topY + 63} textAnchor="end" fill="#6fe39a" fontSize={compact ? '9' : '10.5'} fontWeight="700" fontFamily="monospace">
+        E
+      </text>
+      <text x={pinB + (compact ? 5 : 7)} y={topY + 63} textAnchor="start" fill="#5ab0ff" fontSize={compact ? '9' : '10.5'} fontWeight="700" fontFamily="monospace">
+        B
+      </text>
+      <text x={pinC + (compact ? 6 : 9)} y={topY + 63} textAnchor="start" fill="#ff7868" fontSize={compact ? '9' : '10.5'} fontWeight="700" fontFamily="monospace">
+        C
+      </text>
+
+      {/* Live pin voltage readouts cleanly positioned just below the pads */}
+      {vE && (
+        <text x={pinE} y={padY + 16} textAnchor="middle" fill="#86efac" fontSize="8.2" fontFamily="monospace" fontWeight="700">
+          {vE}
+        </text>
+      )}
+      {vB && (
+        <text x={pinB} y={padY + 16} textAnchor="middle" fill="#7dd3fc" fontSize="8.2" fontFamily="monospace" fontWeight="700">
+          {vB}
+        </text>
+      )}
+      {vC && (
+        <text x={pinC} y={padY + 16} textAnchor="middle" fill="#fca5a5" fontSize="8.2" fontFamily="monospace" fontWeight="700">
+          {vC}
+        </text>
+      )}
+    </g>
+  );
+};
+
+export const InteractiveBoard3D: React.FC<Props> = ({ params, sim, lang, wide = false, onQuickAction }) => {
+  const [rot, setRot] = useState({ rx: wide ? 22 : 28, rz: wide ? -4 : -6 });
+  const [inspected, setInspected] = useState<string>(params.catalogId === 'multimeter-tester' ? 'METER' : 'Q1');
+  const dragRef = useRef<{ active: boolean; x: number; y: number }>({ active: false, x: 0, y: 0 });
+
+  const flowSpeed = sim.conducting
+    ? `${Math.max(0.28, 1.3 - sim.brightness * 0.95).toFixed(2)}s`
+    : '1.2s';
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('button,[data-comp]')) return;
+    dragRef.current = { active: true, x: e.clientX, y: e.clientY };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current.active) return;
+    const dx = e.clientX - dragRef.current.x;
+    const dy = e.clientY - dragRef.current.y;
+    dragRef.current.x = e.clientX;
+    dragRef.current.y = e.clientY;
+    setRot((prev) => ({
+      rx: Math.max(8, Math.min(54, prev.rx - dy * 0.35)),
+      rz: Math.max(-35, Math.min(35, prev.rz + dx * 0.35)),
+    }));
+  };
+
+  const handlePointerUp = () => {
+    dragRef.current.active = false;
+  };
+
+  const cid = params.catalogId;
+  const part = PART_INFO[inspected] || PART_INFO.Q1;
+  const isNpn =
+    cid === 'simplest-tester' || (!cid && params.chapterId === 2)
+      ? params.transistorType === 'NPN'
+      : true;
+  const ledGlow = sim.conducting ? Math.max(0.25, sim.brightness) : 0;
+
+  const isDarlingtonScene =
+    cid === 'second-simplest' ||
+    cid === 'eight-million-gain' ||
+    cid === 'mains-hum' ||
+    (!cid && params.chapterId === 4);
+  const isChaserScene = cid === 'three-led-chaser' || (!cid && params.chapterId === 6 && params.exampleId === 'chaser-3led');
+  const isFlipFlopScene = cid === 'robot-man' || (!cid && params.chapterId === 6 && params.exampleId === 'flipflop-2led');
+  const isSirenScene = cid === 'ticking-bomb' || (!cid && params.chapterId === 6 && params.exampleId === 'siren-tick');
+  const isSolarScene = cid === 'solar-charger' || (!cid && params.chapterId === 8 && params.exampleId === 'solar-charger');
+  const isConstantCurrentScene =
+    cid === 'constant-current-source' || (!cid && params.chapterId === 8 && params.exampleId === 'constant-current');
+  const isMultimeterScene = cid === 'multimeter-tester';
+  const isLie1Scene = cid === 'lie-detector-1';
+  const isLie2Scene = cid === 'lie-detector-2';
+  const isLie4Scene = cid === 'lie-detector-4';
+  const isLie5TScene = cid === 'lie-detector-5t';
+  const isStaircaseDedicatedScene =
+    cid === 'lie-detector-staircase' || (!cid && params.chapterId === 1 && params.exampleId === 'staircase');
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* 3D Cutting Mat Stage */}
+      <div
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        className={`workbench-mat relative ${
+          wide ? 'h-[430px] sm:h-[530px]' : 'h-[350px] sm:h-[395px]'
+        } w-full rounded-xl overflow-hidden border border-stone-700/40 select-none cursor-grab active:cursor-grabbing flex items-center justify-center`}
+        style={{ perspective: wide ? '1250px' : '950px', touchAction: 'pan-y' }}
+      >
+        {/* Top HUD inside Mat */}
+        <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none" dir="ltr">
+          <div className="bg-black/65 backdrop-blur-xs text-stone-100 text-xs px-2.5 py-1 rounded-md font-mono-num flex items-center gap-2 pointer-events-auto">
+            <span className="text-sky-400">V_BE {sim.vbe.toFixed(2)}V</span>
+            <span className="text-stone-500">·</span>
+            <span className="text-rose-400">V_CE {sim.vce.toFixed(2)}V</span>
+            <span className="text-stone-500">·</span>
+            <span className="text-emerald-400">I_C {sim.icMA.toFixed(1)}mA</span>
+            {sim.freqHz && sim.freqHz > 0 && (
+              <>
+                <span className="text-stone-500">·</span>
+                <span className="text-amber-300">
+                  {sim.freqHz >= 1000 ? `${(sim.freqHz / 1000).toFixed(0)}kHz` : `${sim.freqHz.toFixed(1)}Hz`}
+                </span>
+              </>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setRot({ rx: wide ? 22 : 28, rz: wide ? -4 : -6 })}
+            className="pointer-events-auto bg-black/60 hover:bg-black/80 text-stone-100 text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+            title={lang === 'fr' ? 'Réinitialiser l’angle' : 'إعادة ضبط الزاوية'}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>{lang === 'fr' ? 'Vue 3D' : 'زاوية 3D'}</span>
+          </button>
+        </div>
+
+        {/* Tilted 3D PCB SVG */}
+        <div
+          className={`transition-transform duration-150 ease-out ${
+            wide ? 'w-[96%] max-w-[860px]' : 'w-[94%] max-w-[540px]'
+          }`}
+          style={{
+            transform: `rotateX(${rot.rx}deg) rotateZ(${rot.rz}deg)`,
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          <svg
+            viewBox="0 0 520 315"
+            className="w-full h-auto drop-shadow-[0_22px_26px_rgba(0,0,0,0.62)]"
+            direction="ltr"
+            style={{ '--flow-speed': flowSpeed } as React.CSSProperties}
+          >
+            <defs>
+              <filter id="ledGlow" x="-60%" y="-60%" width="220%" height="220%">
+                <feGaussianBlur stdDeviation="7" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <linearGradient id="pcbGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#0f6b46" />
+                <stop offset="100%" stopColor="#094a2f" />
+              </linearGradient>
+              <linearGradient id="pcbEdge" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#063420" />
+                <stop offset="100%" stopColor="#031d12" />
+              </linearGradient>
+              {/* Directional current markers */}
+              <marker id="arrRed" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#ff6b5a" />
+              </marker>
+              <marker id="arrBlue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#5ab0ff" />
+              </marker>
+              <marker id="arrGreen" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#6fe39a" />
+              </marker>
+              <marker id="arrGold" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#ffd24a" />
+              </marker>
+            </defs>
+
+            {/* PCB 3D thickness edge */}
+            <rect x="18" y="22" width="484" height="282" rx="10" fill="url(#pcbEdge)" />
+            {/* PCB Main Surface */}
+            <rect
+              x="18"
+              y="12"
+              width="484"
+              height="282"
+              rx="10"
+              fill="url(#pcbGrad)"
+              stroke="#d6be78"
+              strokeWidth="2.5"
+            />
+            {/* Corner mounting holes */}
+            {[
+              [33, 27],
+              [487, 27],
+              [33, 279],
+              [487, 279],
+            ].map(([cx, cy], idx) => (
+              <g key={idx}>
+                <circle cx={cx} cy={cy} r="6.5" fill="#c8a951" />
+                <circle cx={cx} cy={cy} r="3.2" fill="#133b3f" />
+              </g>
+            ))}
+
+            {/* Silkscreen Legend */}
+            <text x="50" y="287" fill="#d9f2e3" fontSize="8.5" fontFamily="monospace" opacity="0.88">
+              ● B (Base)  ● C (Collecteur)  ● E (Émetteur)
+            </text>
+            <text x="470" y="287" textAnchor="end" fill="#d9f2e3" fontSize="8.5" fontFamily="monospace" opacity="0.75">
+              LIVRE VIVANT · PCB 3D
+            </text>
+
+            {/* ================= CATALOG #24: ANALOG MULTIMETER TESTER ON 3D BENCH ================= */}
+            {isMultimeterScene ? (
+              (() => {
+                const defl = sim.meterDeflection ?? 0.02;
+                const needleDeg = -46 + defl * 92;
+                const bPin = params.blackPin ?? 2;
+                const rPin = params.redPin ?? 1;
+                const range = params.meterRange ?? 'x10';
+                const pinXs: Record<1 | 2 | 3, number> = { 1: 344, 2: 370, 3: 396 };
+                const bX = pinXs[bPin];
+                const rX = pinXs[rPin];
+                const mystery = params.mysteryType ?? 'npn_ebc';
+                const rev = Boolean(params.revealPins);
+                const labels: Record<1 | 2 | 3, string> =
+                  mystery === 'pnp_bce' ? { 1: 'B', 2: 'C', 3: 'E' } : { 1: 'E', 2: 'B', 3: 'C' };
+
+                return (
+                  <g>
+                    {/* Analog Ohmmeter Case on Left of PCB */}
+                    <g data-comp="METER" onClick={() => setInspected('METER')} className="cursor-pointer">
+                      <rect x="44" y="34" width="190" height="236" rx="12" fill="#1e293b" stroke="#64748b" strokeWidth="2.5" />
+                      <rect x="58" y="48" width="162" height="94" rx="7" fill="#fefce8" stroke="#ca8a04" strokeWidth="1.5" />
+                      <path d="M 74 122 A 68 68 0 0 1 204 122" fill="none" stroke="#1c1917" strokeWidth="2.2" />
+                      <text x="68" y="106" fill="#dc2626" fontSize="12" fontWeight="700">∞</text>
+                      <text x="139" y="64" textAnchor="middle" fill="#1c1917" fontSize="9.5" fontWeight="700" fontFamily="monospace">
+                        OHMMÈTRE ({range})
+                      </text>
+                      <text x="196" y="106" fill="#16a34a" fontSize="11" fontWeight="700" fontFamily="monospace">0Ω</text>
+                      <g transform={`translate(139, 134) rotate(${needleDeg})`} className="transition-transform duration-300 ease-out">
+                        <line x1="0" y1="0" x2="0" y2="-62" stroke="#dc2626" strokeWidth="2.8" strokeLinecap="round" />
+                        <circle cx="0" cy="0" r="5.5" fill="#0f172a" />
+                      </g>
+                      {/* Range Switch & Battery Polarity Legend */}
+                      <rect x="74" y="156" width="130" height="30" rx="5" fill="#0f172a" stroke="#475569" />
+                      <text x="139" y="175" textAnchor="middle" fill="#fbbf24" fontSize="10" fontWeight="700" fontFamily="monospace">
+                        CALIBRE {range.toUpperCase()}
+                      </text>
+                      <circle cx="94" cy="222" r="14" fill="#18181b" stroke="#e2e8f0" strokeWidth="2.5" />
+                      <text x="94" y="250" textAnchor="middle" fill="#e2e8f0" fontSize="9" fontWeight="700" fontFamily="monospace">
+                        NOIR (+)
+                      </text>
+                      <circle cx="184" cy="222" r="14" fill="#dc2626" stroke="#fecaca" strokeWidth="2.5" />
+                      <text x="184" y="250" textAnchor="middle" fill="#fca5a5" fontSize="9" fontWeight="700" fontFamily="monospace">
+                        ROUGE (−)
+                      </text>
+                    </g>
+
+                    {/* Unknown TO-92 Transistor Mounted on Right Test Socket */}
+                    <rect x="296" y="94" width="148" height="62" rx="8" fill="#18181b" stroke="#a1a1aa" strokeWidth="2" />
+                    <text x="370" y="122" textAnchor="middle" fill="#f4f4f5" fontSize="14" fontWeight="700" fontFamily="monospace">
+                      {rev ? (mystery === 'pnp_bce' ? 'PNP' : mystery === 'faulty' ? 'COURT-CIRCUIT' : 'NPN') : 'TRANSISTOR ???'}
+                    </text>
+                    <text x="370" y="141" textAnchor="middle" fill="#a1a1aa" fontSize="9" fontFamily="monospace">
+                      {rev ? 'Brochage révélé' : 'TO-92 Inconnu'}
+                    </text>
+
+                    {([1, 2, 3] as const).map((pin) => {
+                      const px = pinXs[pin];
+                      return (
+                        <g key={pin}>
+                          <line x1={px} y1="156" x2={px} y2="206" stroke="#cbd5e1" strokeWidth="4.5" />
+                          <circle cx={px} cy="206" r="7" fill="#d4af37" stroke="#1c1917" strokeWidth="1.2" />
+                          <text x={px} y="226" textAnchor="middle" fill="#fef08a" fontSize="10.5" fontWeight="700" fontFamily="monospace">
+                            {rev ? `${pin}:${labels[pin]}` : `P${pin}`}
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Test Lead Wires: Black (+) and Red (-) */}
+                    <path
+                      d={`M 94 222 L 94 270 L ${bX} 270 L ${bX} 206`}
+                      fill="none"
+                      stroke="#18181b"
+                      strokeWidth="5"
+                    />
+                    <path
+                      d={`M 94 222 L 94 270 L ${bX} 270 L ${bX} 206`}
+                      fill="none"
+                      stroke="#94a3b8"
+                      strokeWidth="2"
+                      strokeDasharray={sim.conducting ? '6 6' : undefined}
+                      className={sim.conducting ? 'flow-active' : ''}
+                    />
+                    <path
+                      d={`M 184 222 L 184 258 L ${rX} 258 L ${rX} 192`}
+                      fill="none"
+                      stroke="#dc2626"
+                      strokeWidth="4"
+                      className={sim.conducting ? 'flow-active' : ''}
+                    />
+
+                    {/* Probe Clips on Selected Pins */}
+                    <circle cx={bX} cy="206" r="9" fill="#0f172a" stroke="#fff" strokeWidth="2" />
+                    <circle cx={rX} cy="190" r="8.5" fill="#dc2626" stroke="#fecaca" strokeWidth="2" />
+
+                    {/* Optional Finger Bridge in x10k mode */}
+                    {range === 'x10k' && params.fingerCB && (
+                      <g>
+                        <rect x="316" y="42" width="112" height="32" rx="14" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
+                        <text x="372" y="62" textAnchor="middle" fill="#1c1917" fontSize="10" fontWeight="700">
+                          Doigt C–B actif
+                        </text>
+                        <path d="M 370 74 L 370 94" stroke="#eab308" strokeWidth="3" strokeDasharray="3 3" />
+                      </g>
+                    )}
+                  </g>
+                );
+              })()
+            ) : isLie1Scene ? (
+              /* ================= LIE DETECTOR-1 (p. 49): 3V NPN+PNP AUDIO OSCILLATOR ================= */
+              (() => {
+                const q1X = 185;
+                const q2X = 335;
+                const topY = 114;
+                const padY = topY + 74; // 188
+                const active = sim.conducting;
+                const pulse = active && params.oscPhase % 2 === 0;
+
+                return (
+                  <g>
+                    {/* Top +3V Rail */}
+                    <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    {active && <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />}
+                    <text x="104" y="31" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      +3 V
+                    </text>
+
+                    {/* Bottom 0V Rail */}
+                    <path d="M 56 108 L 56 268 L 468 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    {active && <path d="M 56 108 L 56 268 L 468 268" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />}
+                    <text x="72" y="262" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      0 V (−)
+                    </text>
+
+                    {/* Touch Pads -> 100k -> Q1 Base */}
+                    <path d="M 102 214 L 185 214 L 185 188" stroke="#5ab0ff" strokeWidth="3.2" opacity={active ? 0.95 : 0.35} fill="none" className={active ? 'flow-active' : ''} />
+                    <path d="M 185 214 L 185 268" stroke="#6fe39a" strokeWidth="2.5" opacity="0.35" fill="none" />
+                    <rect x="128" y="205" width="40" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                    <text x="148" y="217" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontFamily="monospace" fontWeight="700">
+                      100k
+                    </text>
+                    <rect x="167" y="232" width="36" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                    <text x="185" y="244" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontFamily="monospace" fontWeight="700">
+                      100k
+                    </text>
+
+                    {/* Q1(E) -> 0V */}
+                    <path d={`M ${q1X - 26} ${padY} L ${q1X - 26} 268`} stroke="#6fe39a" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+
+                    {/* Q1(C) -> 1k -> Q2(B) */}
+                    <path d={`M ${q1X + 26} ${padY} L ${q1X + 26} 226 L ${q2X} 226 L ${q2X} ${padY}`} stroke="#ff6b5a" strokeWidth="3.5" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+                    <rect x="242" y="217" width="36" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                    <text x="260" y="229" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontFamily="monospace" fontWeight="700">
+                      1k
+                    </text>
+
+                    {/* Q2(E) -> +3V */}
+                    <path d={`M ${q2X - 26} 38 L ${q2X - 26} ${padY}`} stroke="#ffd24a" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+
+                    {/* Q2(C) -> HP 8 Ohm -> 0V */}
+                    <path d={`M ${q2X + 26} ${padY} L ${q2X + 26} 226 L 404 226 L 404 148 L 422 148`} stroke="#ff6b5a" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+                    <path d="M 448 176 L 448 268" stroke="#6fe39a" strokeWidth="4" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+
+                    {/* Feedback Cap 10n from Q2(C) to Q1(B) */}
+                    <path d={`M ${q2X + 26} 250 L ${q1X} 250 L ${q1X} ${padY}`} stroke="#38bdf8" strokeWidth="3" opacity={active ? 0.95 : 0.3} fill="none" className={active ? 'flow-active' : ''} />
+                    <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
+                      <rect x="246" y="241" width="44" height="17" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
+                      <text x="268" y="253" textAnchor="middle" fill="#fff" fontSize="8.5" fontFamily="monospace" fontWeight="700">
+                        10n
+                      </text>
+                    </g>
+
+                    {/* Battery 3V */}
+                    <rect x="34" y="38" width="54" height="70" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
+                    <text x="61" y="67" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700" fontFamily="monospace">+ −</text>
+                    <text x="61" y="90" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">3V</text>
+
+                    {/* Touch Pads */}
+                    <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
+                      <rect x="64" y="186" width="40" height="44" rx="5" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
+                      <text x="84" y="206" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontWeight="700">PEAU</text>
+                      <text x="84" y="219" textAnchor="middle" fill="#1c1917" fontSize="7.5" fontFamily="monospace">≤300k</text>
+                    </g>
+
+                    {/* Speaker 8 Ohm */}
+                    <g data-comp="SPEAKER" onClick={() => setInspected('SPEAKER')} className="cursor-pointer">
+                      <circle cx="448" cy="148" r="28" fill="#27272a" stroke={active ? '#fbbf24' : '#a1a1aa'} strokeWidth="2.2" />
+                      <circle cx="448" cy="148" r={pulse ? 16 : 12} fill={active ? '#f59e0b' : '#52525b'} className="transition-all duration-100" />
+                      <text x="448" y="112" textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="700">
+                        {active ? `${Math.round(sim.freqHz ?? 0)} Hz` : 'HP 8 Ω'}
+                      </text>
+                    </g>
+
+                    <TransistorTO92 cx={q1X} topY={topY} label="Q1 NPN" sub="BC547" compId="Q1" active={active} vE="0V" vB={active ? '0.6V' : '0.2V'} vC={active ? '2.4V' : '3.0V'} onSelect={setInspected} />
+                    <TransistorTO92 cx={q2X} topY={topY} label="Q2 PNP" sub="BC557" compId="PNP" isPnp active={active} vE="3V" vB={active ? '2.4V' : '3.0V'} vC={active ? '2.7V' : '0V'} onSelect={setInspected} />
+                  </g>
+                );
+              })()
+            ) : isLie2Scene ? (
+              /* ================= LIE DETECTOR-2 (p. 49): 3xBC547 TRUE/FALSE WITH VR1 47k ================= */
+              (() => {
+                const { vr1Pct, vr1KOhm, isFalse } = getLieDetector2State(params);
+                const trXs = [174, 294, 414];
+                const topY = 122;
+                const padY = topY + 74; // 196
+                const wiperAngle = -115 + (vr1Pct / 100) * 230;
+                const tr2On = !isFalse;
+                const tr3On = isFalse;
+
+                return (
+                  <g>
+                    {/* Top +9V Rail */}
+                    <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    <path d="M 88 38 L 468 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    <text x="102" y="30" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">+9 V</text>
+
+                    {/* Bottom 0V Ground Rail */}
+                    <path d="M 54 106 L 54 270 L 468 270" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    <path d="M 54 106 L 54 270 L 468 270" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    <text x="72" y="264" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">0 V (−)</text>
+
+                    {/* Battery 9V */}
+                    <rect x="34" y="38" width="54" height="68" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
+                    <text x="61" y="66" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700" fontFamily="monospace">+ −</text>
+                    <text x="61" y="88" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">9V</text>
+
+                    {/* Touch Pads + VR1 (47k) + C1 (100nF) -> TR1(B) */}
+                    <path d={`M 88 216 L ${trXs[0]} 216 L ${trXs[0]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={isFalse ? 0.95 : 0.45} fill="none" className={isFalse ? 'flow-active' : ''} />
+                    <path d={`M 110 154 L ${trXs[0]} 154 L ${trXs[0]} ${padY}`} stroke="#38bdf8" strokeWidth="2.5" opacity="0.5" fill="none" />
+                    <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
+                      <rect x="64" y="196" width="42" height="38" rx="5" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
+                      <text x="85" y="219" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontWeight="700">SONDES</text>
+                    </g>
+                    <g data-comp="VR1" onClick={() => setInspected('VR1')} className="cursor-pointer">
+                      <circle cx="84" cy="148" r="20" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="2" />
+                      <g transform={`translate(84, 148) rotate(${wiperAngle})`}>
+                        <line x1="0" y1="0" x2="0" y2="-13" stroke="#fde047" strokeWidth="3" strokeLinecap="round" />
+                      </g>
+                      <text x="84" y="177" textAnchor="middle" fill="#bae6fd" fontSize="8" fontFamily="monospace" fontWeight="700">
+                        VR1 {vr1KOhm.toFixed(0)}k
+                      </text>
+                    </g>
+                    <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
+                      <rect x="112" y="224" width="38" height="16" rx="3" fill="#1e40af" stroke="#93c5fd" />
+                      <text x="131" y="235" textAnchor="middle" fill="#fff" fontSize="8" fontFamily="monospace">100n</text>
+                    </g>
+
+                    {/* TR1(C) -> TR2(B) invert link + R3 10k pull-up */}
+                    <path d={`M ${trXs[0] + 26} 38 L ${trXs[0] + 26} ${padY}`} stroke="#ff6b5a" strokeWidth="3" opacity={isFalse ? 0.95 : 0.35} fill="none" className={isFalse ? 'flow-active' : ''} />
+                    <rect x={trXs[0] + 15} y="82" width="22" height="20" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                    <text x={trXs[0] + 26} y="95" textAnchor="middle" fill="#1c1917" fontSize="8" fontFamily="monospace" fontWeight="700">10k</text>
+                    <path d={`M ${trXs[0] + 26} ${padY} L ${trXs[0] + 26} 232 L ${trXs[1]} 232 L ${trXs[1]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={tr2On ? 0.95 : 0.25} fill="none" className={tr2On ? 'flow-active' : ''} />
+
+                    {/* TR2(C) -> L1 TRUE (Green) & 47k link to TR3(B) */}
+                    <path d={`M ${trXs[1] + 26} 38 L ${trXs[1] + 26} ${padY}`} stroke="#22c55e" strokeWidth="3.8" opacity={tr2On ? 0.95 : 0.22} fill="none" className={tr2On ? 'flow-active' : ''} />
+                    <path d={`M ${trXs[1] + 26} ${padY} L ${trXs[1] + 26} 232 L ${trXs[2]} 232 L ${trXs[2]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={tr3On ? 0.95 : 0.25} fill="none" className={tr3On ? 'flow-active' : ''} />
+                    <rect x="336" y="223" width="34" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                    <text x="353" y="235" textAnchor="middle" fill="#1c1917" fontSize="8" fontFamily="monospace" fontWeight="700">47k</text>
+
+                    {/* TR3(C) -> L2 FALSE (Red) */}
+                    <path d={`M ${trXs[2] + 26} 38 L ${trXs[2] + 26} ${padY}`} stroke="#ef4444" strokeWidth="3.8" opacity={tr3On ? 0.95 : 0.22} fill="none" className={tr3On ? 'flow-active' : ''} />
+
+                    {/* All 3 Emitters -> 0V */}
+                    {trXs.map((cx, i) => {
+                      const on = i === 0 ? isFalse : i === 1 ? tr2On : tr3On;
+                      return (
+                        <path
+                          key={`e-${i}`}
+                          d={`M ${cx - 26} ${padY} L ${cx - 26} 270`}
+                          stroke="#6fe39a"
+                          strokeWidth="3.8"
+                          opacity={on ? 0.95 : 0.25}
+                          fill="none"
+                          className={on ? 'flow-active' : ''}
+                        />
+                      );
+                    })}
+
+                    {/* L1 TRUE (Green) & L2 FALSE (Red) */}
+                    <circle cx={trXs[1] + 26} cy="64" r="16" fill={tr2On ? '#22c55e' : '#052e16'} stroke="#86efac" strokeWidth="2.4" filter={tr2On ? 'url(#ledGlow)' : undefined} />
+                    <text x={trXs[1] + 26} y="93" textAnchor="middle" fill="#86efac" fontSize="9" fontWeight="700">L1 TRUE</text>
+
+                    <circle cx={trXs[2] + 26} cy="64" r="16" fill={tr3On ? '#ef4444' : '#450a0a'} stroke="#fca5a5" strokeWidth="2.4" filter={tr3On ? 'url(#ledGlow)' : undefined} />
+                    <text x={trXs[2] + 26} y="93" textAnchor="middle" fill="#fca5a5" fontSize="9" fontWeight="700">L2 FALSE</text>
+
+                    {/* 3 × BC547 */}
+                    <TransistorTO92 cx={trXs[0]} topY={topY} label="TR1" sub="BC547" compId="Q1" active={isFalse} vE="0V" vB={`${sim.vbe.toFixed(2)}V`} vC={isFalse ? '0.2V' : '8.4V'} onSelect={setInspected} />
+                    <TransistorTO92 cx={trXs[1]} topY={topY} label="TR2" sub="TRUE" compId="Q2" active={tr2On} vE="0V" vB={tr2On ? '0.65V' : '0.2V'} vC={tr2On ? '0.2V' : '7.1V'} onSelect={setInspected} />
+                    <TransistorTO92 cx={trXs[2]} topY={topY} label="TR3" sub="FALSE" compId="Q2" active={tr3On} vE="0V" vB={tr3On ? '0.65V' : '0.2V'} vC={tr3On ? '0.2V' : '8.8V'} onSelect={setInspected} />
+                  </g>
+                );
+              })()
+            ) : isLie4Scene ? (
+              /* ================= LIE DETECTOR-4 (p. 50): SIMPLIFIED 4xBC547 3-LED STAIRCASE (NO DIODES) ================= */
+              (() => {
+                const qX = [138, 238, 338, 438];
+                const topY = 122;
+                const padY = topY + 74; // 196
+                const leds = sim.staircaseLeds;
+
+                return (
+                  <g>
+                    {/* Top +9V Rail */}
+                    <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    {leds > 0 && <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />}
+                    <text x="102" y="30" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">+9 V</text>
+
+                    {/* Bottom 0V Rail */}
+                    <path d="M 54 106 L 54 270 L 478 270" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    {leds > 0 && <path d="M 54 106 L 54 270 L 478 270" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />}
+                    <text x="72" y="264" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">0 V (−)</text>
+
+                    {/* Battery 9V */}
+                    <rect x="34" y="38" width="54" height="68" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
+                    <text x="61" y="66" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700" fontFamily="monospace">+ −</text>
+                    <text x="61" y="88" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">9V</text>
+
+                    {/* Touch Pad -> Q1(B) */}
+                    <path d={`M 88 228 L ${qX[0]} 228 L ${qX[0]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={sim.ibUA > 0.1 ? 0.95 : 0.35} fill="none" className={sim.ibUA > 0.1 ? 'flow-active' : ''} />
+                    <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
+                      <circle cx="72" cy="228" r="15" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
+                      <text x="72" y="205" textAnchor="middle" fill="#fef08a" fontSize="8.5" fontWeight="700">Touch</text>
+                    </g>
+
+                    {/* Q1(C) -> +9V, Q1..Q3 cascade via 10k (NO DIODES) */}
+                    <path d={`M ${qX[0] + 26} 38 L ${qX[0] + 26} ${padY}`} stroke="#ff6b5a" strokeWidth="3" opacity={leds > 0 ? 0.9 : 0.25} fill="none" />
+                    {[0, 1, 2].map((i) => {
+                      const fromE = qX[i] - 26;
+                      const toB = qX[i + 1];
+                      const activeLink = leds > i;
+                      return (
+                        <g key={`l4-link-${i}`}>
+                          <path
+                            d={`M ${fromE} ${padY} L ${fromE} 236 L ${toB} 236 L ${toB} ${padY}`}
+                            stroke="#38bdf8"
+                            strokeWidth="2.8"
+                            opacity={activeLink ? 0.95 : 0.28}
+                            fill="none"
+                            className={activeLink ? 'flow-active' : ''}
+                          />
+                          <rect x={(fromE + toB) / 2 - 14} y="227" width="28" height="16" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                          <text x={(fromE + toB) / 2} y="238" textAnchor="middle" fill="#1c1917" fontSize="8" fontFamily="monospace" fontWeight="700">
+                            10k
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Q2, Q3, Q4 Collector LEDs (L1, L2, L3) + 100R & Emitters -> 0V */}
+                    {[1, 2, 3].map((idx) => {
+                      const cx = qX[idx];
+                      const pinE = cx - 26;
+                      const pinC = cx + 26;
+                      const lit = leds >= idx;
+                      const ledColors = ['#22c55e', '#f59e0b', '#ef4444'];
+                      return (
+                        <g key={`l4-led-${idx}`}>
+                          <path d={`M ${pinC} 38 L ${pinC} ${padY}`} stroke="#ff6b5a" strokeWidth="3.5" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
+                          <path d={`M ${pinE} ${padY} L ${pinE} 270`} stroke="#6fe39a" strokeWidth="3.2" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
+                          <circle cx={pinC} cy="62" r="13" fill={lit ? ledColors[idx - 1] : '#1c1917'} stroke="#fde047" strokeWidth="2" filter={lit ? 'url(#ledGlow)' : undefined} />
+                          <text x={pinC} y="66" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="700">L{idx}</text>
+                          <rect x={pinC - 13} y="82" width="26" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                          <text x={pinC} y="94" textAnchor="middle" fill="#1c1917" fontSize="7.5" fontFamily="monospace" fontWeight="700">100</text>
+                        </g>
+                      );
+                    })}
+
+                    {/* 4 × BC547 Packages */}
+                    {qX.map((cx, i) => {
+                      const active = i === 0 ? sim.ibUA > 1 : leds >= i;
+                      return (
+                        <TransistorTO92
+                          key={`l4-q-${i}`}
+                          cx={cx}
+                          topY={topY}
+                          label={`Q${i + 1}`}
+                          sub="BC547"
+                          compId={i === 0 ? 'Q1' : 'Q2'}
+                          active={active}
+                          vE={i === 0 ? (active ? '1.6V' : '0V') : '0V'}
+                          vB={active ? '0.65V' : '0.2V'}
+                          vC={active ? '0.2V' : '9V'}
+                          onSelect={setInspected}
+                        />
+                      );
+                    })}
+                  </g>
+                );
+              })()
+            ) : isLie5TScene ? (
+              /* ================= LIE DETECTOR 5-TRANSISTOR (#25): 5xBC547 + 6x1N4148 + 100k POT ================= */
+              (() => {
+                const { potPct, vBaseQ1, vEmitQ1, vWiper, leds } = getLieDetector5TState(params);
+                const qX = [132, 214, 294, 374, 454];
+                const topY = 112;
+                const padY = topY + 74; // 186
+                const q1Active = params.pressure > 2 && vEmitQ1 > 0.2;
+                const ledColors = ['#22c55e', '#84cc16', '#f59e0b', '#ef4444'];
+                const potAngle = -115 + (potPct / 100) * 230;
+
+                return (
+                  <g>
+                    {/* Top +9V Rail */}
+                    <path d="M 80 34 L 486 34" stroke="#ffd24a" strokeWidth="4.2" opacity="0.4" fill="none" />
+                    {q1Active && <path d="M 80 34 L 486 34" stroke="#ffd24a" strokeWidth="3.2" fill="none" className="flow-active" />}
+                    <text x="94" y="27" fill="#fde047" fontSize="9" fontFamily="monospace" fontWeight="700">+9 V</text>
+
+                    {/* Bottom 0V Rail */}
+                    <path d="M 48 98 L 48 272 L 486 272" stroke="#6fe39a" strokeWidth="4.2" opacity="0.35" fill="none" />
+                    {leds > 0 && <path d="M 48 98 L 48 272 L 486 272" stroke="#6fe39a" strokeWidth="3.2" fill="none" className="flow-active" />}
+                    <text x="64" y="266" fill="#86efac" fontSize="9" fontFamily="monospace" fontWeight="700">0 V (−)</text>
+
+                    {/* Battery 9V */}
+                    <rect x="28" y="34" width="52" height="64" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
+                    <text x="54" y="61" textAnchor="middle" fill="#fff" fontSize="12" fontWeight="700" fontFamily="monospace">+ −</text>
+                    <text x="54" y="82" textAnchor="middle" fill="#dcfce7" fontSize="9.5" fontFamily="monospace">9V</text>
+
+                    {/* +9V -> 10k -> Touch Pads -> Q1(B) */}
+                    <path d={`M 90 34 L 90 120`} stroke="#ffd24a" strokeWidth="2.8" opacity="0.7" fill="none" />
+                    <rect x="75" y="72" width="30" height="16" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                    <text x="90" y="83" textAnchor="middle" fill="#1c1917" fontSize="7.5" fontFamily="monospace" fontWeight="700">10k</text>
+                    <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
+                      <rect x="64" y="122" width="38" height="44" rx="5" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
+                      <text x="83" y="142" textAnchor="middle" fill="#1c1917" fontSize="7.5" fontWeight="700">TOUCH</text>
+                      <text x="83" y="155" textAnchor="middle" fill="#1c1917" fontSize="7.5" fontWeight="700">PADS</text>
+                    </g>
+                    <path
+                      d={`M 83 166 L 83 200 L ${qX[0]} 200 L ${qX[0]} ${padY}`}
+                      stroke="#5ab0ff"
+                      strokeWidth="2.8"
+                      opacity={q1Active ? 0.95 : 0.35}
+                      fill="none"
+                      className={q1Active ? 'flow-active' : ''}
+                    />
+
+                    {/* Q1(C) -> +9V */}
+                    <path d={`M ${qX[0] + 18} 34 L ${qX[0] + 18} ${padY}`} stroke="#ff6b5a" strokeWidth="3" opacity={q1Active ? 0.95 : 0.3} fill="none" className={q1Active ? 'flow-active' : ''} />
+
+                    {/* Q1(E) -> 100k Pot -> 0V */}
+                    <path d={`M ${qX[0] - 18} ${padY} L ${qX[0] - 18} 214 L 114 214`} stroke="#6fe39a" strokeWidth="2.8" opacity={q1Active ? 0.95 : 0.35} fill="none" />
+                    <path d="M 114 248 L 114 272" stroke="#6fe39a" strokeWidth="2.8" opacity="0.6" fill="none" />
+                    <g data-comp="POT100K" onClick={() => setInspected('POT100K')} className="cursor-pointer">
+                      <circle cx="114" cy="231" r="16" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="1.8" />
+                      <g transform={`translate(114, 231) rotate(${potAngle})`}>
+                        <line x1="0" y1="0" x2="0" y2="-10" stroke="#fde047" strokeWidth="2.5" strokeLinecap="round" />
+                      </g>
+                      <text x="72" y="234" textAnchor="middle" fill="#bae6fd" fontSize="8" fontFamily="monospace" fontWeight="700">
+                        100k
+                      </text>
+                    </g>
+
+                    {/* Pot Wiper -> Ladder Bus -> Q2, then 3 pairs of 1N4148 across Q2..Q5 */}
+                    <path
+                      d={`M 130 231 L ${qX[1]} 231`}
+                      stroke="#38bdf8"
+                      strokeWidth="2.8"
+                      opacity={vWiper > 0.3 ? 0.95 : 0.3}
+                      fill="none"
+                      className={leds >= 1 ? 'flow-active' : ''}
+                    />
+
+                    {/* 3 pairs of 1N4148 diodes between Q2->Q3, Q3->Q4, Q4->Q5 */}
+                    {[1, 2, 3].map((stageIdx) => {
+                      const x1 = qX[stageIdx];
+                      const x2 = qX[stageIdx + 1];
+                      const activePair = leds >= stageIdx + 1;
+                      const mid = (x1 + x2) / 2;
+                      return (
+                        <g key={`d5t-${stageIdx}`} data-comp="DIODE1N4148" onClick={() => setInspected('DIODE1N4148')} className="cursor-pointer">
+                          <line x1={x1} y1="231" x2={x2} y2="231" stroke="#38bdf8" strokeWidth="2.5" opacity={activePair ? 0.95 : 0.3} className={activePair ? 'flow-active' : ''} />
+                          {/* Diode pair 2x 1N4148 */}
+                          <rect x={mid - 20} y="222" width="40" height="17" rx="3" fill="#0f172a" stroke={activePair ? '#fbbf24' : '#64748b'} strokeWidth="1.4" />
+                          <polygon points={`${mid - 14},225 ${mid - 14},236 ${mid - 4},230.5`} fill={activePair ? '#fbbf24' : '#94a3b8'} />
+                          <line x1={mid - 3} y1="225" x2={mid - 3} y2="236" stroke="#e2e8f0" strokeWidth="1.4" />
+                          <polygon points={`${mid + 3},225 ${mid + 3},236 ${mid + 13},230.5`} fill={activePair ? '#fbbf24' : '#94a3b8'} />
+                          <line x1={mid + 14} y1="225" x2={mid + 14} y2="236" stroke="#e2e8f0" strokeWidth="1.4" />
+                          <text x={mid} y="249" textAnchor="middle" fill="#fde68a" fontSize="6.8" fontFamily="monospace">2×1N4148</text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Q2..Q5: 10k series + 10k pull-down to 0V + Collector LED/100R + Emitter to 0V */}
+                    {[1, 2, 3, 4].map((idx) => {
+                      const cx = qX[idx];
+                      const pinE = cx - 18;
+                      const pinB = cx;
+                      const pinC = cx + 18;
+                      const lit = leds >= idx;
+                      return (
+                        <g key={`ld5t-stage-${idx}`}>
+                          {/* 10k series from bus y=231 to Base pad */}
+                          <line x1={pinB} y1="231" x2={pinB} y2={padY} stroke="#5ab0ff" strokeWidth="2.4" opacity={lit ? 0.95 : 0.3} />
+                          <rect x={pinB - 11} y="204" width="22" height="14" rx="2.5" fill="#e7d6ac" stroke="#78350f" />
+                          <text x={pinB} y="214" textAnchor="middle" fill="#1c1917" fontSize="6.8" fontFamily="monospace" fontWeight="700">10k</text>
+                          {/* 10k pull-down Base -> 0V (offset slightly left to E rail) */}
+                          <line x1={pinB - 8} y1="196" x2={pinE} y2="196" stroke="#6fe39a" strokeWidth="1.6" opacity="0.55" />
+                          {/* Emitter -> 0V */}
+                          <path d={`M ${pinE} ${padY} L ${pinE} 272`} stroke="#6fe39a" strokeWidth="3" opacity={lit ? 0.95 : 0.25} fill="none" className={lit ? 'flow-active' : ''} />
+                          {/* Collector -> 100R -> LED -> +9V */}
+                          <path d={`M ${pinC} 34 L ${pinC} ${padY}`} stroke="#ff6b5a" strokeWidth="3.2" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
+                          <circle cx={pinC} cy="56" r="11.5" fill={lit ? ledColors[idx - 1] : '#1c1917'} stroke="#fde047" strokeWidth="1.8" filter={lit ? 'url(#ledGlow)' : undefined} />
+                          <text x={pinC} y="59.5" textAnchor="middle" fill="#fff" fontSize="7.5" fontWeight="700">L{idx}</text>
+                          <rect x={pinC - 12} y="74" width="24" height="15" rx="2.5" fill="#e7d6ac" stroke="#78350f" />
+                          <text x={pinC} y="84.5" textAnchor="middle" fill="#1c1917" fontSize="7" fontFamily="monospace" fontWeight="700">100</text>
+                        </g>
+                      );
+                    })}
+
+                    {/* 5 × BC547 Transistors */}
+                    {qX.map((cx, i) => {
+                      const active = i === 0 ? q1Active : leds >= i;
+                      return (
+                        <TransistorTO92
+                          key={`ld5t-q-${i}`}
+                          cx={cx}
+                          topY={topY}
+                          label={`Q${i + 1}`}
+                          sub="BC547"
+                          compId={i === 0 ? 'Q1' : 'Q2'}
+                          active={active}
+                          compact
+                          vE={i === 0 ? `${vEmitQ1.toFixed(1)}V` : '0V'}
+                          vB={i === 0 ? `${vBaseQ1.toFixed(1)}V` : active ? '0.65V' : '0.2V'}
+                          vC={i === 0 ? '9.0V' : active ? '0.2V' : '9V'}
+                          onSelect={setInspected}
+                        />
+                      );
+                    })}
+                  </g>
+                );
+              })()
+            ) : isStaircaseDedicatedScene ? (
+              /* ================= LIE DETECTOR 3 / STAIRCASE (#10): 4xBC547 + 3x1N4148 ================= */
+              (() => {
+                const qX = [140, 240, 340, 440];
+                const topY = 122;
+                const padY = topY + 74; // 196
+                const leds = sim.staircaseLeds;
+                const ledColors = ['#22c55e', '#eab308', '#f97316', '#ef4444'];
+
+                return (
+                  <g>
+                    <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    {leds > 0 && <path d="M 88 38 L 478 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />}
+                    <text x="102" y="30" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">+9 V</text>
+
+                    <path d="M 54 106 L 54 270 L 478 270" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    {leds > 0 && <path d="M 54 106 L 54 270 L 478 270" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />}
+                    <text x="72" y="264" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">0 V (−)</text>
+
+                    <rect x="34" y="38" width="54" height="68" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
+                    <text x="61" y="66" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700" fontFamily="monospace">+ −</text>
+                    <text x="61" y="88" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">9V</text>
+
+                    {/* Touch -> Q1(B) */}
+                    <path d={`M 88 232 L ${qX[0]} 232 L ${qX[0]} ${padY}`} stroke="#5ab0ff" strokeWidth="3" opacity={sim.ibUA > 0.1 ? 0.95 : 0.35} fill="none" className={sim.ibUA > 0.1 ? 'flow-active' : ''} />
+                    <g data-comp="TOUCH" onClick={() => setInspected('TOUCH')} className="cursor-pointer">
+                      <circle cx="72" cy="232" r="15" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
+                      <text x="72" y="209" textAnchor="middle" fill="#fef08a" fontSize="8.5" fontWeight="700">Touch</text>
+                    </g>
+
+                    {/* 3 × 1N4148 Diode Steps across Q1..Q4 bases */}
+                    {[0, 1, 2].map((i) => {
+                      const x1 = qX[i];
+                      const x2 = qX[i + 1];
+                      const activeStep = leds >= i + 2;
+                      const mid = (x1 + x2) / 2;
+                      return (
+                        <g key={`sc-d-${i}`} data-comp="DIODE1N4148" onClick={() => setInspected('DIODE1N4148')} className="cursor-pointer">
+                          <path d={`M ${x1} 232 L ${x2} 232 L ${x2} ${padY}`} stroke="#38bdf8" strokeWidth="2.6" opacity={activeStep ? 0.95 : 0.3} fill="none" className={activeStep ? 'flow-active' : ''} />
+                          <rect x={mid - 16} y="223" width="32" height="16" rx="3" fill="#0f172a" stroke={activeStep ? '#fbbf24' : '#64748b'} />
+                          <polygon points={`${mid - 6},226 ${mid - 6},236 ${mid + 5},231`} fill={activeStep ? '#fbbf24' : '#94a3b8'} />
+                          <line x1={mid + 6} y1="226" x2={mid + 6} y2="236" stroke="#e2e8f0" strokeWidth="1.5" />
+                        </g>
+                      );
+                    })}
+
+                    {/* Q1..Q4 LEDs + 100R & Emitters */}
+                    {qX.map((cx, i) => {
+                      const pinE = cx - 26;
+                      const pinC = cx + 26;
+                      const lit = leds >= i + 1;
+                      return (
+                        <g key={`sc-led-${i}`}>
+                          <path d={`M ${pinC} 38 L ${pinC} ${padY}`} stroke="#ff6b5a" strokeWidth="3.5" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
+                          <path d={`M ${pinE} ${padY} L ${pinE} 270`} stroke="#6fe39a" strokeWidth="3.2" opacity={lit ? 0.95 : 0.22} fill="none" className={lit ? 'flow-active' : ''} />
+                          <circle cx={pinC} cy="62" r="13" fill={lit ? ledColors[i] : '#1c1917'} stroke="#fde047" strokeWidth="2" filter={lit ? 'url(#ledGlow)' : undefined} />
+                          <text x={pinC} y="66" textAnchor="middle" fill="#fff" fontSize="8" fontWeight="700">L{i + 1}</text>
+                          <rect x={pinC - 13} y="82" width="26" height="16" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                          <text x={pinC} y="93" textAnchor="middle" fill="#1c1917" fontSize="7.5" fontFamily="monospace" fontWeight="700">100</text>
+                        </g>
+                      );
+                    })}
+
+                    {qX.map((cx, i) => {
+                      const active = leds >= i + 1;
+                      return (
+                        <TransistorTO92
+                          key={`sc-q-${i}`}
+                          cx={cx}
+                          topY={topY}
+                          label={`Q${i + 1}`}
+                          sub="BC547"
+                          compId={i === 0 ? 'Q1' : 'Q2'}
+                          active={active}
+                          vE="0V"
+                          vB={active ? '0.65V' : '0.2V'}
+                          vC={active ? '0.2V' : '9V'}
+                          onSelect={setInspected}
+                        />
+                      );
+                    })}
+                  </g>
+                );
+              })()
+            ) : isDarlingtonScene ? (
+              /* ================= CHAPTER 4 / CATALOG DARLINGTON 1/2/3 STAGES & MAINS HUM 50Hz ================= */
+              (() => {
+                const activeStages =
+                  cid === 'mains-hum' || cid === 'eight-million-gain' || (!cid && (params.exampleId === 'mains-hum' || params.exampleId === 'eight-million'))
+                    ? 3
+                    : cid === 'second-simplest' || (!cid && params.exampleId === 'second-simplest')
+                    ? 2
+                    : params.stages;
+                const vRailLabel = cid ? '+6 V' : '+9 V';
+                const qX = [175, 285, 395];
+                const topY = 114;
+                const padY = topY + 74; // 188
+                const lastIdx = activeStages - 1;
+                const lastEX = qX[lastIdx] - 26;
+
+                return (
+                  <g>
+                    {/* Power Rails: +9V top & 0V GND bottom */}
+                    <path d="M 88 46 L 448 46" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    {sim.conducting && (
+                      <path
+                        d="M 88 46 L 448 46"
+                        stroke="#ffd24a"
+                        strokeWidth="3.5"
+                        fill="none"
+                        className="flow-active"
+                        markerMid="url(#arrGold)"
+                      />
+                    )}
+                    <text x="102" y="38" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      {vRailLabel}
+                    </text>
+
+                    {/* Bottom 0V Ground Rail (routed clean around ANT/Touch at x=50) */}
+                    <path d={`M ${lastEX} 266 L 52 266 L 52 108`} stroke="#6fe39a" strokeWidth="4.5" opacity="0.32" fill="none" />
+                    {sim.conducting && (
+                      <path
+                        d={`M ${lastEX} 266 L 52 266 L 52 108`}
+                        stroke="#6fe39a"
+                        strokeWidth="3.5"
+                        fill="none"
+                        className="flow-active"
+                      />
+                    )}
+                    <text x="68" y="260" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      0 V (−)
+                    </text>
+
+                    {/* Collector Bus at y=90 fed by LED cathode -> enters each active Q(C) pad */}
+                    <path d="M 448 64 L 448 90 L 201 90" stroke="#ff6b5a" strokeWidth="4" opacity="0.32" fill="none" />
+                    {sim.conducting && (
+                      <path d="M 448 64 L 448 90 L 201 90" stroke="#ff6b5a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    )}
+
+                    {/* Individual C traces dropping from y=90 to C pad (x+26, 188) */}
+                    {qX.map((cx, i) => {
+                      const onStage = i < activeStages;
+                      const pinC = cx + 26;
+                      return (
+                        <g key={`c-${i}`} opacity={onStage ? 1 : 0.2}>
+                          <path
+                            d={`M ${pinC} 90 L ${cx + 46} 90 L ${cx + 46} ${padY} L ${pinC} ${padY}`}
+                            stroke="#ff6b5a"
+                            strokeWidth="3.5"
+                            opacity="0.35"
+                            fill="none"
+                          />
+                          {sim.conducting && onStage && (
+                            <path
+                              d={`M ${pinC} 90 L ${cx + 46} 90 L ${cx + 46} ${padY} L ${pinC} ${padY}`}
+                              stroke="#ff6b5a"
+                              strokeWidth="3"
+                              fill="none"
+                              className="flow-active"
+                            />
+                          )}
+                        </g>
+                      );
+                    })}
+
+                    {/* Input Sensor -> Q1 Base (B = 175, 188) */}
+                    <path d="M 106 218 L 175 218 L 175 188" stroke="#5ab0ff" strokeWidth="2.5" opacity="0.4" fill="none" />
+                    {(sim.conducting || sim.ibUA > 0) && (
+                      <path
+                        d="M 106 218 L 175 218 L 175 188"
+                        stroke="#5ab0ff"
+                        strokeWidth="2.2"
+                        fill="none"
+                        className="flow-active"
+                        markerEnd="url(#arrBlue)"
+                      />
+                    )}
+                    <text x="134" y="212" textAnchor="middle" fill="#7dd3fc" fontSize="8" fontFamily="monospace">
+                      {sim.ibUA.toFixed(2)}µA
+                    </text>
+
+                    {/* Darlington Cascade Links: Q1(E) -> Q2(B) and Q2(E) -> Q3(B) */}
+                    {[0, 1].map((i) => {
+                      const linkActive = i + 1 < activeStages;
+                      const fromE = qX[i] - 26;
+                      const toB = qX[i + 1];
+                      const pathD = `M ${fromE} ${padY} L ${fromE} 232 L ${toB} 232 L ${toB} ${padY}`;
+                      return (
+                        <g key={`link-${i}`} opacity={linkActive ? 1 : 0.16}>
+                          <path d={pathD} stroke="#38bdf8" strokeWidth={3 + i * 1.2} opacity="0.35" fill="none" />
+                          {sim.conducting && linkActive && (
+                            <path
+                              d={pathD}
+                              stroke="#38bdf8"
+                              strokeWidth={2.8 + i * 1.2}
+                              fill="none"
+                              className="flow-active"
+                              markerMid="url(#arrBlue)"
+                            />
+                          )}
+                          {linkActive && (
+                            <text x={(fromE + toB) / 2} y="244" textAnchor="middle" fill="#bae6fd" fontSize="8.2" fontFamily="monospace">
+                              E{i + 1}→B{i + 2} (×{i === 0 ? '200' : '40k'})
+                            </text>
+                          )}
+                        </g>
+                      );
+                    })}
+
+                    {/* Final Active Emitter -> 0V Ground */}
+                    <path d={`M ${lastEX} ${padY} L ${lastEX} 266`} stroke="#6fe39a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    {sim.conducting && (
+                      <path
+                        d={`M ${lastEX} ${padY} L ${lastEX} 266`}
+                        stroke="#6fe39a"
+                        strokeWidth="4"
+                        fill="none"
+                        className="flow-active"
+                        markerEnd="url(#arrGreen)"
+                      />
+                    )}
+
+                    {/* Battery Block on Left */}
+                    <rect x="36" y="38" width="54" height="70" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
+                    <text x="63" y="67" textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700" fontFamily="monospace">
+                      +  −
+                    </text>
+                    <text x="63" y="90" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">
+                      9V
+                    </text>
+
+                    {/* Antenna / Static Plate / Touch Pad */}
+                    {cid === 'mains-hum' || (!cid && params.exampleId === 'mains-hum') ? (
+                      <g>
+                        <rect x="70" y="164" width="38" height="62" rx="5" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
+                        <text x="89" y="199" textAnchor="middle" fill="#1c1917" fontSize="10" fontWeight="700">
+                          ANT
+                        </text>
+                        {sim.conducting && (
+                          <circle cx="89" cy="195" r="26" fill="none" stroke="#fde047" strokeWidth="2" strokeDasharray="4 4" />
+                        )}
+                      </g>
+                    ) : cid === 'eight-million-gain' || (!cid && params.exampleId === 'eight-million') ? (
+                      <g data-comp="STATIC" onClick={() => setInspected('STATIC')} className="cursor-pointer">
+                        <rect x="66" y="168" width="44" height="58" rx="6" fill="#0284c7" stroke="#bae6fd" strokeWidth="2" />
+                        <text x="88" y="199" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="700" fontFamily="monospace">
+                          STATIC
+                        </text>
+                        {sim.conducting && (
+                          <circle cx="88" cy="197" r="28" fill="none" stroke="#38bdf8" strokeWidth="2" strokeDasharray="3 3" />
+                        )}
+                      </g>
+                    ) : (
+                      <g>
+                        <circle cx="92" cy="218" r="14" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
+                        <text x="92" y="196" textAnchor="middle" fill="#fef08a" fontSize="9.5" fontWeight="700">
+                          Touch
+                        </text>
+                      </g>
+                    )}
+
+                    {/* 220R & LED on Top Right */}
+                    <g data-comp="R220" onClick={() => setInspected('R220')} className="cursor-pointer">
+                      <rect x="305" y="36" width="70" height="20" rx="4" fill="#e7d6ac" stroke="#78350f" />
+                      <text x="340" y="50" textAnchor="middle" fill="#1c1917" fontSize="10" fontWeight="700" fontFamily="monospace">
+                        220 Ω
+                      </text>
+                    </g>
+                    <circle
+                      cx="448"
+                      cy="46"
+                      r="17"
+                      fill={ledGlow > 0.05 ? `rgba(255, 204, 0, ${0.28 + ledGlow * 0.72})` : '#422006'}
+                      stroke="#fde047"
+                      strokeWidth="2.5"
+                      filter={ledGlow > 0.1 ? 'url(#ledGlow)' : undefined}
+                    />
+                    <text x="448" y="50" textAnchor="middle" fill={ledGlow > 0.35 ? '#1c1917' : '#fef08a'} fontSize="9.5" fontWeight="700">
+                      LED
+                    </text>
+
+                    {/* Q1, Q2, Q3 Packages with live pin voltages */}
+                    {qX.map((cx, idx) => {
+                      const onStage = idx < activeStages;
+                      const stepsLeft = activeStages - idx;
+                      const vbVal = sim.conducting && onStage ? `${(stepsLeft * 0.6).toFixed(1)}V` : '0V';
+                      const veVal = sim.conducting && onStage ? `${((stepsLeft - 1) * 0.6).toFixed(1)}V` : '0V';
+                      const vcVal = sim.conducting && onStage ? '0.2V' : '9V';
+                      return (
+                        <TransistorTO92
+                          key={idx}
+                          cx={cx}
+                          topY={topY}
+                          label={`Q${idx + 1}`}
+                          sub="BC547"
+                          compId={idx === 0 ? 'Q1' : 'Q2'}
+                          active={sim.conducting && onStage}
+                          dimmed={!onStage}
+                          vE={onStage ? veVal : undefined}
+                          vB={onStage ? vbVal : undefined}
+                          vC={onStage ? vcVal : undefined}
+                          onSelect={setInspected}
+                        />
+                      );
+                    })}
+                  </g>
+                );
+              })()
+            ) : isChaserScene ? (
+              /* ================= CHAPTER 6A / CATALOG #15: 3-LED RING CHASER ================= */
+              (() => {
+                const qX = [115, 260, 405];
+                const rawIdx = params.oscPhase % 3;
+                const activeIdx = params.chaserReverse ? (3 - rawIdx) % 3 : rawIdx;
+                const topY = 114;
+                const padY = topY + 74; // 188
+
+                return (
+                  <g>
+                    {/* Top +9V Rail */}
+                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    <text x="52" y="27" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      +9 V
+                    </text>
+
+                    {/* Bottom 0V Ground Rail */}
+                    <path d="M 48 268 L 470 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    <text x="52" y="263" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      0 V (−)
+                    </text>
+
+                    {/* Cross-Stage Capacitor Ring: C(Q1)->B(Q2), C(Q2)->B(Q3), C(Q3)->B(Q1) */}
+                    {[0, 1].map((i) => {
+                      const fromC = qX[i] + 26;
+                      const toB = qX[i + 1];
+                      const nextOn = activeIdx === i + 1;
+                      return (
+                        <g key={`ring-${i}`}>
+                          <path
+                            d={`M ${fromC} ${padY} L ${fromC} 228 L ${toB} 228 L ${toB} ${padY}`}
+                            stroke="#38bdf8"
+                            strokeWidth="3"
+                            opacity={nextOn ? 0.95 : 0.28}
+                            fill="none"
+                            className={nextOn ? 'flow-active' : ''}
+                          />
+                          <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
+                            <rect x={(fromC + toB) / 2 - 19} y="218" width="38" height="18" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
+                            <text x={(fromC + toB) / 2} y="231" textAnchor="middle" fill="#fff" fontSize="8.5" fontFamily="monospace">
+                              10µF
+                            </text>
+                          </g>
+                        </g>
+                      );
+                    })}
+
+                    {/* Wrap-around ring from Q3(C) -> Q1(B) */}
+                    <path
+                      d={`M ${qX[2] + 26} ${padY} L ${qX[2] + 26} 250 L ${qX[0]} 250 L ${qX[0]} ${padY}`}
+                      stroke="#ffd24a"
+                      strokeWidth="3"
+                      opacity={activeIdx === 0 ? 0.95 : 0.28}
+                      fill="none"
+                      className={activeIdx === 0 ? 'flow-active' : ''}
+                    />
+                    <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
+                      <rect x="241" y="241" width="38" height="18" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
+                      <text x="260" y="254" textAnchor="middle" fill="#fff" fontSize="8.5" fontFamily="monospace">
+                        10µF
+                      </text>
+                    </g>
+
+                    {/* 3 Identical Stages */}
+                    {qX.map((cx, idx) => {
+                      const isOn = activeIdx === idx;
+                      const pinE = cx - 26;
+                      const pinB = cx;
+                      const pinC = cx + 26;
+
+                      return (
+                        <g key={idx}>
+                          {/* +9V -> LED -> 470R -> Collector C */}
+                          <path
+                            d={`M ${pinC} 34 L ${pinC} ${padY}`}
+                            stroke="#ff6b5a"
+                            strokeWidth="4"
+                            opacity={isOn ? 0.9 : 0.22}
+                            fill="none"
+                            className={isOn ? 'flow-active' : ''}
+                            markerMid={isOn ? 'url(#arrRed)' : undefined}
+                          />
+
+                          {/* Base bias resistor from +9V -> B */}
+                          <path
+                            d={`M ${pinB} 34 L ${pinB} ${padY}`}
+                            stroke="#5ab0ff"
+                            strokeWidth="2.5"
+                            opacity={isOn ? 0.95 : 0.25}
+                            fill="none"
+                            className={isOn ? 'flow-active' : ''}
+                          />
+
+                          {/* Emitter E -> 0V Ground */}
+                          <path
+                            d={`M ${pinE} ${padY} L ${pinE} 268`}
+                            stroke="#6fe39a"
+                            strokeWidth="4"
+                            opacity={isOn ? 0.95 : 0.22}
+                            fill="none"
+                            className={isOn ? 'flow-active' : ''}
+                          />
+
+                          {/* LED on Collector line */}
+                          <circle
+                            cx={pinC}
+                            cy={57}
+                            r="13.5"
+                            fill={isOn ? '#ef4444' : '#451a1a'}
+                            stroke="#fca5a5"
+                            strokeWidth="2"
+                            filter={isOn ? 'url(#ledGlow)' : undefined}
+                          />
+                          <text x={pinC} y={61} textAnchor="middle" fill="#fff" fontSize="8.5" fontWeight="700">
+                            L{idx + 1}
+                          </text>
+
+                          {/* Collector Resistor */}
+                          <rect x={pinC - 11} y={78} width="22" height="22" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                          <text x={pinC} y={92} textAnchor="middle" fill="#1c1917" fontSize="7.5" fontFamily="monospace" fontWeight="700">
+                            470
+                          </text>
+
+                          {/* Base Resistor */}
+                          <rect x={pinB - 10} y={78} width="20" height="22" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                          <text x={pinB} y={92} textAnchor="middle" fill="#1c1917" fontSize="7.5" fontFamily="monospace" fontWeight="700">
+                            R
+                          </text>
+
+                          <TransistorTO92
+                            cx={cx}
+                            topY={topY}
+                            label={`Q${idx + 1}`}
+                            sub="BC547"
+                            compId={idx === 0 ? 'Q1' : 'Q2'}
+                            active={isOn}
+                            vE="0V"
+                            vB={isOn ? '0.6V' : '0.1V'}
+                            vC={isOn ? '0.2V' : '9V'}
+                            onSelect={setInspected}
+                          />
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })()
+            ) : isFlipFlopScene ? (
+              /* ================= CHAPTER 6B / CATALOG #14: 2-LED ASTABLE MULTIVIBRATOR ================= */
+              (() => {
+                const q1On = params.oscPhase % 2 === 0;
+                const q2On = !q1On;
+                const q1X = 140;
+                const q2X = 380;
+                const topY = 114;
+                const padY = topY + 74; // 188
+
+                return (
+                  <g>
+                    {/* Top +9V Rail */}
+                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    <path d="M 48 34 L 470 34" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    <text x="52" y="27" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      +9 V
+                    </text>
+
+                    {/* Bottom 0V Ground Rail */}
+                    <path d="M 48 268 L 470 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    <text x="52" y="263" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      0 V (−)
+                    </text>
+
+                    {/* Cross-coupling C1: Q1(C = 166) -> Q2(B = 380) */}
+                    <path
+                      d={`M ${q1X + 26} ${padY} L ${q1X + 26} 228 L ${q2X} 228 L ${q2X} ${padY}`}
+                      stroke="#38bdf8"
+                      strokeWidth="3"
+                      opacity={q2On ? 0.95 : 0.25}
+                      fill="none"
+                      className={q2On ? 'flow-active' : ''}
+                    />
+                    <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
+                      <rect x="234" y="218" width="52" height="19" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
+                      <text x="260" y="231" textAnchor="middle" fill="#fff" fontSize="9" fontFamily="monospace" fontWeight="700">
+                        C1 100µ
+                      </text>
+                    </g>
+
+                    {/* Cross-coupling C2: Q2(C = 406) -> Q1(B = 140) */}
+                    <path
+                      d={`M ${q2X + 26} ${padY} L ${q2X + 26} 250 L ${q1X} 250 L ${q1X} ${padY}`}
+                      stroke="#ffd24a"
+                      strokeWidth="3"
+                      opacity={q1On ? 0.95 : 0.25}
+                      fill="none"
+                      className={q1On ? 'flow-active' : ''}
+                    />
+                    <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
+                      <rect x="234" y="240" width="52" height="19" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
+                      <text x="260" y="253" textAnchor="middle" fill="#fff" fontSize="9" fontFamily="monospace" fontWeight="700">
+                        C2 100µ
+                      </text>
+                    </g>
+
+                    {/* Stage 1 & Stage 2 */}
+                    {[
+                      { cx: q1X, on: q1On, color: '#ef4444', idx: 1 },
+                      { cx: q2X, on: q2On, color: '#22c55e', idx: 2 },
+                    ].map(({ cx, on, color, idx }) => {
+                      const pinE = cx - 26;
+                      const pinB = cx;
+                      const pinC = cx + 26;
+                      return (
+                        <g key={idx}>
+                          {/* +9V -> LED -> 470R -> Collector C */}
+                          <path
+                            d={`M ${pinC} 34 L ${pinC} ${padY}`}
+                            stroke="#ff6b5a"
+                            strokeWidth="4"
+                            opacity={on ? 0.95 : 0.22}
+                            fill="none"
+                            className={on ? 'flow-active' : ''}
+                            markerMid={on ? 'url(#arrRed)' : undefined}
+                          />
+                          {/* +9V -> R_B -> Base B */}
+                          <path
+                            d={`M ${pinB} 34 L ${pinB} ${padY}`}
+                            stroke="#5ab0ff"
+                            strokeWidth="2.8"
+                            opacity={on ? 0.95 : 0.25}
+                            fill="none"
+                            className={on ? 'flow-active' : ''}
+                          />
+                          {/* Emitter E -> 0V */}
+                          <path
+                            d={`M ${pinE} ${padY} L ${pinE} 268`}
+                            stroke="#6fe39a"
+                            strokeWidth="4"
+                            opacity={on ? 0.95 : 0.22}
+                            fill="none"
+                            className={on ? 'flow-active' : ''}
+                          />
+
+                          {/* LED */}
+                          <circle
+                            cx={pinC}
+                            cy={57}
+                            r="14.5"
+                            fill={on ? color : '#292524'}
+                            stroke="#e7e5e4"
+                            strokeWidth="2"
+                            filter={on ? 'url(#ledGlow)' : undefined}
+                          />
+                          <text x={pinC} y="61" textAnchor="middle" fill="#fff" fontSize="8.5" fontWeight="700">
+                            LED{idx}
+                          </text>
+
+                          {/* Collector & Base Resistors */}
+                          <rect x={pinC - 11} y="79" width="22" height="22" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                          <text x={pinC} y="94" textAnchor="middle" fill="#1c1917" fontSize="8" fontFamily="monospace" fontWeight="700">
+                            470
+                          </text>
+                          <rect x={pinB - 11} y="79" width="22" height="22" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                          <text x={pinB} y="94" textAnchor="middle" fill="#1c1917" fontSize="8" fontFamily="monospace" fontWeight="700">
+                            R{idx}
+                          </text>
+
+                          <TransistorTO92
+                            cx={cx}
+                            topY={topY}
+                            label={`Q${idx}`}
+                            sub="BC547"
+                            compId={idx === 1 ? 'Q1' : 'Q2'}
+                            active={on}
+                            vE="0V"
+                            vB={on ? '0.6V' : '0.1V'}
+                            vC={on ? '0.2V' : '8.8V'}
+                            onSelect={setInspected}
+                          />
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })()
+            ) : isSirenScene ? (
+              /* ================= CHAPTER 6C / CATALOG #16: COMPLEMENTARY NPN + PNP SIREN OSCILLATOR ================= */
+              (() => {
+                const pulse = params.oscPhase % 2 === 0;
+                const q1X = 148;
+                const q2X = 320;
+                const topY = 114;
+                const padY = topY + 74; // 188
+
+                return (
+                  <g>
+                    {/* Top +9V Rail */}
+                    <path d="M 48 38 L 468 38" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    <path d="M 48 38 L 468 38" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    <text x="54" y="31" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      +9 V
+                    </text>
+
+                    {/* Bottom 0V Rail */}
+                    <path d="M 48 268 L 468 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    <text x="54" y="263" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      0 V (−)
+                    </text>
+
+                    {/* Q1 (NPN) Emitter E -> 0V */}
+                    <path
+                      d={`M ${q1X - 26} ${padY} L ${q1X - 26} 268`}
+                      stroke="#6fe39a"
+                      strokeWidth="4"
+                      className={pulse ? 'flow-active' : ''}
+                      opacity={pulse ? 0.95 : 0.3}
+                      fill="none"
+                    />
+
+                    {/* Timing resistor R from +9V -> Q1 Base B */}
+                    <path d={`M ${q1X} 38 L ${q1X} ${padY}`} stroke="#5ab0ff" strokeWidth="3" className="flow-active" fill="none" />
+                    <rect x={q1X - 18} y="72" width="36" height="22" rx="4" fill="#e7d6ac" stroke="#78350f" />
+                    <text x={q1X} y="87" textAnchor="middle" fill="#1c1917" fontSize="9" fontFamily="monospace" fontWeight="700">
+                      {params.oscSpeedR.toFixed(0)}k
+                    </text>
+
+                    {/* Direct coupling Q1 Collector C -> Q2 PNP Base B */}
+                    <path
+                      d={`M ${q1X + 26} ${padY} L ${q1X + 26} 226 L ${q2X} 226 L ${q2X} ${padY}`}
+                      stroke="#ff6b5a"
+                      strokeWidth="3.5"
+                      className={pulse ? 'flow-active' : ''}
+                      opacity={pulse ? 0.95 : 0.35}
+                      fill="none"
+                    />
+                    <text x="246" y="220" textAnchor="middle" fill="#fca5a5" fontSize="8.2" fontFamily="monospace">
+                      Q1(C) → Q2(B)
+                    </text>
+
+                    {/* Q2 (PNP) Emitter E connected directly to +9V Rail! */}
+                    <path
+                      d={`M ${q2X - 26} 38 L ${q2X - 26} ${padY}`}
+                      stroke="#ffd24a"
+                      strokeWidth="4"
+                      className={pulse ? 'flow-active' : ''}
+                      opacity={pulse ? 0.95 : 0.35}
+                      fill="none"
+                    />
+
+                    {/* Q2 (PNP) Collector C -> Speaker 8 Ohm -> 0V (cleanly in/out of speaker) */}
+                    <path
+                      d={`M ${q2X + 26} ${padY} L ${q2X + 26} 226 L 398 226 L 398 148 L 416 148`}
+                      stroke="#ff6b5a"
+                      strokeWidth="4"
+                      className={pulse ? 'flow-active' : ''}
+                      opacity={pulse ? 0.95 : 0.35}
+                      fill="none"
+                    />
+                    <path
+                      d="M 444 176 L 444 268"
+                      stroke="#6fe39a"
+                      strokeWidth="4"
+                      className={pulse ? 'flow-active' : ''}
+                      opacity={pulse ? 0.95 : 0.35}
+                      fill="none"
+                    />
+
+                    {/* Feedback Capacitor from Q2(C) back to Q1(B) */}
+                    <path
+                      d={`M ${q2X + 26} 250 L ${q1X} 250 L ${q1X} ${padY}`}
+                      stroke="#38bdf8"
+                      strokeWidth="3"
+                      className="flow-active"
+                      fill="none"
+                    />
+                    <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
+                      <rect x="218" y="240" width="56" height="19" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
+                      <text x="246" y="253" textAnchor="middle" fill="#fff" fontSize="8.5" fontFamily="monospace" fontWeight="700">
+                        C_fb 22n
+                      </text>
+                    </g>
+
+                    {/* Speaker 8 Ohm */}
+                    <g>
+                      <circle cx="444" cy="148" r="28" fill="#27272a" stroke="#a1a1aa" strokeWidth="2" />
+                      <circle cx="444" cy="148" r="14" fill="#52525b" className="speaker-pulse" />
+                      <text x="444" y="112" textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="700">
+                        HP 8 Ω
+                      </text>
+                    </g>
+
+                    <TransistorTO92
+                      cx={q1X}
+                      topY={topY}
+                      label="Q1 NPN"
+                      sub="BC547"
+                      compId="Q1"
+                      active={pulse}
+                      vE="0V"
+                      vB={pulse ? '0.6V' : '0.2V'}
+                      vC={pulse ? '8.3V' : '9V'}
+                      onSelect={setInspected}
+                    />
+                    <TransistorTO92
+                      cx={q2X}
+                      topY={topY}
+                      label="Q2 PNP"
+                      sub="BC557"
+                      compId="PNP"
+                      isPnp
+                      active={pulse}
+                      vE="9V"
+                      vB={pulse ? '8.3V' : '9V'}
+                      vC={pulse ? '8.8V' : '0V'}
+                      onSelect={setInspected}
+                    />
+                  </g>
+                );
+              })()
+            ) : isSolarScene ? (
+              /* ================= CHAPTER 8A / CATALOG #20: SOLAR CHARGER WITH RELAY & Q1 PINS ================= */
+              (() => {
+                const qX = 225;
+                const topY = 140;
+                const padY = topY + 74; // 214
+                const q1On = params.solarDiverted;
+
+                return (
+                  <g>
+                    {/* Solar +18V -> Relay Common */}
+                    <path d="M 118 76 L 195 76" stroke="#ffd24a" strokeWidth="5" opacity="0.35" fill="none" />
+                    <path d="M 118 76 L 195 76" stroke="#ffd24a" strokeWidth="4" fill="none" className="flow-active" />
+
+                    {/* Relay NO -> Dummy Load 100R 5W (active when solarDiverted) */}
+                    <path d="M 278 62 L 368 62" stroke="#ff9a3c" strokeWidth="5" opacity="0.32" fill="none" />
+                    {q1On && params.dummyLoadEnabled && (
+                      <path d="M 278 62 L 368 62" stroke="#ff9a3c" strokeWidth="4" fill="none" className="flow-active" />
+                    )}
+
+                    {/* Relay NC -> 12V Battery + (active when charging) */}
+                    <path d="M 278 104 L 410 104 L 410 162" stroke="#6fe39a" strokeWidth="5" opacity="0.32" fill="none" />
+                    {!q1On && (
+                      <path
+                        d="M 278 104 L 410 104 L 410 162"
+                        stroke="#6fe39a"
+                        strokeWidth="4"
+                        fill="none"
+                        className="flow-active"
+                        markerMid="url(#arrGreen)"
+                      />
+                    )}
+
+                    {/* Sense Line: Battery + -> Zener/1k Pot -> Q1 Base (B = 225, 214) */}
+                    <path
+                      d={`M 358 192 L 316 192 L 316 246 L ${qX} 246 L ${qX} ${padY}`}
+                      stroke="#5ab0ff"
+                      strokeWidth="3.5"
+                      opacity={q1On ? 0.95 : 0.45}
+                      fill="none"
+                      className={q1On ? 'flow-active' : ''}
+                    />
+                    <rect x="285" y="237" width="38" height="17" rx="3" fill="#e7d6ac" stroke="#78350f" />
+                    <text x="304" y="249" textAnchor="middle" fill="#1c1917" fontSize="8.5" fontFamily="monospace" fontWeight="700">
+                      1k
+                    </text>
+
+                    {/* Q1 Collector (C = 251, 214) -> Relay Coil Bottom */}
+                    <path
+                      d={`M 251 120 L 251 135 L 280 135 L 280 ${padY} L 251 ${padY}`}
+                      stroke="#ff6b5a"
+                      strokeWidth="3.8"
+                      opacity={q1On ? 0.95 : 0.25}
+                      fill="none"
+                      className={q1On ? 'flow-active' : ''}
+                    />
+
+                    {/* Bottom 0V (-) Ground Rail connecting Solar -, Q1(E), Battery - */}
+                    <path
+                      d={`M 80 144 L 80 268 L 412 268 L 412 226 M ${qX - 26} ${padY} L ${qX - 26} 268`}
+                      stroke="#6fe39a"
+                      strokeWidth="4"
+                      opacity={q1On ? 0.85 : 0.38}
+                      fill="none"
+                      className={q1On ? 'flow-active' : ''}
+                    />
+                    <text x="128" y="262" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      0 V (−)
+                    </text>
+
+                    {/* 28-cell Solar Panel */}
+                    <g data-comp="SOLAR" onClick={() => setInspected('SOLAR')} className="cursor-pointer">
+                      <rect x="38" y="38" width="84" height="106" rx="6" fill="#1e3a8a" stroke="#cbd5e1" strokeWidth="2" />
+                      {Array.from({ length: 28 }).map((_, i) => {
+                        const col = i % 4;
+                        const row = Math.floor(i / 4);
+                        const sunOp = 0.25 + ((params.sunIntensity ?? 90) / 100) * 0.75;
+                        return (
+                          <rect
+                            key={i}
+                            x={44 + col * 19}
+                            y={44 + row * 13.5}
+                            width="15"
+                            height="10.2"
+                            rx="1.5"
+                            fill="#3b82f6"
+                            opacity={sunOp}
+                          />
+                        );
+                      })}
+                      <text x="80" y="160" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700">
+                        {(8 + ((params.sunIntensity ?? 90) / 100) * 10).toFixed(1)}V ({params.sunIntensity ?? 90}%)
+                      </text>
+                    </g>
+
+                    {/* Relay K1 + Animated Contact Arm */}
+                    <g data-comp="RELAY" onClick={() => setInspected('RELAY')} className="cursor-pointer">
+                      <rect x="195" y="40" width="84" height="80" rx="6" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="1.5" />
+                      <text x="237" y="60" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700">
+                        K1 · 12V
+                      </text>
+                      <line
+                        x1="210"
+                        y1="86"
+                        x2="268"
+                        y2={q1On ? 62 : 104}
+                        stroke="#fde047"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                      />
+                      <circle cx="210" cy="86" r="4" fill="#fff" />
+                      <text x="237" y="113" textAnchor="middle" fill="#bfdbfe" fontSize="8" fontFamily="monospace">
+                        {q1On ? 'Bobine ON' : 'Repos NC'}
+                      </text>
+                    </g>
+
+                    {/* Dummy Load 100R 5W */}
+                    <g data-comp="DUMMY" onClick={() => setInspected('DUMMY')} className="cursor-pointer">
+                      <rect
+                        x="368"
+                        y="38"
+                        width="98"
+                        height="46"
+                        rx="5"
+                        fill={q1On && params.dummyLoadEnabled ? '#ea580c' : '#d6c6a5'}
+                        stroke="#44403c"
+                        strokeWidth="2"
+                        filter={q1On && params.dummyLoadEnabled ? 'url(#ledGlow)' : undefined}
+                      />
+                      <text
+                        x="417"
+                        y="65"
+                        textAnchor="middle"
+                        fill={q1On && params.dummyLoadEnabled ? '#fff' : '#1c1917'}
+                        fontSize="12"
+                        fontWeight="700"
+                        fontFamily="monospace"
+                      >
+                        100Ω 5W
+                      </text>
+                      <text x="417" y="96" textAnchor="middle" fill="#fed7aa" fontSize="9.5">
+                        {q1On && params.dummyLoadEnabled ? `${(sim.powerW ?? 3.24).toFixed(2)} W` : 'Dummy Load'}
+                      </text>
+                    </g>
+
+                    {/* 12V Battery */}
+                    <g>
+                      <rect x="358" y="162" width="108" height="64" rx="6" fill="#3f6212" stroke="#bef264" strokeWidth="2" />
+                      <text x="412" y="191" textAnchor="middle" fill="#ecfccb" fontSize="14" fontWeight="700" fontFamily="monospace">
+                        {params.battVoltage.toFixed(1)} V
+                      </text>
+                      <text x="412" y="211" textAnchor="middle" fill="#d9f99d" fontSize="9.5">
+                        {q1On ? 'Charge coupée' : 'Charge active'}
+                      </text>
+                    </g>
+
+                    {/* Regulator Transistor Q1 with clear E, B, C pins & live voltages */}
+                    <TransistorTO92
+                      cx={qX}
+                      topY={topY}
+                      label="Q1"
+                      sub="BC547"
+                      compId="Q1"
+                      active={q1On}
+                      vE="0V"
+                      vB={q1On ? '0.65V' : '0.45V'}
+                      vC={q1On ? '0.2V' : `${params.battVoltage.toFixed(1)}V`}
+                      onSelect={setInspected}
+                    />
+                  </g>
+                );
+              })()
+            ) : isConstantCurrentScene ? (
+              /* ================= CHAPTER 8B / CATALOG #21: 2-TRANSISTOR CONSTANT CURRENT REGULATOR ================= */
+              (() => {
+                const q1X = 165;
+                const q2X = 355;
+                const topY = 114;
+                const padY = topY + 74; // 188
+                const vSense = Math.min(0.62, (sim.icMA / 1000) * params.rSense);
+
+                return (
+                  <g>
+                    {/* Top +V Variable Supply Rail */}
+                    <path d="M 94 40 L 435 40" stroke="#ffd24a" strokeWidth="4.5" opacity="0.4" fill="none" />
+                    {sim.conducting && (
+                      <path d="M 94 40 L 435 40" stroke="#ffd24a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    )}
+                    <text x="115" y="32" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      +V = {params.supplyV.toFixed(1)} V
+                    </text>
+
+                    {/* Bottom 0V Rail */}
+                    <path d="M 64 110 L 64 268 L 329 268" stroke="#6fe39a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    {sim.conducting && (
+                      <path d="M 64 110 L 64 268 L 329 268" stroke="#6fe39a" strokeWidth="3.5" fill="none" className="flow-active" />
+                    )}
+                    <text x="88" y="262" fill="#86efac" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      0 V (−)
+                    </text>
+
+                    {/* +V -> 1/2/3 Series LEDs -> Q2 Collector (C = 381) */}
+                    <path
+                      d={`M 381 40 L 381 ${padY}`}
+                      stroke="#ff6b5a"
+                      strokeWidth="4"
+                      opacity={sim.conducting ? 0.95 : 0.25}
+                      fill="none"
+                      className={sim.conducting ? 'flow-active' : ''}
+                      markerMid={sim.conducting ? 'url(#arrRed)' : undefined}
+                    />
+                    {Array.from({ length: params.ledSeriesCount ?? 1 }).map((_, li) => {
+                      const count = params.ledSeriesCount ?? 1;
+                      const cy = count === 1 ? 72 : count === 2 ? 56 + li * 28 : 48 + li * 23;
+                      const r = count === 1 ? 16 : count === 2 ? 12 : 9.5;
+                      return (
+                        <circle
+                          key={li}
+                          cx="381"
+                          cy={cy}
+                          r={r}
+                          fill={ledGlow > 0.05 ? `rgba(251, 191, 36, ${0.28 + ledGlow * 0.72})` : '#422006'}
+                          stroke="#fde047"
+                          strokeWidth="2.2"
+                          filter={ledGlow > 0.1 ? 'url(#ledGlow)' : undefined}
+                        />
+                      );
+                    })}
+                    <text x="415" y="76" fill="#fff" fontSize="10" fontWeight="700">
+                      {(params.ledSeriesCount ?? 1) > 1 ? `${params.ledSeriesCount}×LED` : 'LED'}
+                    </text>
+
+                    {/* +V -> 10k Bias Resistor -> Q2 Base (B = 355) & Q1 Collector (C = 191) */}
+                    <path d={`M 260 40 L 260 226 L ${q2X} 226 L ${q2X} ${padY}`} stroke="#5ab0ff" strokeWidth="3" className="flow-active" fill="none" />
+                    <path d={`M 260 226 L ${q1X + 26} 226 L ${q1X + 26} ${padY}`} stroke="#ff6b5a" strokeWidth="3" className="flow-active" fill="none" />
+                    <rect x="242" y="72" width="36" height="22" rx="4" fill="#e7d6ac" stroke="#78350f" />
+                    <text x="260" y="87" textAnchor="middle" fill="#1c1917" fontSize="9" fontFamily="monospace" fontWeight="700">
+                      10k
+                    </text>
+
+                    {/* Q2 Emitter (E = 329) -> R_sense -> 0V AND feedback node to Q1 Base (B = 165) */}
+                    <path d={`M ${q2X - 26} ${padY} L ${q2X - 26} 268`} stroke="#6fe39a" strokeWidth="4" className="flow-active" fill="none" />
+                    <path
+                      d={`M ${q2X - 26} 244 L ${q1X} 244 L ${q1X} ${padY}`}
+                      stroke="#5ab0ff"
+                      strokeWidth="3"
+                      className="flow-active"
+                      fill="none"
+                    />
+                    <g data-comp="RSENSE" onClick={() => setInspected('RSENSE')} className="cursor-pointer">
+                      <rect x="303" y="246" width="52" height="19" rx="4" fill="#d97706" stroke="#fde68a" />
+                      <text x="329" y="259" textAnchor="middle" fill="#fff" fontSize="9" fontFamily="monospace" fontWeight="700">
+                        {params.rSense} Ω
+                      </text>
+                    </g>
+
+                    {/* Q1 Emitter (E = 139) -> 0V */}
+                    <path d={`M ${q1X - 26} ${padY} L ${q1X - 26} 268`} stroke="#6fe39a" strokeWidth="3.5" className="flow-active" fill="none" />
+
+                    {/* Variable Battery Block */}
+                    <rect x="38" y="38" width="58" height="72" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
+                    <text x="67" y="68" textAnchor="middle" fill="#fff" fontSize="14" fontWeight="700" fontFamily="monospace">
+                      +  −
+                    </text>
+                    <text x="67" y="92" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">
+                      {params.supplyV.toFixed(1)}V
+                    </text>
+
+                    <TransistorTO92
+                      cx={q1X}
+                      topY={topY}
+                      label="Q1 Rég."
+                      sub="BC547"
+                      compId="Q1"
+                      active={sim.conducting}
+                      vE="0V"
+                      vB={`${vSense.toFixed(2)}V`}
+                      vC={`${(vSense + 0.6).toFixed(2)}V`}
+                      onSelect={setInspected}
+                    />
+                    <TransistorTO92
+                      cx={q2X}
+                      topY={topY}
+                      label="Q2 Pass"
+                      sub="BC337"
+                      compId="Q2"
+                      active={sim.conducting}
+                      vE={`${vSense.toFixed(2)}V`}
+                      vB={`${(vSense + 0.6).toFixed(2)}V`}
+                      vC={`${(vSense + sim.vce).toFixed(1)}V`}
+                      onSelect={setInspected}
+                    />
+                  </g>
+                );
+              })()
+            ) : (
+              /* ================= VERSATILE SINGLE-TRANSISTOR / SPECIALIZED PCB ================= */
+              (() => {
+                const qX = 275;
+                const topY = 114;
+                const padY = topY + 74; // 188
+                const pinE = qX - 26; // 249
+                const pinB = qX;      // 275
+                const pinC = qX + 26; // 301
+                const pnpFlow = !isNpn;
+                const revFlow = pnpFlow && params.batteryReversed;
+
+                const isLdrScene =
+                  cid === 'schmitt-trigger' ||
+                  cid === 'night-light' ||
+                  (!cid && params.chapterId === 5 && (params.exampleId === 'dark-schmitt' || params.exampleId === 'night-light'));
+                const isClapScene =
+                  cid === 'sound-triggered-led' || (!cid && params.chapterId === 5 && params.exampleId === 'clap-sound');
+                const isPwmScene =
+                  cid === 'motor-speed-control' || (!cid && params.chapterId === 5 && params.exampleId === 'motor-pwm');
+                const isLatchScene =
+                  cid === 'touch-switch-globe' || (!cid && params.chapterId === 5 && params.exampleId === 'touch-latch');
+                const isCapScene =
+                  cid === 'courtesy-light' || (!cid && params.chapterId === 3);
+                const isRelayOutScene =
+                  cid === 'night-light' ||
+                  (!cid &&
+                    params.chapterId === 5 &&
+                    (params.exampleId === 'night-light' ||
+                      (params.exampleId === 'motor-relay' && params.loadKind === 'relay')));
+                const isMotorOutScene =
+                  isPwmScene ||
+                  (!cid && params.chapterId === 5 && params.exampleId === 'motor-relay' && params.loadKind === 'motor');
+                const isCoilScene =
+                  cid === 'led-torch-1v5' ||
+                  cid === 'bike-flasher-air' ||
+                  (!cid && params.chapterId === 7 && (params.exampleId === 'joule-thief' || params.exampleId === 'bike-flasher'));
+                const isBikeScene = cid === 'bike-flasher-air' || (!cid && params.chapterId === 7 && params.exampleId === 'bike-flasher');
+                const isTorchScene = cid === 'led-torch-1v5' || (!cid && params.chapterId === 7 && params.exampleId === 'joule-thief');
+                const isChargePumpScene = cid === 'led-on-1v5' || (!cid && params.chapterId === 7 && params.exampleId === 'charge-pump');
+                const isStaircaseScene = cid === 'lie-detector-staircase' || (!cid && params.chapterId === 1 && params.exampleId === 'staircase');
+                const isLogicProbeScene = cid === 'logic-probe' || (!cid && params.chapterId === 2 && params.exampleId === 'logic-probe');
+                const isPlantScene = cid === 'plant-watering' || (!cid && params.chapterId === 1 && params.exampleId === 'plant');
+                const isSelfBiasScene = cid === 'self-bias-ce' || (!cid && params.chapterId === 9);
+                const isReversedBat = (cid === 'simplest-tester' || (!cid && params.chapterId === 2)) && params.batteryReversed;
+
+                const batLabel =
+                  isChargePumpScene || isCoilScene
+                    ? `${params.cellVoltage.toFixed(1)}V`
+                    : isSelfBiasScene
+                    ? '5V'
+                    : cid === 'courtesy-light'
+                    ? '12V'
+                    : cid === 'night-light'
+                    ? `${params.supplySelect6or9 === 6 ? 6 : 12}V`
+                    : !cid && params.chapterId === 5 && params.exampleId === 'night-light'
+                    ? '12V'
+                    : isPwmScene || isPlantScene || isLogicProbeScene
+                    ? '3V'
+                    : cid === 'schmitt-trigger' || cid === 'touch-switch-globe' || cid === 'sound-triggered-led'
+                    ? '6V'
+                    : cid === 'worlds-simplest'
+                    ? `${params.supplySelect6or9 ?? 9}V`
+                    : '9V';
+
+                return (
+                  <g>
+                    {/* +V Top Rail */}
+                    <path d="M 96 62 L 420 62" stroke="#ffd24a" strokeWidth="4.5" opacity="0.35" fill="none" />
+                    {sim.conducting && (
+                      <path
+                        d="M 96 62 L 420 62"
+                        stroke="#ffd24a"
+                        strokeWidth="3.8"
+                        fill="none"
+                        className={revFlow ? 'flow-active-rev' : 'flow-active'}
+                      />
+                    )}
+                    <text x="112" y="52" fill="#fde047" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                      {isReversedBat ? '− Rail' : `+${batLabel} Rail`}
+                    </text>
+
+                    {/* Collector / Output Load Path */}
+                    <path
+                      d={`M 420 62 L 420 218 L ${pinC} 218 L ${pinC} ${padY}`}
+                      stroke="#ff6b5a"
+                      strokeWidth="4.5"
+                      opacity="0.32"
+                      fill="none"
+                    />
+                    {sim.conducting && (
+                      <path
+                        d={`M 420 62 L 420 218 L ${pinC} 218 L ${pinC} ${padY}`}
+                        stroke="#ff6b5a"
+                        strokeWidth="3.8"
+                        fill="none"
+                        className={revFlow ? 'flow-active-rev' : 'flow-active'}
+                        markerMid="url(#arrRed)"
+                      />
+                    )}
+
+                    {/* Emitter Path */}
+                    <path
+                      d={`M ${pinE} ${padY} L ${pinE} 264 L 66 264 L 66 112`}
+                      stroke="#6fe39a"
+                      strokeWidth="4.5"
+                      opacity="0.32"
+                      fill="none"
+                    />
+                    {sim.conducting && (
+                      <path
+                        d={`M ${pinE} ${padY} L ${pinE} 264 L 66 264 L 66 112`}
+                        stroke="#6fe39a"
+                        strokeWidth="3.8"
+                        fill="none"
+                        className={revFlow ? 'flow-active-rev' : 'flow-active'}
+                        markerMid="url(#arrGreen)"
+                      />
+                    )}
+
+                    {/* Base Path */}
+                    <path
+                      d={`M 70 228 L ${pinB} 228 L ${pinB} ${padY}`}
+                      stroke="#5ab0ff"
+                      strokeWidth="4"
+                      opacity="0.32"
+                      fill="none"
+                    />
+                    {(sim.conducting || sim.ibUA > 0.1) && (
+                      <path
+                        d={`M 70 228 L ${pinB} 228 L ${pinB} ${padY}`}
+                        stroke="#5ab0ff"
+                        strokeWidth="3.2"
+                        fill="none"
+                        className={revFlow ? 'flow-active-rev' : 'flow-active'}
+                        markerEnd="url(#arrBlue)"
+                      />
+                    )}
+
+                    {/* Extra Joule Thief / Bike Flasher feedback coil link C -> B */}
+                    {isCoilScene && (
+                      <path
+                        d={`M 326 62 L 326 104 L ${pinB} 104 L ${pinB} ${padY}`}
+                        stroke="#fbbf24"
+                        strokeWidth="2.6"
+                        strokeDasharray="5 4"
+                        fill="none"
+                        opacity={sim.conducting || params.openCircuitFault ? 0.95 : 0.35}
+                      />
+                    )}
+
+                    {/* Extra Charge Pump 1uF boost capacitor */}
+                    {isChargePumpScene && (
+                      <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
+                        <path
+                          d={`M ${pinC} ${padY} L 355 ${padY} L 355 62`}
+                          stroke="#38bdf8"
+                          strokeWidth="2.8"
+                          className={params.pumpPhase === 'B' ? 'flow-active' : ''}
+                          opacity={params.pumpPhase === 'B' ? 0.95 : 0.35}
+                          fill="none"
+                        />
+                        <rect x="334" y="122" width="42" height="22" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
+                        <text x="355" y="137" textAnchor="middle" fill="#fff" fontSize="9" fontFamily="monospace" fontWeight="700">
+                          1µF
+                        </text>
+                      </g>
+                    )}
+
+                    {/* Terminal Block (Battery) */}
+                    <g>
+                      <rect x="38" y="40" width="58" height="72" rx="6" fill="#15803d" stroke="#bbf7d0" strokeWidth="2" />
+                      <text x="67" y="72" textAnchor="middle" fill="#fff" fontSize="15" fontWeight="700" fontFamily="monospace">
+                        {isReversedBat ? '−   +' : '+   −'}
+                      </text>
+                      <text x="67" y="96" textAnchor="middle" fill="#dcfce7" fontSize="10" fontFamily="monospace">
+                        {batLabel}
+                      </text>
+                    </g>
+
+                    {/* Base Component */}
+                    {isLdrScene ? (
+                      <g data-comp="LDR" onClick={() => setInspected('LDR')} className="cursor-pointer">
+                        <circle cx="84" cy="228" r="21" fill="#b45309" stroke="#fde68a" strokeWidth="2" />
+                        <path d="M 72 228 L 78 220 L 84 236 L 90 220 L 96 228" stroke="#fef3c7" strokeWidth="2.5" fill="none" />
+                        <text x="84" y="198" textAnchor="middle" fill="#fef3c7" fontSize="9.5" fontWeight="700">
+                          LDR ({params.luxLevel}%)
+                        </text>
+                      </g>
+                    ) : isClapScene ? (
+                      <g>
+                        <circle cx="84" cy="228" r="18" fill="#334155" stroke="#94a3b8" strokeWidth="2" />
+                        <circle cx="84" cy="228" r="8" fill={params.clapActive ? '#fbbf24' : '#0f172a'} />
+                        <text x="84" y="201" textAnchor="middle" fill="#e2e8f0" fontSize="9.5" fontWeight="700">
+                          MIC ×{params.micGain ?? 2}
+                        </text>
+                        <rect x="136" y="218" width="56" height="19" rx="4" fill="#1d4ed8" stroke="#93c5fd" />
+                        <text x="164" y="231" textAnchor="middle" fill="#fff" fontSize="9.5" fontFamily="monospace" fontWeight="700">
+                          10µF
+                        </text>
+                      </g>
+                    ) : isPwmScene ? (
+                      <g data-comp="PWM" onClick={() => setInspected('PWM')} className="cursor-pointer">
+                        <rect x="52" y="211" width="76" height="34" rx="5" fill="#1e3a8a" stroke="#93c5fd" strokeWidth="1.8" />
+                        <text x="90" y="226" textAnchor="middle" fill="#fff" fontSize="9" fontWeight="700" fontFamily="monospace">
+                          PWM {params.pwmDuty}%
+                        </text>
+                        <text x="90" y="239" textAnchor="middle" fill="#bae6fd" fontSize="8" fontFamily="monospace">
+                          BC557 Osc
+                        </text>
+                      </g>
+                    ) : isLatchScene ? (
+                      <g>
+                        <g onClick={() => onQuickAction?.('latch-on')} className="cursor-pointer">
+                          <rect x="44" y="182" width="42" height="24" rx="4" fill="#eab308" stroke="#fef08a" strokeWidth="1.5" />
+                          <text x="65" y="198" textAnchor="middle" fill="#1c1917" fontSize="10" fontWeight="700">
+                            ON
+                          </text>
+                        </g>
+                        <g onClick={() => onQuickAction?.('latch-off')} className="cursor-pointer">
+                          <rect x="94" y="182" width="42" height="24" rx="4" fill="#e11d48" stroke="#fecdd3" strokeWidth="1.5" />
+                          <text x="115" y="198" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700">
+                            OFF
+                          </text>
+                        </g>
+                        <g data-comp="FB4M7" onClick={() => setInspected('FB4M7')} className="cursor-pointer">
+                          <rect x="148" y="218" width="60" height="20" rx="4" fill="#e7d6ac" stroke="#78350f" />
+                          <text x="178" y="232" textAnchor="middle" fill="#1c1917" fontSize="10" fontWeight="700" fontFamily="monospace">
+                            4M7
+                          </text>
+                        </g>
+                      </g>
+                    ) : isCapScene ? (
+                      <g data-comp="CAP" onClick={() => setInspected('CAP')} className="cursor-pointer">
+                        {cid === 'courtesy-light' && (
+                          <text x="88" y="196" textAnchor="middle" fill="#fde68a" fontSize="9" fontWeight="700">
+                            {params.doorOpen ? 'Porte OUVERTE' : 'Porte FERMÉE'}
+                          </text>
+                        )}
+                        <rect x="135" y="208" width="66" height="34" rx="6" fill="#1d4ed8" stroke="#93c5fd" strokeWidth="1.5" />
+                        <rect
+                          x="137"
+                          y="210"
+                          width={Math.max(4, 62 * (params.doorOpen ? 0.05 : params.capCharge))}
+                          height="30"
+                          rx="4"
+                          fill="#38bdf8"
+                          opacity="0.55"
+                        />
+                        <text x="168" y="229" textAnchor="middle" fill="#fff" fontSize="10.5" fontWeight="700" fontFamily="monospace">
+                          {params.capValueUF}µF
+                        </text>
+                      </g>
+                    ) : (
+                      <g>
+                        <circle cx="70" cy="228" r="14" fill="#eab308" stroke="#fef08a" strokeWidth="2" />
+                        <text x="70" y="205" textAnchor="middle" fill="#fef08a" fontSize="9.5" fontWeight="600">
+                          {isPlantScene ? 'Sonde' : 'Touch'}
+                        </text>
+                        <rect x="132" y="218" width="64" height="19" rx="4" fill="#e7d6ac" stroke="#78350f" />
+                        <text x="164" y="231" textAnchor="middle" fill="#1c1917" fontSize="10" fontFamily="monospace" fontWeight="700">
+                          {isSelfBiasScene ? 'RB' : isPlantScene ? '220k' : 'R1'}
+                        </text>
+                      </g>
+                    )}
+
+                    {/* Central Transistor Package */}
+                    <TransistorTO92
+                      cx={qX}
+                      topY={topY}
+                      label={
+                        cid === 'courtesy-light'
+                          ? 'BD679'
+                          : isPwmScene
+                          ? 'BC338'
+                          : isTorchScene
+                          ? 'BC337'
+                          : isNpn
+                          ? 'BC547'
+                          : 'BC557'
+                      }
+                      sub={
+                        cid === 'courtesy-light'
+                          ? 'BC557+BD679'
+                          : isPwmScene
+                          ? 'Q2 · PWM'
+                          : isNpn
+                          ? 'Q1 · NPN'
+                          : 'Q1 · PNP'
+                      }
+                      compId={cid === 'courtesy-light' ? 'DOME' : isNpn ? 'Q1' : 'PNP'}
+                      isPnp={!isNpn}
+                      active={sim.conducting}
+                      vE={isReversedBat ? '9V' : '0V'}
+                      vB={
+                        isReversedBat
+                          ? `${(9 - sim.vbe).toFixed(2)}V`
+                          : `${sim.vbe.toFixed(2)}V`
+                      }
+                      vC={`${sim.vc.toFixed(1)}V`}
+                      onSelect={setInspected}
+                    />
+
+                    {/* Top Load Resistor or Inductor Coil */}
+                    {isCoilScene ? (
+                      <g data-comp="COIL" onClick={() => setInspected('COIL')} className="cursor-pointer">
+                        <rect x="230" y="44" width="104" height="36" rx="6" fill="#44403c" stroke="#f59e0b" strokeWidth="2" />
+                        <path
+                          d="M 240 62 Q 250 46 260 62 T 280 62 T 300 62 T 320 62"
+                          stroke="#fbbf24"
+                          strokeWidth="3"
+                          fill="none"
+                        />
+                        <text x="282" y="34" textAnchor="middle" fill="#fde68a" fontSize="9.5" fontWeight="700">
+                          {isBikeScene ? 'Bobine Air 30+30t' : 'Ferrite F29 L1+L2'}
+                        </text>
+                      </g>
+                    ) : isRelayOutScene ? (
+                      <g data-comp="RELAY" onClick={() => setInspected('RELAY')} className="cursor-pointer">
+                        <rect x="250" y="51" width="84" height="22" rx="4" fill="#1e293b" stroke="#38bdf8" />
+                        <text x="292" y="66" textAnchor="middle" fill="#bae6fd" fontSize="9.5" fontWeight="700" fontFamily="monospace">
+                          D1 1N4148
+                        </text>
+                      </g>
+                    ) : (
+                      <g data-comp="R220" onClick={() => setInspected('R220')} className="cursor-pointer">
+                        <rect x="255" y="51" width="76" height="22" rx="4" fill="#e7d6ac" stroke="#78350f" />
+                        <text x="293" y="66" textAnchor="middle" fill="#1c1917" fontSize="11" fontWeight="700" fontFamily="monospace">
+                          {isSelfBiasScene
+                            ? 'RL 22k'
+                            : isPwmScene
+                            ? 'Shunt 3V'
+                            : cid === 'courtesy-light'
+                            ? 'Bulb 12V'
+                            : '220 Ω'}
+                        </text>
+                      </g>
+                    )}
+
+                    {/* Output Load Component on Top Right */}
+                    {isStaircaseScene ? (
+                      <g>
+                        {[0, 1, 2, 3].map((i) => {
+                          const lit = i < sim.staircaseLeds;
+                          return (
+                            <g key={i}>
+                              <circle
+                                cx={366 + i * 28}
+                                cy={62}
+                                r="10"
+                                fill={lit ? '#22c55e' : '#1c1917'}
+                                stroke="#86efac"
+                                strokeWidth="2"
+                                filter={lit ? 'url(#ledGlow)' : undefined}
+                              />
+                              <text x={366 + i * 28} y="86" textAnchor="middle" fill="#fff" fontSize="8.5">
+                                L{i + 1}
+                              </text>
+                            </g>
+                          );
+                        })}
+                      </g>
+                    ) : isLogicProbeScene ? (
+                      <g>
+                        <circle
+                          cx="396"
+                          cy="58"
+                          r="15"
+                          fill={params.logicInput === 'HIGH' ? '#ef4444' : '#450a0a'}
+                          stroke="#fca5a5"
+                          strokeWidth="2"
+                          filter={params.logicInput === 'HIGH' ? 'url(#ledGlow)' : undefined}
+                        />
+                        <text x="396" y="86" textAnchor="middle" fill="#fecaca" fontSize="8.5" fontWeight="700">
+                          HIGH
+                        </text>
+                        <circle
+                          cx="440"
+                          cy="58"
+                          r="15"
+                          fill={params.logicInput === 'LOW' ? '#22c55e' : '#052e16'}
+                          stroke="#86efac"
+                          strokeWidth="2"
+                          filter={params.logicInput === 'LOW' ? 'url(#ledGlow)' : undefined}
+                        />
+                        <text x="440" y="86" textAnchor="middle" fill="#bbf7d0" fontSize="8.5" fontWeight="700">
+                          LOW
+                        </text>
+                      </g>
+                    ) : isMotorOutScene ? (
+                      <g>
+                        <circle cx="420" cy="62" r="28" fill="#71717a" stroke="#e4e4e7" strokeWidth="2.5" />
+                        <g
+                          className={sim.conducting ? 'fan-spin' : ''}
+                          style={{ '--spin-speed': `${Math.max(0.22, 1.4 - sim.brightness * 1.15).toFixed(2)}s` } as React.CSSProperties}
+                        >
+                          <rect x="416" y="40" width="8" height="44" rx="3" fill="#fde047" />
+                          <rect x="398" y="58" width="44" height="8" rx="3" fill="#fde047" />
+                        </g>
+                        <text x="420" y="104" textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="700">
+                          {isPwmScene ? 'MOTEUR 3V' : 'MOTEUR'}
+                        </text>
+                      </g>
+                    ) : isRelayOutScene ? (
+                      <g data-comp="RELAY" onClick={() => setInspected('RELAY')} className="cursor-pointer">
+                        <rect
+                          x="374"
+                          y="34"
+                          width="90"
+                          height="58"
+                          rx="6"
+                          fill={sim.conducting ? '#2563eb' : '#1e3a8a'}
+                          stroke="#93c5fd"
+                          strokeWidth="2"
+                        />
+                        <text x="419" y="60" textAnchor="middle" fill="#fff" fontSize="10.5" fontWeight="700">
+                          SONGLE {cid === 'night-light' && params.supplySelect6or9 === 6 ? '6V' : '12V'}
+                        </text>
+                        <text x="419" y="78" textAnchor="middle" fill="#dbeafe" fontSize="9.5">
+                          {sim.conducting ? 'FERMÉ' : 'OUVERT'}
+                        </text>
+                      </g>
+                    ) : isCoilScene && params.openCircuitFault ? (
+                      <g>
+                        <circle cx="420" cy="62" r="22" fill="#450a0a" stroke="#f43f5e" strokeWidth="2.5" strokeDasharray="4 3" />
+                        <text x="420" y="66" textAnchor="middle" fill="#fda4af" fontSize="11" fontWeight="700" fontFamily="monospace">
+                          {Math.round(sim.vc)}V!
+                        </text>
+                        <text x="420" y="98" textAnchor="middle" fill="#fda4af" fontSize="9" fontWeight="700">
+                          SURTENSION
+                        </text>
+                      </g>
+                    ) : isBikeScene ? (
+                      <g>
+                        {[396, 444].map((lx, idx) => (
+                          <g key={idx}>
+                            <circle
+                              cx={lx}
+                              cy={60}
+                              r="17"
+                              fill={sim.conducting ? '#f8fafc' : '#334155'}
+                              stroke="#fde047"
+                              strokeWidth="2.5"
+                              filter={sim.conducting ? 'url(#ledGlow)' : undefined}
+                            />
+                            <text x={lx} y="92" textAnchor="middle" fill="#fef08a" fontSize="8.5" fontWeight="700">
+                              LED {idx + 1}
+                            </text>
+                          </g>
+                        ))}
+                      </g>
+                    ) : (
+                      <g>
+                        <circle
+                          cx="420"
+                          cy="62"
+                          r="21"
+                          fill={
+                            ledGlow > 0.04
+                              ? isTorchScene
+                                ? `rgba(248, 250, 252, ${0.35 + ledGlow * 0.65})`
+                                : `rgba(251, 191, 36, ${0.25 + ledGlow * 0.75})`
+                              : '#422006'
+                          }
+                          stroke="#fde047"
+                          strokeWidth="2.5"
+                          filter={ledGlow > 0.08 ? 'url(#ledGlow)' : undefined}
+                        />
+                        <text x="420" y="98" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700">
+                          {isTorchScene ? 'TORCHE' : cid === 'courtesy-light' ? 'PLAFONNIER' : 'LED'}
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                );
+              })()
+            )}
+          </svg>
+        </div>
+
+        {/* Bottom Status Bar inside Mat */}
+        <div className="absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="bg-black/70 backdrop-blur-xs text-stone-100 text-xs px-3 py-1.5 rounded-md font-medium">
+              {lang === 'fr' ? sim.statusFr : sim.statusAr}
+            </div>
+            {(sim.warningFr || sim.warningAr) && (
+              <div className="bg-rose-950/90 border border-rose-500/70 text-rose-200 text-xs px-3 py-1.5 rounded-md font-semibold">
+                {lang === 'fr' ? sim.warningFr : sim.warningAr}
+              </div>
+            )}
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 bg-black/55 text-stone-300 text-xs px-2.5 py-1.5 rounded-md">
+            <MousePointerClick className="w-3.5 h-3.5" />
+            <span>{lang === 'fr' ? 'Glisser pour pivoter · Cliquer un composant' : 'اسحب للتدوير · انقر أي مكوّن'}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Component Inspector Strip */}
+      <div className="rounded-lg border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-xs font-mono-num text-amber-700 dark:text-amber-400 font-semibold">
+            {part.name}
+          </div>
+          <p className="text-sm text-stone-700 dark:text-stone-300 mt-0.5 leading-snug">
+            {lang === 'fr' ? part.roleFr : part.roleAr}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 text-xs font-mono-num">
+          <span className="text-sky-600 dark:text-sky-400">I_B {sim.ibUA.toFixed(1)}µA</span>
+          <span className="text-stone-400">·</span>
+          <span className="text-rose-600 dark:text-rose-400">I_C {sim.icMA.toFixed(1)}mA</span>
+        </div>
+      </div>
+    </div>
+  );
+};

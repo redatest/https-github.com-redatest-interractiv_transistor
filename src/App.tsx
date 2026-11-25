@@ -278,7 +278,7 @@ export default function App() {
               {track === 'mosfet'
                 ? tr(lang, 'Filière MOSFET · Effet de Champ & Puissance', 'مسار MOSFET · تأثير المجال والقدرة', 'MOSFET Track · Field-Effect & Power')
                 : track === 'kirchhoff'
-                ? tr(lang, 'Filière Kirchhoff · Loi des Mailles (KVL) & des Nœuds (KCL)', 'مسار كيرشوف · قانونا الحلقات والعقد', 'Kirchhoff Track · KVL & KCL Circuit Analysis')
+                ? tr(lang, 'Filière Kirchhoff & Thévenin · Loi des Mailles, des Nœuds & Équivalent (E_th, R_th)', 'مسار كيرشوف وثيفنان · الحلقات والعقد ومكافئ ثيفنان', 'Kirchhoff & Thévenin Track · KVL, KCL & (E_th, R_th)')
                 : track === 'bjt'
                 ? `1-100 Transistor Circuits · Colin Mitchell · ${tr(lang, 'BJT Bipolaire', 'BJT ثنائي القطب', 'BJT Bipolar')}`
                 : tr(lang, 'Électronique Interactive · BJT, MOSFET & Kirchhoff', 'الإلكترونيات التفاعلية · BJT و MOSFET وكيرشوف', 'Interactive Electronics · BJT, MOSFET & Kirchhoff')}
@@ -515,9 +515,9 @@ export default function App() {
               : track === 'kirchhoff'
               ? tr(
                   lang,
-                  'Cours interactif Kirchhoff : loi des mailles (KVL), loi des nœuds (KCL), Millman & pont de Wheatstone',
-                  'دورة كيرشوف التفاعلية: قانون الحلقات (KVL) وقانون العقد (KCL) وميلمان وجسر ويتستون',
-                  'Interactive Kirchhoff Course: KVL Loops, KCL Nodes, Millman & Wheatstone Bridge'
+                  'Cours interactif Kirchhoff & Thévenin : KVL, KCL, Millman, pont de Wheatstone & modèle (E_th, R_th)',
+                  'دورة كيرشوف وثيفنان التفاعلية: الحلقات، العقد، ميلمان، جسر ويتستون ونموذج ثيفنان',
+                  'Interactive Kirchhoff & Thévenin Course: KVL, KCL, Millman, Wheatstone Bridge & (E_th, R_th)'
                 )
               : tr(
                   lang,

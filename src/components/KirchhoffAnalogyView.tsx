@@ -9,6 +9,7 @@ interface Props {
 }
 
 export const KirchhoffAnalogyView: React.FC<Props> = ({ params, sim, lang }) => {
+  const isThevenin = params.topology === 'thevenin-equiv';
   const isKclFocused =
     params.topology === 'parallel-2' ||
     params.topology === 'parallel-3' ||
@@ -16,7 +17,7 @@ export const KirchhoffAnalogyView: React.FC<Props> = ({ params, sim, lang }) => 
     params.topology === 'two-mesh-millman' ||
     params.topology === 'led-parallel-trap';
 
-  const eMax = Math.max(params.e1, 1);
+  const eMax = Math.max(isThevenin ? sim.eTh : params.e1, 1);
   const vAH = Math.max(8, Math.min(110, (sim.vA / eMax) * 105));
   const vTopH = 115;
 
@@ -28,12 +29,16 @@ export const KirchhoffAnalogyView: React.FC<Props> = ({ params, sim, lang }) => 
     <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-gradient-to-b from-sky-50/70 to-emerald-50/40 dark:from-stone-900 dark:to-stone-900/90 p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between text-xs font-mono-num">
         <span className="font-bold text-sky-800 dark:text-sky-300">
-          {isKclFocused
+          {isThevenin
+            ? tr(lang, 'Analogie Hydraulique · Boîte Noire de Thévenin (E_th, R_th)', 'التشبيه المائي · الصندوق الأسود لثيفنان (E_th, R_th)', 'Hydraulic Analogy · Thévenin Black Box (E_th, R_th)')
+            : isKclFocused
             ? tr(lang, 'Analogie Hydraulique · Nœud de Débit (KCL)', 'التشبيه المائي · تفرّع التدفق عند العقدة', 'Hydraulic Analogy · Flow Junction (KCL)')
             : tr(lang, 'Analogie Hydraulique · Boucle d’Altitude (KVL)', 'التشبيه المائي · ميزان الارتفاع في الحلقة', 'Hydraulic Analogy · Elevation Loop (KVL)')}
         </span>
         <span className="text-emerald-700 dark:text-emerald-400 font-bold">
-          {isKclFocused
+          {isThevenin
+            ? `E_th = ${sim.eTh.toFixed(2)}V · R_th = ${sim.rTh.toFixed(0)}Ω`
+            : isKclFocused
             ? `∑Q = ${sim.iTotalMA.toFixed(1)} mA`
             : `ΔH = ${params.e1.toFixed(1)} m (V)`}
         </span>

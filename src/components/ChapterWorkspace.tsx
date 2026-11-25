@@ -21,6 +21,9 @@ import { InteractiveBoard3D } from './InteractiveBoard3D';
 import { LiveSchematicScope } from './LiveSchematicScope';
 import { WaterValveAnalogy } from './WaterValveAnalogy';
 import { playPageFlip, playRelayClick, playTickSound } from '../utils/sound';
+import { VoltageCalculationCard } from './VoltageCalculationCard';
+import { computeBjtVoltageSteps } from '../utils/voltageCalculations';
+import { ExampleOperationBox } from './ExampleOperationBox';
 
 interface Props {
   chapters: ChapterDef[];
@@ -324,7 +327,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
               {(() => {
                 const ex = chapter.examples.find((e) => e.id === selectedExampleId) || chapter.examples[0];
                 return (
-                  <div className="pt-2 border-t border-stone-200/70 dark:border-stone-800 text-xs space-y-1.5">
+                  <div className="pt-2 border-t border-stone-200/70 dark:border-stone-800 text-xs space-y-2">
                     <div className="font-mono-num text-amber-700 dark:text-amber-400">
                       {ex.pageRef} · {ex.components.join(' · ')}
                     </div>
@@ -335,6 +338,18 @@ export const ChapterWorkspace: React.FC<Props> = ({
                 );
               })()}
             </div>
+
+            {(() => {
+              const ex = chapter.examples.find((e) => e.id === selectedExampleId) || chapter.examples[0];
+              return <ExampleOperationBox example={ex} lang={lang} accent="amber" />;
+            })()}
+
+            {/* Step-by-step Voltage Calculation Breakdown */}
+            <VoltageCalculationCard
+              report={computeBjtVoltageSteps({ ...params, exampleId: selectedExampleId }, sim, lang)}
+              lang={lang}
+              accent="amber"
+            />
 
             {/* Predict-Observe-Explain Interactive Card */}
             <div className="rounded-xl border border-dashed border-stone-400 dark:border-stone-600 p-4 flex flex-col gap-3 bg-stone-100/50 dark:bg-stone-900/40">

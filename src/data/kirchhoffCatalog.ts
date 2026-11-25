@@ -251,4 +251,29 @@ export const KIRCHHOFF_CATALOG: CatalogCircuit[] = [
       en: 'A break stops all flow and concentrates full pressure across the open gap.',
     },
   },
+  {
+    id: 'thevenin-equiv-bench',
+    page: 138,
+    title: 'Thévenin Equivalent Reducer (E_th, R_th)',
+    titleBi: {
+      fr: 'Réducteur de Thévenin (E_th, R_th) en charge',
+      ar: 'مختزل ثيفنان (E_th, R_th) مع تغيّر الحمل',
+      en: 'Thévenin Equivalent Reducer (E_th, R_th)',
+    },
+    category: 'basics',
+    transistors: ['Thévenin', 'E_th / R_th'],
+    supply: '12 V',
+    parts: ['R₁ = 2 kΩ', 'R₂ = 2 kΩ', 'Charge R_L'],
+    concept: {
+      fr: 'Basculez entre le pont diviseur complet et sa source de Thévenin (E_th, R_th) et vérifiez l’identité exacte sur R_L.',
+      ar: 'بدّل بين الشبكة الكاملة ومصدر ثيفنان المكافئ (E_th, R_th) وتأكد من تطابق جهد وتيار الحمل.',
+      en: 'Toggle between the full network and its (E_th, R_th) Thévenin model and verify identical load V_L & I_L.',
+    },
+    analogyTitle: { fr: 'Boîte noire équivalente', ar: 'الصندوق الأسود المكافئ', en: 'Equivalent Black Box' },
+    analogyText: {
+      fr: 'La charge R_L ne fait aucune différence entre le réseau original et son couple unique E_th + R_th.',
+      ar: 'لا يفرّق الحمل R_L أبداً بين الشبكة الأصلية ونموذجها المكافئ E_th + R_th.',
+      en: 'Load R_L experiences the exact same voltage and current from either network.',
+    },
+  },
 ];

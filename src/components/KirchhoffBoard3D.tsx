@@ -52,6 +52,12 @@ const PART_INFO: Record<string, { name: string; fr: string; ar: string; en: stri
     ar: 'يقيس فرق الجهد V_A − V_B بين ذراعي جسر ويتستون (0.00V عند التوازن).',
     en: 'Measures differential voltage V_A − V_B across the Wheatstone bridge (0.00 V at null).',
   },
+  thevenin: {
+    name: 'Modèle Thévenin (E_th, R_th)',
+    fr: 'Source idéale E_th (= V_vide) en série avec R_th (= R₁ // R₂). Produit exactement le même V_L et I_L sur R_L !',
+    ar: 'مصدر مثالي E_th (جهد الفراغ) على التوالي مع R_th (R₁ // R₂) يعطي نفس V_L و I_L تماماً!',
+    en: 'Ideal source E_th (open-circuit V) in series with R_th (R₁ // R₂). Produces identical V_L & I_L across R_L!',
+  },
 };
 
 type PotentialTone = 'high' | 'ctrl' | 'load' | 'return' | 'danger' | 'idle';
@@ -362,6 +368,8 @@ export const KirchhoffBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickAc
   const isDualSources = top === 'dual-sources';
   const isInternalRi = top === 'internal-resistance';
   const isLedSeries = top === 'led-series-kvl';
+  const isThevenin = top === 'thevenin-equiv';
+  const isTheveninDual = isThevenin && params.exampleId === 'thevenin-dual-mesh';
 
   return (
     <div className="flex flex-col gap-3">
@@ -411,7 +419,7 @@ export const KirchhoffBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickAc
               </text>
 
               {/* ================= 1. SINGLE-LOOP FAMILY (series-2r, series-3r, led-series-kvl, internal-resistance) ================= */}
-              {!isTwoMesh && !isBridge && !isParallel && !isLoadedDiv && !isDualSources && (
+              {!isTwoMesh && !isBridge && !isParallel && !isLoadedDiv && !isDualSources && !isThevenin && (
                 <g>
                   {/* Copper Base Traces */}
                   <path
@@ -1122,6 +1130,222 @@ export const KirchhoffBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickAc
                   <circle cx="415" cy="130" r="6" fill="#fb923c" stroke="#09111a" strokeWidth="1.8" />
                   <VoltageNodeBadge x={175} y={130} text={`V_A ${sim.vA.toFixed(2)}V`} tone="ctrl" />
                   <VoltageNodeBadge x={465} y={130} text={`V_B ${sim.vB.toFixed(2)}V`} tone="load" />
+                </g>
+              )}
+
+              {/* ================= 7. THÉVENIN EQUIVALENT REDUCTION ================= */}
+              {isThevenin && (
+                <g>
+                  {/* Copper Base Traces */}
+                  <path
+                    d="M 80 95 L 80 52 L 440 52 L 440 208 L 80 208 L 80 165"
+                    fill="none"
+                    stroke="#0d4a31"
+                    strokeWidth="7"
+                    strokeLinejoin="round"
+                  />
+
+                  {params.showTheveninEquivalent ? (
+                    /* SIMPLIFIED THÉVENIN EQUIVALENT MODEL: E_th -> R_th -> Bornes A/B -> R_L */
+                    <>
+                      {/* Black-box outline */}
+                      <rect
+                        x="42"
+                        y="28"
+                        width="292"
+                        height="202"
+                        rx="12"
+                        fill="#0f172a"
+                        fillOpacity="0.32"
+                        stroke="#34d399"
+                        strokeWidth="1.8"
+                        strokeDasharray="5 4"
+                      />
+                      <text x="188" y="24" textAnchor="middle" fill="#6ee7b7" fontSize="8.5" fontFamily="monospace" fontWeight="700">
+                        MODÈLE THÉVENIN (E_th = {sim.eTh.toFixed(2)}V · R_th = {sim.rTh.toFixed(0)}Ω)
+                      </text>
+
+                      {/* Traces */}
+                      <path
+                        d="M 80 95 L 80 52 L 348 52"
+                        fill="none"
+                        className={params.loadConnected ? 'flow-pulse-high' : 'potential-pulse-high'}
+                        stroke="#fbbf24"
+                        strokeWidth="3.6"
+                      />
+                      <path
+                        d="M 348 52 L 440 52 L 440 208 L 348 208"
+                        fill="none"
+                        className={params.loadConnected ? 'flow-pulse-load' : ''}
+                        stroke={params.loadConnected ? '#fb923c' : '#475569'}
+                        strokeWidth="3.4"
+                        strokeDasharray={params.loadConnected ? undefined : '4 4'}
+                      />
+                      <path
+                        d="M 348 208 L 80 208 L 80 165"
+                        fill="none"
+                        className={params.loadConnected ? 'flow-pulse-return' : ''}
+                        stroke="#2dd4bf"
+                        strokeWidth="3.6"
+                      />
+
+                      <PcbBattery
+                        x={80}
+                        y={130}
+                        label="E_th"
+                        voltage={sim.eTh}
+                        selected={selectedPart === 'thevenin'}
+                        onClick={() => setSelectedPart('thevenin')}
+                      />
+                      <PcbResistor
+                        x={210}
+                        y={52}
+                        label={`R_th ${formatOhm(Math.round(sim.rTh))}`}
+                        subLabel={`-${(params.loadConnected ? sim.u3 : 0).toFixed(2)}V`}
+                        selected={selectedPart === 'thevenin'}
+                        onClick={() => setSelectedPart('thevenin')}
+                      />
+                    </>
+                  ) : (
+                    /* ORIGINAL NETWORK BEFORE REDUCTION */
+                    <>
+                      <rect
+                        x="42"
+                        y="28"
+                        width="292"
+                        height="202"
+                        rx="12"
+                        fill="#0f172a"
+                        fillOpacity="0.18"
+                        stroke="#94a3b8"
+                        strokeWidth="1.4"
+                        strokeDasharray="4 4"
+                      />
+                      <text x="188" y="24" textAnchor="middle" fill="#fde68a" fontSize="8.5" fontFamily="monospace" fontWeight="700">
+                        {isTheveninDual ? 'RÉSEAU ORIGINAL (2 SOURCES E₁, E₂)' : 'RÉSEAU ORIGINAL (DIVISEUR E₁, R₁, R₂)'}
+                      </text>
+
+                      {/* Traces */}
+                      <path
+                        d="M 80 95 L 80 52 L 295 52 L 295 208 L 80 208 L 80 165"
+                        fill="none"
+                        stroke="#0d4a31"
+                        strokeWidth="6"
+                      />
+                      <path
+                        d="M 80 95 L 80 52 L 220 52"
+                        fill="none"
+                        className="flow-pulse-high"
+                        stroke="#fbbf24"
+                        strokeWidth="3.5"
+                      />
+                      <path
+                        d="M 220 52 L 348 52"
+                        fill="none"
+                        className="flow-pulse-ctrl"
+                        stroke="#38bdf8"
+                        strokeWidth="3.3"
+                      />
+                      {isTheveninDual ? (
+                        <path
+                          d="M 220 52 L 220 120 L 295 120 L 295 208"
+                          fill="none"
+                          className={sim.i2MA < 0 ? 'flow-pulse-ctrl-rev' : 'flow-pulse-ctrl'}
+                          stroke="#38bdf8"
+                          strokeWidth="3"
+                        />
+                      ) : (
+                        <line x1="220" y1="52" x2="220" y2="208" className="flow-pulse-ctrl" stroke="#38bdf8" strokeWidth="3" />
+                      )}
+                      <path
+                        d="M 348 52 L 440 52 L 440 208 L 348 208"
+                        fill="none"
+                        className={params.loadConnected ? 'flow-pulse-load' : ''}
+                        stroke={params.loadConnected ? '#fb923c' : '#475569'}
+                        strokeWidth="3.4"
+                        strokeDasharray={params.loadConnected ? undefined : '4 4'}
+                      />
+                      <path
+                        d="M 348 208 L 80 208 L 80 165"
+                        fill="none"
+                        className="flow-pulse-return"
+                        stroke="#2dd4bf"
+                        strokeWidth="3.5"
+                      />
+
+                      <PcbBattery
+                        x={80}
+                        y={130}
+                        label="E₁"
+                        voltage={params.e1}
+                        selected={selectedPart === 'e1'}
+                        onClick={() => setSelectedPart('e1')}
+                      />
+                      <PcbResistor
+                        x={152}
+                        y={52}
+                        label={`R₁ ${formatOhm(params.r1)}`}
+                        subLabel={`-${sim.u1.toFixed(2)}V`}
+                        selected={selectedPart === 'r1'}
+                        onClick={() => setSelectedPart('r1')}
+                      />
+                      {isTheveninDual ? (
+                        <>
+                          <PcbResistor
+                            x={280}
+                            y={52}
+                            label={`R₂ ${formatOhm(params.r2)}`}
+                            subLabel={`-${sim.u2.toFixed(2)}V`}
+                            selected={selectedPart === 'r2'}
+                            onClick={() => setSelectedPart('r2')}
+                          />
+                          <PcbBattery
+                            x={295}
+                            y={142}
+                            label="E₂"
+                            voltage={params.e2}
+                            selected={selectedPart === 'e2'}
+                            onClick={() => setSelectedPart('e2')}
+                          />
+                        </>
+                      ) : (
+                        <PcbResistor
+                          x={220}
+                          y={130}
+                          vertical
+                          label={`R₂ ${formatOhm(params.r2)}`}
+                          subLabel={`${sim.u2.toFixed(2)}V`}
+                          selected={selectedPart === 'r2'}
+                          onClick={() => setSelectedPart('r2')}
+                        />
+                      )}
+                    </>
+                  )}
+
+                  {/* Terminal A and B Binding Posts */}
+                  <circle cx="348" cy="52" r="6.5" fill="#38bdf8" stroke="#09111a" strokeWidth="2" />
+                  <circle cx="348" cy="208" r="6.5" fill="#2dd4bf" stroke="#09111a" strokeWidth="2" />
+                  <text x="348" y="38" textAnchor="middle" fill="#bae6fd" fontSize="8.5" fontFamily="monospace" fontWeight="800">
+                    A
+                  </text>
+                  <text x="348" y="226" textAnchor="middle" fill="#99f6e4" fontSize="8.5" fontFamily="monospace" fontWeight="800">
+                    B (GND)
+                  </text>
+
+                  {/* Load R_L */}
+                  <PcbResistor
+                    x={440}
+                    y={130}
+                    vertical
+                    label={params.loadConnected ? `R_L ${formatOhm(params.rLoad)}` : 'À VIDE'}
+                    subLabel={params.loadConnected ? `${sim.iLoadMA.toFixed(1)}mA` : '0.0mA'}
+                    fault={params.loadConnected ? 'none' : 'open'}
+                    selected={selectedPart === 'r3'}
+                    onClick={() => setSelectedPart('r3')}
+                  />
+
+                  <VoltageNodeBadge x={440} y={32} text={`V_L = ${sim.vOut.toFixed(2)}V`} tone="load" />
+                  <VoltageNodeBadge x={155} y={236} text={`E_th=${sim.eTh.toFixed(2)}V · R_th=${sim.rTh.toFixed(0)}Ω`} tone="ctrl" />
                 </g>
               )}
             </svg>

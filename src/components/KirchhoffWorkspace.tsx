@@ -25,6 +25,9 @@ import { playPageFlip, playRelayClick, playTickSound } from '../utils/sound';
 import { KirchhoffBoard3D } from './KirchhoffBoard3D';
 import { KirchhoffSchematicScope } from './KirchhoffSchematicScope';
 import { KirchhoffAnalogyView } from './KirchhoffAnalogyView';
+import { VoltageCalculationCard } from './VoltageCalculationCard';
+import { computeKirchhoffVoltageSteps } from '../utils/voltageCalculations';
+import { ExampleOperationBox } from './ExampleOperationBox';
 
 interface Props {
   chapters: ChapterDef[];
@@ -130,6 +133,19 @@ function buildKirchhoffParamsForChapter(chapterId: number, exampleId?: string): 
         r2: 2000,
         faultMode: 'open',
       });
+    case 9:
+      return createDefaultKirchhoffParams({
+        chapterId: 9,
+        exampleId: ex || 'thevenin-divider',
+        topology: 'thevenin-equiv',
+        e1: 12.0,
+        e2: 6.0,
+        r1: 2000,
+        r2: 2000,
+        rLoad: 1000,
+        loadConnected: true,
+        showTheveninEquivalent: false,
+      });
     default:
       return createDefaultKirchhoffParams({ chapterId });
   }
@@ -211,8 +227,10 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
             />
           </label>
 
-          {/* Secondary source E2 for Dual-Sources & 2-Mesh Millman */}
-          {(top === 'dual-sources' || top === 'two-mesh-millman') && (
+          {/* Secondary source E2 for Dual-Sources, 2-Mesh Millman & Dual-Mesh Thévenin */}
+          {(top === 'dual-sources' ||
+            top === 'two-mesh-millman' ||
+            (top === 'thevenin-equiv' && params.exampleId === 'thevenin-dual-mesh')) && (
             <label className="flex flex-col gap-1 text-xs">
               <div className="flex justify-between font-mono-num">
                 <span className="text-stone-600 dark:text-stone-400">
@@ -311,7 +329,10 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
           )}
 
           {/* Load / Bridge Sensor R_L */}
-          {(top === 'loaded-divider' || top === 'wheatstone-bridge' || top === 'internal-resistance') && (
+          {(top === 'loaded-divider' ||
+            top === 'wheatstone-bridge' ||
+            top === 'internal-resistance' ||
+            top === 'thevenin-equiv') && (
             <label className="flex flex-col gap-1 text-xs">
               <div className="flex justify-between font-mono-num">
                 <span className="text-stone-600 dark:text-stone-400">
@@ -353,7 +374,10 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
             </button>
           )}
 
-          {(top === 'loaded-divider' || top === 'internal-resistance' || top === 'led-series-kvl') && (
+          {(top === 'loaded-divider' ||
+            top === 'internal-resistance' ||
+            top === 'led-series-kvl' ||
+            top === 'thevenin-equiv') && (
             <button
               type="button"
               onClick={() => {
@@ -372,7 +396,26 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
                   : tr(lang, '1 seule LED (V_F = 1,9 V)', 'مصباح واحد فقط (1.9V)', 'Single LED (1.9 V)')
                 : params.loadConnected
                 ? tr(lang, 'Charge R_L : Branchée', 'الحمل R_L: موصول', 'Load R_L: Connected')
-                : tr(lang, 'Charge R_L : À vide (débranchée)', 'دون حمل (مفصول)', 'No-Load (Disconnected)')}
+                : tr(lang, 'Charge R_L : À vide (V_AB = E_th)', 'دون حمل (مفصول)', 'No-Load (Open Circuit)')}
+            </button>
+          )}
+
+          {top === 'thevenin-equiv' && (
+            <button
+              type="button"
+              onClick={() => {
+                playRelayClick(muted, !params.showTheveninEquivalent);
+                setParams((p) => ({ ...p, showTheveninEquivalent: !p.showTheveninEquivalent }));
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer ${
+                params.showTheveninEquivalent
+                  ? 'bg-sky-600 text-white border-sky-600'
+                  : 'bg-amber-600 text-white border-amber-600'
+              }`}
+            >
+              {params.showTheveninEquivalent
+                ? tr(lang, 'Vue : Modèle Thévenin (E_th, R_th)', 'العرض: نموذج ثيفينان المكافئ', 'View: Thévenin Model (E_th, R_th)')
+                : tr(lang, 'Basculer → Modèle Thévenin', 'التحويل ← نموذج ثيفينان', 'Switch → Thévenin Equivalent')}
             </button>
           )}
 
@@ -575,6 +618,19 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
             </div>
           </div>
 
+          {(() => {
+            const activeExId = activeExampleId ?? chapter.examples[0]?.id;
+            const ex = chapter.examples.find((e) => e.id === activeExId) || chapter.examples[0];
+            return ex ? <ExampleOperationBox example={ex} lang={lang} accent="emerald" /> : null;
+          })()}
+
+          {/* Step-by-step Voltage Calculation Breakdown */}
+          <VoltageCalculationCard
+            report={computeKirchhoffVoltageSteps(params, sim, lang)}
+            lang={lang}
+            accent="emerald"
+          />
+
           {/* Interactive POEC Prediction Quiz */}
           <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-4">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400">
@@ -687,7 +743,9 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-3">
               <div className="text-[11px] text-stone-500 dark:text-stone-400">
-                {tr(lang, 'Potentiel V_A', 'جهد العقدة V_A', 'Node V_A')}
+                {params.topology === 'thevenin-equiv'
+                  ? tr(lang, 'Tension V_AB (Charge)', 'الجهد V_AB (الحمل)', 'Load V_AB')
+                  : tr(lang, 'Potentiel V_A', 'جهد العقدة V_A', 'Node V_A')}
               </div>
               <div className="font-mono-num text-lg font-bold text-sky-700 dark:text-sky-400 mt-0.5">
                 {sim.vA.toFixed(2)} V
@@ -695,7 +753,9 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
             </div>
             <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-3">
               <div className="text-[11px] text-stone-500 dark:text-stone-400">
-                {tr(lang, 'Courant principal', 'التيار الرئيسي', 'Main Current')}
+                {params.topology === 'thevenin-equiv'
+                  ? tr(lang, 'Courant charge I_L', 'تيار الحمل I_L', 'Load Current I_L')
+                  : tr(lang, 'Courant principal', 'التيار الرئيسي', 'Main Current')}
               </div>
               <div className="font-mono-num text-lg font-bold text-amber-700 dark:text-amber-400 mt-0.5">
                 {sim.iTotalMA.toFixed(2)} mA
@@ -703,10 +763,14 @@ export const KirchhoffWorkspace: React.FC<Props> = ({
             </div>
             <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-3">
               <div className="text-[11px] text-stone-500 dark:text-stone-400">
-                {tr(lang, 'Bilan ∑U (KVL)', 'ميزان الحلقات ∑U', 'KVL Residual')}
+                {params.topology === 'thevenin-equiv'
+                  ? tr(lang, 'Équivalent E_th · R_th', 'مكافئ ثيفينان E_th · R_th', 'Thévenin E_th · R_th')
+                  : tr(lang, 'Bilan ∑U (KVL)', 'ميزان الحلقات ∑U', 'KVL Residual')}
               </div>
               <div className="font-mono-num text-lg font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
-                {sim.kvlLoop1ResidualV.toFixed(2)} V
+                {params.topology === 'thevenin-equiv'
+                  ? `${(sim.eTh ?? 0).toFixed(2)} V / ${Math.round(sim.rTh ?? 0)} Ω`
+                  : `${sim.kvlLoop1ResidualV.toFixed(2)} V`}
               </div>
             </div>
             <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-3">

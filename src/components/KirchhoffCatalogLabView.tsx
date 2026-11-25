@@ -55,6 +55,8 @@ function buildInitialKirchhoffCatalogParams(circuitId: string): KirchhoffSimPara
       return createDefaultKirchhoffParams({ catalogId: circuitId, topology: 'internal-resistance', e1: 9, rInternal: 3.5, rLoad: 12, loadConnected: true });
     case 'fault-finder-bench':
       return createDefaultKirchhoffParams({ catalogId: circuitId, topology: 'series-2r', e1: 9, r1: 1000, r2: 2000, faultMode: 'open' });
+    case 'thevenin-equiv-bench':
+      return createDefaultKirchhoffParams({ catalogId: circuitId, topology: 'thevenin-equiv', exampleId: 'thevenin-divider', e1: 12, r1: 2000, r2: 2000, rLoad: 1000, loadConnected: true, showTheveninEquivalent: false });
     default:
       return createDefaultKirchhoffParams({ catalogId: circuitId });
   }
@@ -233,7 +235,7 @@ export const KirchhoffCatalogLabView: React.FC<Props> = ({
                 </label>
               )}
 
-              {(params.topology === 'loaded-divider' || params.topology === 'wheatstone-bridge' || params.topology === 'internal-resistance') && (
+              {(params.topology === 'loaded-divider' || params.topology === 'wheatstone-bridge' || params.topology === 'internal-resistance' || params.topology === 'thevenin-equiv') && (
                 <label className="flex flex-col gap-1">
                   <div className="flex justify-between font-mono-num">
                     <span>R_L</span>
@@ -252,7 +254,43 @@ export const KirchhoffCatalogLabView: React.FC<Props> = ({
                   <input type="range" min="0" max="20" step="0.5" value={params.e2} onChange={(e) => setParams((p) => ({ ...p, e2: Number(e.target.value) }))} className="accent-sky-600 cursor-pointer" />
                 </label>
               )}
+
+              {params.topology === 'thevenin-equiv' && (
+                <label className="flex flex-col gap-1">
+                  <div className="flex justify-between font-mono-num">
+                    <span>R₂</span>
+                    <span className="font-bold">{params.r2} Ω</span>
+                  </div>
+                  <input type="range" min="100" max="10000" step="100" value={params.r2} onChange={(e) => setParams((p) => ({ ...p, r2: Number(e.target.value) }))} className="accent-emerald-600 cursor-pointer" />
+                </label>
+              )}
             </div>
+
+            {params.topology === 'thevenin-equiv' && (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playRelayClick(muted, !params.showTheveninEquivalent);
+                    setParams((p) => ({ ...p, showTheveninEquivalent: !p.showTheveninEquivalent }));
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer ${
+                    params.showTheveninEquivalent ? 'bg-emerald-700 text-white' : 'bg-amber-600 text-white'
+                  }`}
+                >
+                  {params.showTheveninEquivalent
+                    ? tr(lang, 'Vue : Modèle Thévenin (E_th, R_th)', 'العرض: نموذج ثيفنان المكافئ', 'View: Thévenin Model (E_th, R_th)')
+                    : tr(lang, 'Basculer → Modèle Thévenin', 'تحويل إلى نموذج ثيفنان', 'Switch → Thévenin Model')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setParams((p) => ({ ...p, loadConnected: !p.loadConnected }))}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-300 dark:border-stone-700 cursor-pointer"
+                >
+                  {params.loadConnected ? tr(lang, 'R_L : Branchée', 'الحمل: موصول', 'R_L: Connected') : tr(lang, 'R_L : À vide', 'دون حمل', 'R_L: Open')}
+                </button>
+              </div>
+            )}
 
             {params.topology === 'led-parallel-trap' && (
               <button

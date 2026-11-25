@@ -257,6 +257,141 @@ export const KirchhoffToolsView: React.FC<Props> = ({ lang }) => {
           </div>
         </section>
       </div>
+
+      {/* TOOL 3: Live Thévenin & Norton Equivalent Reducer */}
+      <TheveninReducerCard lang={lang} />
     </div>
+  );
+};
+
+const TheveninReducerCard: React.FC<{ lang: Lang }> = ({ lang }) => {
+  const [mode, setMode] = useState<'divider' | 'dual'>('divider');
+  const [e1, setE1] = useState(12);
+  const [e2, setE2] = useState(6);
+  const [r1, setR1] = useState(2000);
+  const [r2, setR2] = useState(2000);
+  const [rLoad, setRLoad] = useState(1000);
+
+  const thSim = useMemo(
+    () =>
+      computeKirchhoffSimulation(
+        createDefaultKirchhoffParams({
+          topology: 'thevenin-equiv',
+          exampleId: mode === 'dual' ? 'thevenin-dual-mesh' : 'thevenin-divider',
+          e1,
+          e2,
+          r1,
+          r2,
+          rLoad,
+          loadConnected: true,
+        })
+      ),
+    [mode, e1, e2, r1, r2, rLoad]
+  );
+
+  const pMaxMW = thSim.rTh > 0 ? ((thSim.eTh * thSim.eTh) / (4 * thSim.rTh)) * 1000 : 0;
+
+  return (
+    <section className="rounded-xl border border-emerald-500/40 bg-white dark:bg-stone-900/75 p-5 flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-bold text-stone-900 dark:text-stone-50">
+          <Calculator className="w-4 h-4 text-emerald-600" />
+          <span>{tr(lang, 'Réducteur de Thévenin & Norton (E_th, R_th, I_N)', 'مختزل ثيفنان ونورتن التفاعلي (E_th, R_th, I_N)', 'Thévenin & Norton Equivalent Reducer (E_th, R_th, I_N)')}</span>
+        </div>
+        <div className="flex items-center gap-1 rounded-lg border border-stone-300 dark:border-stone-700 p-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => setMode('divider')}
+            className={`px-2.5 py-1 rounded-md font-semibold cursor-pointer ${
+              mode === 'divider' ? 'bg-emerald-700 text-white' : 'text-stone-600 dark:text-stone-300'
+            }`}
+          >
+            {tr(lang, 'Pont diviseur', 'مقسّم جهد', 'Voltage Divider')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('dual')}
+            className={`px-2.5 py-1 rounded-md font-semibold cursor-pointer ${
+              mode === 'dual' ? 'bg-emerald-700 text-white' : 'text-stone-600 dark:text-stone-300'
+            }`}
+          >
+            {tr(lang, 'Réseau 2 sources', 'شبكة بمصدرين', '2-Source Mesh')}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+        <label className="flex flex-col gap-1">
+          <div className="flex justify-between font-mono-num">
+            <span>E₁</span>
+            <span className="font-bold text-amber-600">{e1.toFixed(1)} V</span>
+          </div>
+          <input type="range" min="1" max="24" step="0.5" value={e1} onChange={(e) => setE1(Number(e.target.value))} className="accent-emerald-600 cursor-pointer" />
+        </label>
+        {mode === 'dual' && (
+          <label className="flex flex-col gap-1">
+            <div className="flex justify-between font-mono-num">
+              <span>E₂</span>
+              <span className="font-bold text-sky-600">{e2.toFixed(1)} V</span>
+            </div>
+            <input type="range" min="0" max="24" step="0.5" value={e2} onChange={(e) => setE2(Number(e.target.value))} className="accent-sky-600 cursor-pointer" />
+          </label>
+        )}
+        <label className="flex flex-col gap-1">
+          <div className="flex justify-between font-mono-num">
+            <span>R₁</span>
+            <span className="font-bold">{r1} Ω</span>
+          </div>
+          <input type="range" min="100" max="10000" step="100" value={r1} onChange={(e) => setR1(Number(e.target.value))} className="accent-emerald-600 cursor-pointer" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <div className="flex justify-between font-mono-num">
+            <span>R₂</span>
+            <span className="font-bold">{r2} Ω</span>
+          </div>
+          <input type="range" min="100" max="10000" step="100" value={r2} onChange={(e) => setR2(Number(e.target.value))} className="accent-emerald-600 cursor-pointer" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <div className="flex justify-between font-mono-num">
+            <span>R_L</span>
+            <span className="font-bold text-orange-600">{rLoad} Ω</span>
+          </div>
+          <input type="range" min="100" max="10000" step="100" value={rLoad} onChange={(e) => setRLoad(Number(e.target.value))} className="accent-orange-600 cursor-pointer" />
+        </label>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-2 border-t border-stone-200 dark:border-stone-800 font-mono-num text-xs">
+        <div className="p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900">
+          <div className="text-stone-500">E_th</div>
+          <div className="text-base font-bold text-emerald-700 dark:text-emerald-400">{thSim.eTh.toFixed(2)} V</div>
+        </div>
+        <div className="p-2.5 rounded-lg bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800">
+          <div className="text-stone-500">R_th</div>
+          <div className="text-base font-bold text-amber-600">{thSim.rTh.toFixed(0)} Ω</div>
+        </div>
+        <div className="p-2.5 rounded-lg bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800">
+          <div className="text-stone-500">I_N (Norton)</div>
+          <div className="text-base font-bold text-sky-600">{thSim.iNortonMA.toFixed(2)} mA</div>
+        </div>
+        <div className="p-2.5 rounded-lg bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800">
+          <div className="text-stone-500">V_L (charge)</div>
+          <div className="text-base font-bold text-orange-600">{thSim.uLoad.toFixed(2)} V</div>
+        </div>
+        <div className="p-2.5 rounded-lg bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800">
+          <div className="text-stone-500">I_L (charge)</div>
+          <div className="text-base font-bold text-stone-900 dark:text-stone-100">{thSim.iLoadMA.toFixed(2)} mA</div>
+        </div>
+        <div className="p-2.5 rounded-lg bg-stone-50 dark:bg-stone-950/60 border border-stone-200 dark:border-stone-800">
+          <div className="text-stone-500">P_max (R_L=R_th)</div>
+          <div className="text-base font-bold text-emerald-700 dark:text-emerald-400">{pMaxMW.toFixed(1)} mW</div>
+        </div>
+      </div>
+
+      <div className="rounded-lg bg-stone-100 dark:bg-stone-950/70 border border-stone-200 dark:border-stone-800 p-3 text-xs font-mono-num text-stone-800 dark:text-stone-200" dir="ltr">
+        {mode === 'divider'
+          ? `E_th = ${e1.toFixed(1)} × ${r2} / (${r1} + ${r2}) = ${thSim.eTh.toFixed(2)} V  |  R_th = (${r1}×${r2})/(${r1}+${r2}) = ${thSim.rTh.toFixed(0)} Ω  |  V_L = ${thSim.eTh.toFixed(2)} × ${rLoad} / (${thSim.rTh.toFixed(0)}+${rLoad}) = ${thSim.uLoad.toFixed(2)} V`
+          : `E_th = (${e1.toFixed(1)}/${r1} + ${e2.toFixed(1)}/${r2}) / (1/${r1}+1/${r2}) = ${thSim.eTh.toFixed(2)} V  |  R_th = ${thSim.rTh.toFixed(0)} Ω  |  V_L = ${thSim.uLoad.toFixed(2)} V`}
+      </div>
+    </section>
   );
 };

@@ -25,6 +25,9 @@ import { playPageFlip, playRelayClick, playTickSound } from '../utils/sound';
 import { MosfetBoard3D } from './MosfetBoard3D';
 import { MosfetSchematicScope } from './MosfetSchematicScope';
 import { MosfetAnalogyView } from './MosfetAnalogyView';
+import { VoltageCalculationCard } from './VoltageCalculationCard';
+import { computeMosfetVoltageSteps } from '../utils/voltageCalculations';
+import { ExampleOperationBox } from './ExampleOperationBox';
 
 interface Props {
   chapters: ChapterDef[];
@@ -737,6 +740,18 @@ export const MosfetWorkspace: React.FC<Props> = ({
                 })}
               </div>
             </div>
+
+            {(() => {
+              const ex = chapter.examples.find((e) => e.id === params.exampleId) || chapter.examples[0];
+              return ex ? <ExampleOperationBox example={ex} lang={lang} accent="sky" /> : null;
+            })()}
+
+            {/* Step-by-step Voltage Calculation Breakdown */}
+            <VoltageCalculationCard
+              report={computeMosfetVoltageSteps(params, sim, lang)}
+              lang={lang}
+              accent="sky"
+            />
 
             {/* Predict - Observe - Explain Quiz */}
             <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/70 p-4 flex flex-col gap-3">

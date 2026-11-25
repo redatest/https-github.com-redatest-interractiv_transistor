@@ -9,7 +9,8 @@ export type KirchhoffTopology =
   | 'led-parallel-trap'
   | 'two-mesh-millman'
   | 'wheatstone-bridge'
-  | 'internal-resistance';
+  | 'internal-resistance'
+  | 'thevenin-equiv';
 
 export type KirchhoffFaultMode = 'none' | 'open' | 'short';
 
@@ -31,6 +32,7 @@ export interface KirchhoffSimParams {
   vfLed1: number; // Forward voltage of LED1 (e.g. 1.9V Red)
   vfLed2: number; // Forward voltage of LED2 (e.g. 3.1V Blue)
   faultMode: KirchhoffFaultMode; // 'none' | 'open' | 'short'
+  showTheveninEquivalent?: boolean; // Toggle reduced Eth + Rth view
 }
 
 export interface KirchhoffSimReadout {
@@ -73,6 +75,10 @@ export interface KirchhoffSimReadout {
   warningFr?: string;
   warningAr?: string;
   warningEn?: string;
+  // Thévenin / Norton equivalent parameters (used in Ch. 9 & Réducteur)
+  eTh: number;
+  rTh: number;
+  iNortonMA: number;
 }
 
 export function createDefaultKirchhoffParams(
@@ -95,6 +101,7 @@ export function createDefaultKirchhoffParams(
     vfLed1: 1.9,
     vfLed2: 3.1,
     faultMode: 'none',
+    showTheveninEquivalent: false,
     ...overrides,
   };
 }
@@ -139,6 +146,9 @@ export function computeKirchhoffSimulation(params: KirchhoffSimParams): Kirchhof
   let warningFr: string | undefined;
   let warningAr: string | undefined;
   let warningEn: string | undefined;
+  let eTh = 0;
+  let rTh = 0;
+  let iNortonMA = 0;
 
   switch (params.topology) {
     case 'series-2r': {
@@ -644,6 +654,81 @@ export function computeKirchhoffSimulation(params: KirchhoffSimParams): Kirchhof
       }
       break;
     }
+
+    case 'thevenin-equiv': {
+      const isDualMesh = params.exampleId === 'thevenin-dual-mesh';
+      rTh = (r1 * r2) / (r1 + r2);
+      if (isDualMesh) {
+        // Two sources E1 via R1 and E2 via R2 meeting at Node A
+        eTh = (e1 / r1 + e2 / r2) / (1 / r1 + 1 / r2);
+      } else {
+        // Voltage divider E1 -> R1 -> Node A -> R2 -> GND
+        eTh = e1 * (r2 / (r1 + r2));
+      }
+      iNortonMA = (eTh / rTh) * 1000;
+
+      if (!params.loadConnected) {
+        vA = eTh;
+        vOut = eTh;
+        uLoad = eTh;
+        iLoadMA = 0;
+        if (isDualMesh) {
+          i1MA = ((e1 - vA) / r1) * 1000;
+          i2MA = ((e2 - vA) / r2) * 1000;
+          iTotalMA = Math.abs(i1MA);
+          u1 = e1 - vA;
+          u2 = e2 - vA;
+        } else {
+          i1MA = (e1 / (r1 + r2)) * 1000;
+          i2MA = i1MA;
+          iTotalMA = i1MA;
+          u1 = e1 - vA;
+          u2 = vA;
+        }
+        kvlLoop1ResidualV = eTh - uLoad;
+        efficiencyPct = 100;
+        statusFr = `À vide (A–B ouverts) : V_AB = E_th = ${eTh.toFixed(2)} V · R_th = ${rTh.toFixed(0)} Ω.`;
+        statusAr = `دون حمل (الطرفان A–B مفتوحان): جهد الفراغ = E_th = ${eTh.toFixed(2)} V · المقاومة المكافئة R_th = ${rTh.toFixed(0)} Ω.`;
+        statusEn = `Open-circuit (A–B open): V_AB = E_th = ${eTh.toFixed(2)} V · R_th = ${rTh.toFixed(0)} Ω.`;
+      } else {
+        const iLoadA = eTh / (rTh + rLoad);
+        vOut = iLoadA * rLoad;
+        vA = vOut;
+        uLoad = vOut;
+        iLoadMA = iLoadA * 1000;
+        if (isDualMesh) {
+          i1MA = ((e1 - vA) / r1) * 1000;
+          i2MA = ((e2 - vA) / r2) * 1000;
+          iTotalMA = iLoadMA;
+          u1 = e1 - vA;
+          u2 = e2 - vA;
+          kclNodeResidualMA = i1MA + i2MA - iLoadMA;
+        } else {
+          i1MA = ((e1 - vA) / r1) * 1000;
+          i2MA = (vA / r2) * 1000;
+          iTotalMA = i1MA;
+          u1 = e1 - vA;
+          u2 = vA;
+          kclNodeResidualMA = i1MA - i2MA - iLoadMA;
+        }
+        u3 = iLoadA * rTh; // drop across equivalent R_th
+        kvlLoop1ResidualV = eTh - iLoadA * rTh - uLoad;
+        loadPowerMW = uLoad * iLoadMA;
+        totalPowerMW = eTh * iLoadMA;
+        efficiencyPct = eTh > 0 ? (uLoad / eTh) * 100 : 0;
+
+        statusFr = `Thévenin vérifié : E_th (${eTh.toFixed(2)} V) + R_th (${rTh.toFixed(0)} Ω) → V_L = ${uLoad.toFixed(2)} V & I_L = ${iLoadMA.toFixed(2)} mA.`;
+        statusAr = `تحقق ثيفنان: المكافئ E_th (${eTh.toFixed(2)} V) و R_th (${rTh.toFixed(0)} Ω) يعطي V_L = ${uLoad.toFixed(2)} V و I_L = ${iLoadMA.toFixed(2)} mA.`;
+        statusEn = `Thévenin match: E_th (${eTh.toFixed(2)} V) + R_th (${rTh.toFixed(0)} Ω) → V_L = ${uLoad.toFixed(2)} V & I_L = ${iLoadMA.toFixed(2)} mA.`;
+
+        if (Math.abs(rLoad - rTh) / Math.max(1, rTh) < 0.08) {
+          warningFr = `Adaptation d’impédance (R_L ≈ R_th) : puissance maximale transmise à la charge (${loadPowerMW.toFixed(1)} mW) !`;
+          warningAr = `توافق مقاومة مثالي (R_L ≈ R_th): أقصى قدرة منقولة للحمل (${loadPowerMW.toFixed(1)} mW)!`;
+          warningEn = `Maximum power transfer matched (R_L ≈ R_th): peak load power ${loadPowerMW.toFixed(1)} mW!`;
+        }
+      }
+      break;
+    }
   }
 
   return {
@@ -680,5 +765,8 @@ export function computeKirchhoffSimulation(params: KirchhoffSimParams): Kirchhof
     warningFr,
     warningAr,
     warningEn,
+    eTh,
+    rTh,
+    iNortonMA,
   };
 }

@@ -53,6 +53,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           ar: 'اشحن بوابة 2N7000 بنبضة قصيرة ولاحظ بقاء الـ LED مضيئاً حتى تفعّل مقاومة التفريغ 1 MΩ.',
           en: 'Pulse-charge a 2N7000 gate and watch the LED stay latched ON until you enable the 1 MΩ bleed resistor.',
         },
+        howItWorks: {
+          fr: 'La grille du 2N7000 est isolée du canal par une couche de dioxyde de silicium SiO₂ et forme un minuscule condensateur C_iss (~50 pF). Une brève impulsion positive charge cette capacité au-dessus du seuil V_th, créant un champ électrique qui attire les électrons dans le canal Drain→Source et allume la LED (330 Ω limite le courant). Quand on relâche le contact sans résistance de fuite, les charges restent piégées sur la grille et maintiennent le canal ouvert ; activer la 1 MΩ vers la Source vide C_iss et coupe instantanément la LED.',
+          ar: 'بوابة الـ 2N7000 معزولة تماماً بطبقة SiO₂ وتعمل كمكثف صغير C_iss. عند شحنها بنبضة موجبة فوق العتبة V_th يتكوّن حقل كهربائي يفتح قناة التوصيل بين المصرف D والمنبع S فتضيء الـ LED عبر مقاومة الحماية 330Ω. وعند رفع سلك التحفيز تبقى الشحنة محبوسة فتستمر الإضاءة، ولا تنطفئ إلا عند تفعيل مقاومة التفريغ 1MΩ نحو الأرضي.',
+          en: 'The 2N7000 gate sits behind an insulating SiO₂ barrier acting as a tiny capacitor C_iss (~50 pF). A brief positive pulse charges C_iss above V_th, forming a field-induced Drain→Source channel so current flows through the 330 Ω resistor and LED. With no bleed path, trapped gate charge keeps the LED latched ON indefinitely until the 1 MΩ pull-down drains C_iss back to 0 V.',
+        },
         components: ['2N7000', '1 MΩ (option)', 'LED', '330R', '5V'],
       },
       {
@@ -63,6 +68,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           fr: 'Avec une résistance pull-down active, faites varier V_GS : en dessous de V_th le canal est coupé, au-dessus la LED s’illumine avec I_G = 0 µA.',
           ar: 'مع تفعيل مقاومة الربط، غيّر جهد البوابة V_GS: تحت العتبة تنقطع القناة، وفوقها يضيء الـ LED بتيار بوابة صفري.',
           en: 'With pull-down fitted, sweep V_GS: below V_th the channel is pinched off; above V_th the LED lights with zero DC gate current.',
+        },
+        howItWorks: {
+          fr: 'La résistance de 1 MΩ entre Grille et Source fixe V_GS à 0 V dès qu’aucun signal n’est appliqué. En montant la tension de commande V_GS, aucun courant continu ne traverse l’oxyde (I_G ≈ 0), mais dès que V_GS dépasse V_th (≈ 2,1 V), la résistance du canal chute brutalement : le courant du +5 V traverse la LED et la résistance série 220 Ω depuis le Drain vers la Source à la masse.',
+          ar: 'تضمن مقاومة السحب 1MΩ ثبات V_GS عند 0V في غياب إشارة التحكم. ومع رفع جهد البوابة V_GS لا يسحب الـ MOSFET أي تيار مستمر (I_G ≈ 0)، وبمجرد تجاوز العتبة V_th تتشكّل القناة الموصلة فتنهار مقاومة Drain→Source ويمر تيار المصباح عبر مقاومة الحدّ 220Ω إلى الأرضي.',
+          en: 'The 1 MΩ pull-down anchors Gate at 0 V when idle. Raising control voltage V_GS draws virtually zero DC gate current through the SiO₂ insulator, yet once V_GS crosses V_th (~2.1 V) the channel opens smoothly and sinks LED current through the 220 Ω limiter from Drain to Source.',
         },
         components: ['2N7000', '1 MΩ Pull-down', 'LED', '220R', '5V'],
       },
@@ -143,6 +153,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           ar: 'اضبط V_GS على 5V بتيار 5A وقارن الحرارة بين IRF540N القياسي و IRLZ44N المنطقي.',
           en: 'Set V_GS to 5 V with a 5 A load and switch between standard IRF540N and logic-level IRLZ44N to see the thermal difference.',
         },
+        howItWorks: {
+          fr: 'La charge de puissance (5 A sous 12 V) est connectée en série sur le Drain. Avec un signal logique Arduino de V_GS = 5 V, l’IRF540N (prévu pour 10 V) n’est que partiellement ouvert : son R_DS reste élevé (centaines de mΩ), provoquant une chute V_DS importante et un échauffement brutal P = I_D² × R_DS. En passant à l’IRLZ44N « Logic-Level » (V_th bas ≈ 1,6 V), 5 V suffisent à aplatir R_DS à ~22 mΩ : V_DS tombe près de 0,1 V et le boîtier reste tiède.',
+          ar: 'يمر تيار الحمل الكبير (5A) عبر قناة Drain–Source. عند قيادة البوابة بـ 5V فقط، يبقى الـ IRF540N القياسي نصف مفتوح بمقاومة R_DS عالية فينتج هبوط جهد وحرارة مفرطة (P = I_D² × R_DS). عند التبديل إلى IRLZ44N المخصّص للمنطق (V_th منخفض)، تكفي 5V لفتح القناة بالكامل عند ~22 mΩ فيبرد الترانزستور وتصل كامل القدرة للحمل.',
+          en: 'The 5 A load pulls current down through the Drain–Source channel. Driven at 5 V logic, a standard IRF540N (rated for 10 V drive) remains pinched in a high-R_DS resistive state, dropping volts across itself and burning P = I_D² × R_DS heat. Swapping to a logic-level IRLZ44N flattens R_DS(on) to ~22 mΩ even at 5 V, keeping V_DS near 0.1 V and the package cool.',
+        },
         components: ['IRF540N / IRLZ44N', 'Charge 5 A', '12V'],
       },
       {
@@ -153,6 +168,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           fr: 'Balayez V_GS de 0 V à 12 V pour voir la transition critique entre blocage, zone résistive chaude et conduction ohmique froide.',
           ar: 'حرّك جهد البوابة من 0V إلى 12V لمراقبة الانتقال من القطع إلى المنطقة الساخنة ثم الفتح الأومي البارد.',
           en: 'Sweep V_GS from 0 V to 12 V to watch the sharp transition from cutoff through hot linear conduction to cool ohmic saturation.',
+        },
+        howItWorks: {
+          fr: 'En augmentant progressivement V_GS de 0 à 12 V sur une charge alimentée en 12 V, on traverse trois régimes distincts : 1) Blocage (V_GS < V_th) : I_D = 0, tout le 12 V est sur V_DS ; 2) Transition linéaire (V_GS juste au-dessus de V_th) : courant et V_DS coexistent, créant le pic maximal de dissipation thermique ; 3) Zone ohmique complète (V_GS ≥ 8–10 V) : R_DS(on) tombe au minimum, V_DS devient négligeable et la puissance perdue chute drastiquement.',
+          ar: 'عند مسح V_GS من 0 إلى 12V، يمر الترانزستور بثلاث مراحل واضحة: أولاً القطع (تحت V_th) حيث ينعدم التيار؛ ثانياً المنطقة الانتقالية الحرجة حيث يجتمع تيار كبير مع جهد V_DS مرتفع فتقفز الحرارة للذروة؛ ثالثاً المنطقة الأومية المشبعة (فوق 8–10V) حيث تهبط R_DS لأدنى قيمة ويبرد الترانزستور.',
+          en: 'Sweeping V_GS from 0 to 12 V walks through three regimes: (1) Cutoff below V_th where I_D = 0; (2) Active transition just past V_th where high V_DS and rising I_D overlap to trigger peak heating; and (3) Deep Ohmic overdrive (8–10 V+) where R_DS(on) bottoms out, V_DS collapses, and losses drop sharply.',
         },
         components: ['IRF540N', 'Shunt 12V', 'Capteur T°'],
       },
@@ -232,6 +252,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           ar: 'الحِمل موصول بالموجب والمصرف يغلقه نحو الأرضي: بوابة مرتفعة = تشغيل.',
           en: 'Load wired to +12 V, Drain pulls down to GND: Gate HIGH (+10 V) = ON, Gate LOW (0 V) = OFF.',
         },
+        howItWorks: {
+          fr: 'La charge reste branchée en permanence au +12 V et son autre borne rejoint le Drain du N-MOS dont la Source est fixe à 0 V (GND). Comme V_S = 0 V, la tension Grille-Source est directement égale au potentiel de grille (V_GS = V_G). À V_G = 0 V (maintenu par la 10 kΩ pull-down), le circuit est ouvert et V_D monte à +12 V ; à V_G = +10 V, le N-MOS tire le Drain à ~0 V et ferme le retour vers la masse.',
+          ar: 'يرتبط الحِمل دائماً بالموجب +12V بينما يُوصل طرفه السالب بمصرف N-MOS الذي يقع منبعه عند 0V. وبما أن V_S = 0V فإن V_GS يساوي جهد البوابة مباشرة: عند 0V (تثبته مقاومة 10kΩ) ينقطع المسار، وعند +10V تنغلق القناة نحو الأرضي ليمر تيار التشغيل.',
+          en: 'The load ties permanently to +12 V and returns into the N-MOS Drain, whose Source is anchored to 0 V GND. Because V_S = 0 V, V_GS equals Gate voltage directly: at 0 V (held by the 10 kΩ pull-down) the Drain floats to +12 V (OFF); driving Gate to +10 V pulls Drain to ~0 V and completes the ground return.',
+        },
         components: ['IRF540 (N-MOS)', 'Charge 12 V', '10k Pull-down'],
       },
       {
@@ -243,6 +268,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           ar: 'المنبع عند +12V: سحب البوابة إلى 0V يعطي V_GS = −12V (تشغيل)، ورفعها إلى +12V يفصل الحمل.',
           en: 'Source tied to +12 V: pulling Gate to 0 V yields V_GS = −12 V (ON); tying Gate to +12 V yields V_GS = 0 V (OFF).',
         },
+        howItWorks: {
+          fr: 'Ici le P-MOS coupe le rail positif (+12 V) avant la charge qui reste référencée à 0 V. La Source est reliée au +12 V : si la résistance pull-up de 10 kΩ tire la Grille à +12 V, on a V_GS = 12 − 12 = 0 V et le P-MOS bloque. Pour l’allumer, on met la Grille vers 0 V : V_GS = 0 − 12 = −12 V, ce qui ouvre pleinement le canal P et envoie +12 V depuis S vers D dans la charge.',
+          ar: 'يتحكم P-MOS في الخط الموجب قبل الحمل المربوط بالأرضي. يتصل المنبع S بـ +12V: عندما تسحب مقاومة الرفع 10kΩ البوابة إلى +12V يصبح الفرق V_GS = 0V فينطفئ الترانزستور. وعند خفض البوابة إلى 0V يصبح V_GS = −12V فتفتح القناة P وتصل الـ +12V إلى الحمل.',
+          en: 'Here the P-MOS interrupts the +12 V rail ahead of the grounded load. With Source fixed at +12 V, a 10 kΩ pull-up holds Gate at +12 V so V_GS = 0 V (OFF). Pulling Gate down to 0 V sets V_GS = 0 − 12 = −12 V, fully enhancing the P-channel to deliver +12 V from Source to Drain into the load.',
+        },
         components: ['IRF9540 (P-MOS)', 'Charge 12 V', '10k Pull-up'],
       },
       {
@@ -253,6 +283,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           fr: 'Inversez la batterie 12 V pour voir le P-MOS protéger instantanément la charge sans aucune chute de diode de 0,7 V en marche normale.',
           ar: 'اقلب البطارية لترى كيف يمنع الـ P-MOS التلف دون خسارة 0.7V المعتادة في الدايود.',
           en: 'Flip the 12 V battery to watch the P-MOS block reverse current cleanly while running nearly lossless in normal polarity.',
+        },
+        howItWorks: {
+          fr: 'Le P-MOS est monté « à l’envers » sur le rail positif : Drain vers la batterie et Source vers la charge, avec la Grille reliée à la masse (protégée par une Zener 12 V). En polarité normale, la diode de corps interne amorce la Source vers +11,3 V ; aussitôt V_GS devient ≈ −11,3 V, ouvrant le canal P à ~30 mΩ qui court-circuite la diode (perte quasi nulle !). Si la batterie est branchée à l’envers, la diode de corps bloque et V_GS ≥ 0 maintient le canal hermétiquement fermé.',
+          ar: 'يُركب P-MOS بالعكس على الخط الموجب: المصرف D جهة البطارية والمنبع S جهة الحِمل، مع ربط البوابة بالأرضي (محمية بزينر 12V). في القطبية السليمة يمر تيار ابتدائي عبر الدايود الداخلي فيرتفع جهد S ليصبح V_GS ≈ −11.3V، فتفتح القناة P بمقاومة صغيرة جداً تلغي فقد الـ 0.7V. وعند قلب البطارية تنحاز الدايود عكسياً وتغلق القناة لحماية الحمل تماماً.',
+          en: 'The P-MOS is wired backwards in the +12 V rail—Drain toward battery, Source toward load, and Gate tied to GND (clamped by a 12 V Zener). On correct polarity, the internal body diode initially pulls Source up, creating V_GS ≈ −11.3 V which snaps the ~30 mΩ P-channel ON to bypass the 0.7 V diode drop. Reversed battery reverse-biases the body diode and holds V_GS ≥ 0, blocking all current.',
         },
         components: ['IRF4905 (P-MOS)', 'Batterie 12 V', 'Zener 12V'],
       },
@@ -332,6 +367,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           ar: 'بدّل جهد الدخل بين 0V و 5V وراقب انعدام الاستهلاك في الطرفين والذروة الحرجة عند 2.5V.',
           en: 'Swing V_in between 0 V and 5 V: observe near-zero quiescent draw at the rails and the cross-conduction spike at 2.5 V.',
         },
+        howItWorks: {
+          fr: 'Les deux grilles du P-MOS (en haut sur +5 V) et du N-MOS (en bas sur 0 V) sont reliées ensemble à V_in, et leurs deux Drains réunis forment V_out. À V_in = 0 V, le P-MOS conduit (V_GS = −5 V) et le N-MOS est bloqué : V_out = +5 V sans aucun courant vers la masse. À V_in = +5 V, c’est l’inverse : V_out = 0 V avec I_statique ≈ 0. Seule la zone intermédiaire (~2,5 V) où |V_GS| dépasse V_th pour les deux à la fois provoque un courant transversal.',
+          ar: 'ترتبط بوابتا P-MOS العلوي و N-MOS السفلي معاً بالدخل V_in، ويشكّل المصرفان المتصلان المخرج V_out. عند V_in = 0V يفتح P-MOS ويغلق N-MOS فيرتفع الخرج إلى +5V دون تسريب للأرضي؛ وعند V_in = +5V ينعكس الوضع ويهبط الخرج إلى 0V. فقط قرب المنتصف (2.5V) يعمل الاثنان معاً لحظياً.',
+          en: 'Top P-MOS (+5 V) and bottom N-MOS (0 V) share input Gate V_in and tie their Drains together at V_out. At V_in = 0 V, P-MOS pulls V_out to +5 V while N-MOS stays completely OFF (zero idle draw). At V_in = 5 V, N-MOS pulls V_out to 0 V while P-MOS cuts off. Only near the 2.5 V midpoint do both transistors conduct simultaneously.',
+        },
         components: ['2N7000 (N-MOS)', 'BS250 (P-MOS)', '5V'],
       },
       {
@@ -342,6 +382,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           fr: 'Désactivez puis réactivez le temps mort à mi-course (V_in = 2,5 V) pour observer la suppression immédiate du pic destructeur.',
           ar: 'أوقف ثم فعّل الزمن الميت عند نقطة التبديل 2.5V لمشاهدة إخماد تيار القصر فوراً.',
           en: 'Toggle dead-time protection ON/OFF at the 2.5 V midpoint to watch the destructive shoot-through spike vanish.',
+        },
+        howItWorks: {
+          fr: 'Sur un demi-pont de puissance, au lieu d’envoyer le même signal sur les deux grilles, le driver pilote séparément le transistor haut et le transistor bas. Lorsque V_in traverse la zone de basculement (2,5 V), le circuit « Dead-Time » retarde l’ordre d’allumage du second MOSFET de quelques centaines de nanosecondes afin que le premier ait totalement vidé sa grille et fermé son canal — supprimant ainsi le court-circuit vertical +V → GND.',
+          ar: 'في أنصاف الجسور عالية القدرة، يفصل المشغّل نبضة قيادة الترانزستور العلوي عن السفلي. وعند لحظة الانقلاب يفرض مؤقّت «الزمن الميت» تأخيراً قصيراً قبل تشغيل الترانزستور الجديد للتأكد من إغلاق الترانزستور السابق تماماً، مما يلغي نبضة القصر العابر بين +V والأرضي.',
+          en: 'Instead of tying both power gates to one wire, a half-bridge gate driver controls high-side and low-side independently. During switching near 2.5 V, dead-time logic delays turn-on of the incoming MOSFET until the outgoing MOSFET’s gate capacitance fully discharges, preventing a direct rail-to-ground short.',
         },
         components: ['Half-Bridge', 'Driver Dead-Time', 'Shunt'],
       },
@@ -422,6 +467,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           ar: 'ارفع R_G من 10Ω إلى 1kΩ وشاهد تحوّل موجة البوابة المربعة إلى منحنى بطيء وارتفاع الحرارة.',
           en: 'Raise R_G from 10 Ω to 1 kΩ to watch the square V_GS trace round off and switching losses climb sharply.',
         },
+        howItWorks: {
+          fr: 'La résistance série R_G forme un filtre RC avec la capacité totale de grille C_iss du MOSFET. À chaque front PWM, le driver 10 V charge puis décharge cette capacité à travers R_G : le courant crête est limité à I_pic = 10 V / R_G. Sur le plateau de Miller (environ 4–5 V), l’énergie sert à inverser la capacité Drain-Grille Q_gd : si R_G est grand (1 kΩ), le MOSFET traverse très lentement la zone linéaire et dissipe beaucoup de chaleur à chaque commutation.',
+          ar: 'تشكّل مقاومة البوابة R_G دائرة RC مع سعة البوابة C_iss. مع كل نبضة PWM يشحن المشغل هذه السعة ويفرّغها عبر R_G بتيار ذروي I_pic = V_drv/R_G. وأثناء عبور «هضبة ميلر» يستهلك المشغل شحنة إضافية Q_gd؛ لذا يؤدي تكبير R_G إلى إبطاء الحواف وبقاء الترانزستور في المنطقة الخطية الساخنة طويلاً.',
+          en: 'Series gate resistor R_G forms an RC network with input capacitance C_iss. On every PWM edge, the 10 V driver charges/discharges the gate through R_G at peak I_pic = 10 V / R_G. During the flat Miller plateau, drive current goes into sweeping V_DS across Q_gd; high R_G stretches these transitions so high V_DS and I_D overlap longer each cycle.',
+        },
         components: ['IRLZ44N', 'R_G (10Ω..1k)', 'Driver 10V', 'PWM'],
       },
       {
@@ -432,6 +482,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           fr: 'Réglez le rapport cyclique (10–100 %) et la fréquence PWM pour contrôler un moteur 12 V sans chaleur.',
           ar: 'اضبط نسبة النبض (10–100%) وتردد PWM للتحكم بسرعة محرك 12V بكفاءة عالية.',
           en: 'Vary duty cycle (10–100%) and PWM frequency to spin a 12 V motor smoothly with minimal heat.',
+        },
+        howItWorks: {
+          fr: 'Le MOSFET commute entièrement entre bloqué (0 % de puissance perdue) et saturé ohmique (V_DS ≈ 0 V) à 25 kHz, inaudible pour l’oreille. La tension moyenne vue par le moteur vaut D × 12 V : son inductance interne lisse le courant en un flux quasi continu. Pendant la phase OFF de chaque période, la diode Schottky placée en parallèle sur le moteur récupère le courant inductif afin d’éviter toute surtension sur le Drain.',
+          ar: 'يبدّل الـ MOSFET بسرعة بين القطع الكامل والفتح الكامل بتردد فوق صوتي، فيرى المحرك جهداً متوسطاً يساوي D × 12V بينما ينعّم حثّ المحرك التيار. وخلال فترة الإطفاء توفر دايود شوتكي مسار دوران حر (Freewheeling) لتيار المحرك المستمر دون إجهاد الترانزستور.',
+          en: 'The MOSFET snaps cleanly between full OFF and full ohmic ON at 25 kHz (above human hearing). Motor inductance averages the pulses into smooth current proportional to duty D × 12 V, while the parallel Schottky diode circulates inductive motor current during every OFF interval.',
         },
         components: ['IRLZ44N', 'Moteur 12V', 'Diode Schottky'],
       },
@@ -512,6 +567,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           ar: 'أزل دايود الحماية لترى ارتفاع جهد المصرف فوق 90V لحظة إغلاق الـ MOSFET.',
           en: 'Remove the 1N5819 flyback diode to watch the Drain spike shoot past 90 V on turn-off.',
         },
+        howItWorks: {
+          fr: 'Quand le MOSFET conduit, le courant traverse la bobine vers la masse et bâtit un champ magnétique. À l’instant où la grille retombe à 0 V, la bobine s’oppose à l’arrêt brutal du courant en inversant sa polarité (V = −L·dI/dt) : la borne reliée au Drain monte bien au-dessus de +12 V. Avec la diode 1N5819 en inverse aux bornes de la bobine, celle-ci devient passante dès +12,4 V et boucle le courant en douceur dans la bobine ; sans elle, le pic dépasse 90 V et force le MOSFET en avalanche.',
+          ar: 'أثناء توصيل الـ MOSFET يخزّن الملف طاقة مغناطيسية. لحظة فتح القناة يحاول الملف الحفاظ على تياره فيرفع الجهد عند المصرف D بعكس القطبية (V = −L·dI/dt). مع وجود دايود الحماية 1N5819 يتشكّل مسار مغلق آمن يفرّغ تيار الملف عند ~12.4V؛ وبدونه يتجاوز الارتفاع 90V ويُدخِل الترانزستور في انهيار خطير.',
+          en: 'While the MOSFET conducts, coil current builds magnetic flux. The instant the gate drops to 0 V, the inductor opposes the sudden dI/dt by flipping polarity, driving the Drain terminal way above +12 V. With the reverse-wired 1N5819 across the coil, current safely recirculates once Drain passes ~12.4 V; without it, the Drain spike shoots past 90 V into avalanche breakdown.',
+        },
         components: ['IRF540N', 'Bobine Relais 12V', '1N5819 Flyback'],
       },
       {
@@ -522,6 +582,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           fr: 'Même avec V_GS = 0 V (grille coupée !), appliquez une tension positive sur la Source (ou inversez Drain/Source) : la diode interne conduit à ~0,7 V.',
           ar: 'حتى مع V_GS = 0V (البوابة مغلقة تماماً!)، عكس القطبية يمرر تياراً عبر الدايود الداخلي للترانزستور.',
           en: 'Even with V_GS = 0 V (gate completely OFF!), reverse Drain-Source polarity conducts ~0.7 V straight through the internal body diode.',
+        },
+        howItWorks: {
+          fr: 'Physiquement, le substrat silicium d’un N-MOS est court-circuité en interne à sa broche Source, créant une jonction PN (anode à S, cathode à D) en parallèle avec le canal. Si la charge ou une source extérieure rend la Source plus positive que le Drain d’environ 0,7 V, cette « Body Diode » s’ouvre spontanément et laisse passer le courant de S vers D même si V_GS = 0 V. C’est pourquoi un MOSFET seul ne peut couper le courant que dans un seul sens.',
+          ar: 'بسبب ربط جسم الشريحة داخلياً بالمنبع S، يتكوّن ثنائي PN داخلي مصعده عند S ومهبطه عند D. لذلك، حتى عند فصل البوابة تماماً (V_GS = 0V)، إذا أصبح جهد المنبع أعلى من المصرف بنحو 0.7V يفتح الدايود الداخلي ويمرر التيار من S إلى D، مما يجعل الـ MOSFET الواحد قاطعاً أحادي الاتجاه.',
+          en: 'Internally, a power N-MOS ties its P-body directly to Source, forming an intrinsic P-N diode pointing from Source (anode) to Drain (cathode). Whenever external voltage pushes Source ~0.7 V above Drain, this Body Diode conducts freely from S to D even with V_GS = 0 V—meaning a single MOSFET can only block voltage in one polarity.',
         },
         components: ['IRF540N', 'Charge R', 'Test Inverse'],
       },
@@ -602,6 +667,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           ar: 'عدّل جهد الدخل ونسبة النبض D وشاهد تضاعف الجهد على المكثف وفق المعادلة.',
           en: 'Tune V_in and duty cycle D to step voltage up and verify V_in / (1 − D) live on the scope.',
         },
+        howItWorks: {
+          fr: 'Chaque cycle PWM alterne deux temps : 1) MOSFET ON (durée D·T) : la bobine de 100 µH est court-circuitée vers la masse, son courant croît linéairement et stocke de l’énergie magnétique tandis que la diode Schottky bloque pour empêcher le condensateur 470 µF de se vider ; 2) MOSFET OFF : la bobine inverse sa tension et s’additionne à V_in pour pousser des paquets de courant à travers la Schottky et rehausser V_out à V_in / (1 − D).',
+          ar: 'تتناوب الدارة بين مرحلتين في كل دورة PWM: عند إغلاق الـ MOSFET (بنسبة D) يتدفق التيار عبر الملف إلى الأرضي مخزّناً طاقة مغناطيسية بينما تمنع دايود شوتكي تفريغ المكثف؛ وعند فتحه فجأة يُضاف جهد الملف فوق جهد البطارية V_in فيندفع التيار عبر شوتكي لشحن المكثف عند جهد أعلى يساوي V_in/(1−D).',
+          en: 'Each PWM cycle runs two phases: (1) MOSFET ON (ratio D): the 100 µH inductor connects from V_in to GND, ramping up magnetic energy while the reverse-biased Schottky keeps the 470 µF output cap isolated; (2) MOSFET OFF: collapsing flux puts the inductor in series with V_in, forward-biasing the Schottky to pump output voltage up to V_in / (1 − D).',
+        },
         components: ['IRLZ44N', 'Inductance 100 µH', '1N5819 Schottky', '470 µF'],
       },
       {
@@ -612,6 +682,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           fr: 'Montez D au-delà de 65 % à partir d’une batterie 3,7 V Li-Ion pour dépasser le seuil d’une branche de 3 LEDs blanches (≈ 10 V).',
           ar: 'ارفع نسبة D فوق 65% من بطارية 3.7V لتتجاوز عتبة 3 مصابيح بيضاء على التوالي (≈ 10V).',
           en: 'Push duty cycle past 65% from a single 3.7 V cell to drive a 3-LED white string (~10 V).',
+        },
+        howItWorks: {
+          fr: 'Trois LEDs blanches en série nécessitent environ 3 × 3,2 V = 9,6 V pour s’allumer, soit près du triple d’une cellule Li-Ion de 3,7 V. En augmentant le rapport cyclique D du MOSFET de découpage au-delà de 65 %, la bobine de 47 µH accumule assez d’impulsion magnétique pendant chaque phase ON pour hisser la sortie au-dessus de 10 V pendant la phase OFF et illuminer toute la guirlande à courant régulier.',
+          ar: 'تتطلب ثلاث مصابيح بيضاء على التوالي نحو 10V لتضيء، وهو ما تعجز عنه بطارية ليثيوم 3.7V بمفردها. برفع نسبة التشغيل D فوق 65%، يضاعف الملف الحثي 47 µH الجهد عبر نبضات متلاحقة حتى يتجاوز عتبة السلسلة كاملة فتضيء المصابيح الثلاثة سوية.',
+          en: 'Three series white LEDs need ~9.6–10 V total, far above a single 3.7 V Li-Ion cell. Raising switching duty cycle D above 65% lets the 47 µH coil store enough energy per ON pulse to boost V_out past 10 V during OFF intervals, driving the entire LED string evenly.',
         },
         components: ['MOSFET N-CH', 'Bobine 47 µH', '3×LED Blanches'],
       },
@@ -692,6 +767,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           ar: 'تحكّم بالمفاتيح الأربعة لعكس دوران المحرك أو تفعيل الفرملة المغناطيسية الفورية.',
           en: 'Switch the 4 MOSFETs to reverse motor polarity or engage dynamic electromagnetic braking.',
         },
+        howItWorks: {
+          fr: 'Le moteur occupe la barre horizontale du « H » entre deux bras verticaux (P-MOS Q1/Q2 en haut sur +12 V, N-MOS Q3/Q4 en bas à 0 V). En activant la diagonale Q1 + Q4, le courant traverse le moteur de gauche à droite (Avant). En basculant sur la diagonale opposée Q2 + Q3, la polarité aux bornes du moteur s’inverse (Arrière). En mode Frein, Q3 et Q4 sont tous deux fermés : le moteur court-circuité vers la masse dissipe son élan par freinage dynamique.',
+          ar: 'يتوسط المحرك أربعة مفاتيح على شكل حرف H (P-MOS Q1/Q2 في الأعلى، و N-MOS Q3/Q4 في الأسفل). تفعيل القطر Q1+Q4 يمرّر التيار من اليسار لليمين (دوران للأمام)، بينما تفعيل القطر المعاكس Q2+Q3 يعكس القطبية على المحرك (دوران للخلف). وفي وضع الفرملة يُغلق Q3 و Q4 معاً فيتوقف المحرك سريعاً بفعل القصر الكهرومغناطيسي.',
+          en: 'The motor bridges two half-legs (top P-MOS Q1/Q2 at +12 V, bottom N-MOS Q3/Q4 at 0 V). Closing diagonal Q1 + Q4 drives current left-to-right (Forward); switching to opposite diagonal Q2 + Q3 reverses terminal polarity (Reverse). Closing both bottom switches Q3 + Q4 shorts the motor leads to GND for rapid electromagnetic braking.',
+        },
         components: ['2×IRF9540 (P)', '2×IRF540 (N)', 'Moteur DC', '12V'],
       },
       {
@@ -702,6 +782,11 @@ export const MOSFET_CHAPTERS: ChapterDef[] = [
           fr: 'Faites varier la tension de batterie testée (5 → 18 V) tout en maintenant le courant I_D parfaitement constant grâce au shunt 0,1 Ω.',
           ar: 'غيّر جهد البطارية المختبرة (5–18V) بينما يثبت التيار بدقة تامة بفضل مقاومة 0.1Ω.',
           en: 'Sweep test battery voltage (5 → 18 V) while the MOSFET holds I_D rock-steady via the 0.1 Ω shunt.',
+        },
+        howItWorks: {
+          fr: 'Tout le courant de la batterie testée traverse le MOSFET IRFP250N puis une résistance shunt de précision R_shunt = 0,1 Ω vers la masse, produisant une tension de mesure V_shunt = I_D × 0,1 Ω. L’amplificateur opérationnel LM358 compare en permanence V_shunt à la consigne V_ref et ajuste la grille du MOSFET dans sa zone linéaire : si V_batt monte ou baisse, V_DS absorbe la différence tandis que I_D reste figé exactement à V_ref / 0,1 Ω.',
+          ar: 'يمر تيار البطارية المختبرة عبر الـ MOSFET ثم مقاومة القياس الدقيقة R_shunt = 0.1Ω ليولّد جهداً متناسباً V_shunt = I_D × 0.1Ω. يقارن مكبّر العمليات LM358 هذا الجهد بالمرجع V_ref ويضبط جهد البوابة لحظياً في المنطقة الخطية: مهما تغير جهد البطارية، يمتص الترانزستور الفرق كحرارة ويثبّت التيار عند V_ref / 0.1Ω بدقة.',
+          en: 'All test-battery current flows through the IRFP250N and a precision 0.1 Ω source shunt to GND, developing sense voltage V_shunt = I_D × 0.1 Ω. Op-amp LM358 continuously compares V_shunt against V_ref and trims the Gate in the linear region: as battery voltage varies, V_DS absorbs the excess while locking I_D rigidly at V_ref / 0.1 Ω.',
         },
         components: ['IRFP250N', 'AOP LM358', 'Shunt 0,1 Ω', 'Radiateur'],
       },

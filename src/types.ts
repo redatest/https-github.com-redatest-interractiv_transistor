@@ -19,6 +19,7 @@ export interface BookExample {
   pageRef: string;
   title: BiText;
   summary: BiText;
+  howItWorks: BiText;
   components: string[];
 }
 

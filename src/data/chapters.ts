@@ -53,6 +53,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'إصبعان يصلان القاعدة بالموجب. كلما اشتد الضغط هبطت مقاومة الجلد وسطع الـ LED.',
           en: 'Two fingers bridge base to +9 V. Pressing harder lowers skin resistance (2 MΩ → 20 kΩ) and brightens the LED.',
         },
+        howItWorks: {
+          fr: 'Le doigt agit comme une résistance variable entre le +9 V et la base B du BC547. Dès que la tension de base atteint V_BE ≈ 0,6 V, un minuscule courant de base I_B (quelques microampères) circule de B vers E. Le transistor amplifie ce courant par β ≈ 200 entre le collecteur C et l’émetteur E : le flux principal traverse la résistance de protection 220 Ω et la LED, l’illuminant proportionnellement à la pression du doigt.',
+          ar: 'يعمل الإصبع كمقاومة متغيرة تصل +9V بقاعدة الترانزستور B. وبمجرد وصول جهد القاعدة إلى 0.6V يمر تيار ضئيل I_B (بضعة ميكروأمبيرات) من القاعدة إلى الباعث، فيضخّمه BC547 بمقدار β ≈ 200 بين المجمّع C والباعث E ليمر عبر المقاومة 220Ω والـ LED فتضيء حسب قوة الضغط.',
+          en: 'Your finger acts as a variable resistor bridging +9 V to the BC547 base. Once the base passes V_BE ≈ 0.6 V, a tiny microamp current I_B enters B→E. The transistor multiplies I_B by β ≈ 200 between Collector and Emitter, pulling current through the 220 Ω limiter and LED so brightness tracks finger pressure.',
+        },
         components: ['BC547', 'LED', '220R', 'Pile 9V'],
       },
       {
@@ -64,6 +69,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'دارة ٣ فولت بمقاومة قاعدة 220k: رطوبة التربة تغيّر المقاومة بين المسبارين وتتحكم بسطوع الـ LED بتيار آمن (~2mA).',
           en: '3 V circuit with 220 kΩ base resistor: soil probes modulate I_B by moisture (safely capped near ~2 mA without an LED resistor).',
         },
+        howItWorks: {
+          fr: 'Les deux sondes métalliques plongées dans le terreau jouent le rôle d’une résistance sensible à l’humidité, en série avec la 220 kΩ de sécurité vers la base. Quand la terre est humide, l’eau minéralisée conduit un faible courant I_B ≈ (3 − 0,6) / (220 kΩ + R_sol) qui suffit à allumer la LED rouge (alimentée en 3 V, la 220 kΩ plafonne naturellement I_C autour de 2 mA sans risquer de brûler la LED). Quand la terre sèche, R_sol grimpe vers l’infini et la LED s’éteint pour alerter.',
+          ar: 'يعمل المسباران داخل التربة كمقاومة متغيرة بالرطوبة موصولة على التوالي مع مقاومة الحماية 220kΩ نحو القاعدة. في التربة الرطبة تمرر الأملاح تيار قاعدة صغيراً يضيء الـ LED بأمان (تحدّ مقاومة 220kΩ تيار المجمّع نحو ~2mA عند 3V)، وعندما تجفّ التربة ترتفع مقاومتها فينقطع I_B وتنطفئ الـ LED لتنبهك بالسقي.',
+          en: 'Two soil probes act as a moisture-dependent resistor in series with the 220 kΩ base limiter. Moist soil conducts enough microamps into the BC547 base to light the red LED (under 3 V, the 220 kΩ cap naturally limits collector current near ~2 mA with no extra LED resistor). As the pot dries out, soil resistance soars, I_B vanishes, and the LED goes dark.',
+        },
         components: ['BC547', '220k', 'LED Rouge', '3V'],
       },
       {
@@ -74,6 +84,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Montage en escalier (4 LEDs) : chaque étage ajoute 0,6 V (diode 1N4148 ou jonction B-E). Plus on serre les bornes, plus le nombre de LEDs allumées grimpe !',
           ar: 'دارة متدرجة بـ ٤ مصابيح LED: كل درجة تضيف 0.6V، فكلما ضغطتَ أقوى أضاءت مصابيح أكثر بالتتابع.',
           en: 'Staircase 4-LED circuit: each stage adds 0.6 V (1N4148 or B-E junction). Squeezing harder lights more LEDs in sequence!',
+        },
+        howItWorks: {
+          fr: 'Les quatre transistors BC547 ont leurs bases alimentées par une échelle de diodes 1N4148 en série : il faut ~0,6 V pour allumer Q1, ~1,2 V pour Q2, ~1,8 V pour Q3 et ~2,4 V pour Q4. Lorsque la peau serre plus fort entre les bornes d’entrée, le courant qui descend dans la chaîne augmente la tension d’entrée : les seuils de 0,6 V sont franchis un par un, allumant les 4 LEDs comme un vumètre progressif.',
+          ar: 'ترتبط قواعد الترانزستورات الأربعة عبر سلّم من الدايودات 1N4148 على التوالي؛ فيحتاج كل طابق إلى 0.6V إضافية فوق السابق (~0.6V للأول، 1.2V للثاني، 1.8V للثالث، 2.4V للرابع). كلما زاد ضغط الأصابع زاد التيار وارتفع الجهد التدريجي لتشتعل المصابيح الأربعة واحداً تلو الآخر كمؤشر مستوى.',
+          en: 'Four BC547 stages sit behind a series ladder of 1N4148 diodes, raising the turn-on threshold by ~0.6 V per step (0.6 V, 1.2 V, 1.8 V, 2.4 V). Squeezing the touch pads harder boosts input voltage up the ladder, crossing each 0.6 V threshold in turn to light all 4 LEDs sequentially like a bargraph.',
         },
         components: ['4×BC547', '3×1N4148', '4×LED', '100R', '9V'],
       },
@@ -153,6 +168,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'اختر NPN أو PNP واقلب البطارية: لا يضيء الـ LED إلا إذا تطابق نوع الترانزستور مع قطبية المصدر.',
           en: 'Select BC337 (NPN) or BC327 (PNP) and flip polarity: the LED lights only when type and battery polarity match.',
         },
+        howItWorks: {
+          fr: 'Pour conduire, un NPN demande que C et B soient positifs par rapport à E (le courant entre par B et sort par E). À l’inverse, un PNP exige que E soit plus positif que B et C (le courant entre par E et sort par B et C). En touchant les broches de test avec la résistance de 1 kΩ et la LED en série sur le collecteur, seule la bonne polarité de pile polarise la jonction Base-Émetteur en direct (0,6 V) et allume la LED ; à l’envers, les jonctions bloquent.',
+          ar: 'لكي يمرر NPN التيار يجب أن يكون جهدا C و B أعلى من E (تيار القاعدة يدخل إلى B). أما PNP فيشترط أن يكون الباعث E أكثر إيجابية من B و C (التيار يخرج من B). بوجود مقاومة الحماية 1kΩ والـ LED، لا تنحاز وصلة القاعدة-الباعث أمامياً (0.6V) إلا عندما تتطابق قطبية البطارية مع نوع الترانزستور، بينما تنسدّ تماماً عند عكس القطبية.',
+          en: 'An NPN conducts only when Collector and Base are positive relative to Emitter (I_B flows into B). A PNP requires the exact opposite: Emitter positive relative to Base and Collector (I_B flows out of B). With the 1 kΩ resistor and LED on the test loop, only matching battery polarity forward-biases the 0.6 V B–E junction and lights the LED.',
+        },
         components: ['BC547 / BC557', '1k', 'LED', '9V'],
       },
       {
@@ -163,6 +183,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Sonde du livre : à vide (2,1 + 0,6 + 1,7 + 0,6 = 5 V > 3 V), aucune LED ne s’allume. Sur LOW (0 V), le BC557 allume la LED verte. Sur HIGH (> 2,3 V), le BC547 allume la LED rouge.',
           ar: 'عند السكون لا يضيء أي مصباح لأن مجموع الجهود (5V) أكبر من 3V. عند لمس LOW يضيء الأخضر عبر PNP، وعند HIGH يضيء الأحمر عبر NPN.',
           en: 'Floating (2.1+0.6+1.7+0.6 = 5 V > 3 V): both LEDs off. On LOW (0 V), BC557 lights green; on HIGH (> 2.3 V), BC547 lights red.',
+        },
+        howItWorks: {
+          fr: 'L’astuce repose sur la somme des seuils entre +3 V et 0 V : de haut en bas, LED verte (2,1 V) + V_EB du BC557 (0,6 V) + V_BE du BC547 (0,6 V) + LED rouge (1,7 V) demandent 5,0 V au total ! Sous une pile de 3 V, aucune branche ne peut amorcer seule à vide. Si la pointe touche 0 V (LOW), du courant sort de la base du PNP (BC557) à travers la 10 kΩ et allume la LED verte. Si elle touche +3 V (HIGH), du courant entre dans la base du NPN (BC547) et allume la LED rouge.',
+          ar: 'تقوم الفكرة على جمع جهود العتبات بين +3V و 0V: من الأعلى للأسفل لدينا LED خضراء (2.1V) + BC557 (0.6V) + BC547 (0.6V) + LED حمراء (1.7V) بمجموع 5.0V، وهو أكبر من بطارية 3V لذلك تبقى كلتا الإضاءتين مطفأتين في وضع السكون! عند ملامسة 0V (LOW) يخرج تيار من قاعدة PNP فيضيء الأخضر، وعند ملامسة +3V (HIGH) يدخل تيار لقاعدة NPN فيضيء الأحمر.',
+          en: 'The trick relies on threshold stacking across the 3 V supply: green LED (2.1 V) + PNP V_EB (0.6 V) + NPN V_BE (0.6 V) + red LED (1.7 V) total 5.0 V—more than 3 V, so both LEDs stay dead off when floating! Touching LOW (0 V) pulls current out of the BC557 PNP base via 10 kΩ to light green; touching HIGH (>2.3 V) pushes current into the BC547 NPN base to light red.',
         },
         components: ['BC547', 'BC557', 'LED Verte', 'LED Rouge', '2×10k', '2×100R', '3V'],
       },
@@ -243,6 +268,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'المس السلكين: يضيء الـ LED ثم ينطفئ عند تمام شحن المكثف. اضغط «تفريغ» لإعادة المحاولة.',
           en: 'Press “Touch”: the LED lights up then fades off as C fills. Click “Discharge” to reset.',
         },
+        howItWorks: {
+          fr: 'Lorsque le condensateur est vide (0 V), fermer le contact relie le +6 V à travers C directement sur la base du premier BC547 : un fort courant de charge traverse C et la base pendant quelques dixièmes à plusieurs secondes (selon τ = R × C), saturant la paire Darlington qui allume vivement la LED. À mesure que C se charge vers 5,4 V, le courant de charge décroît exponentiellement jusqu’à zéro et la LED s’éteint d’elle-même.',
+          ar: 'عندما يكون المكثف فارغاً (0V)، يعمل لحظة التوصيل كسلك مغلق يمرّر تيار شحنٍ كبيراً من +6V إلى قاعدة الترانزستور، فتتضاعف الشحنة وتضيء الـ LED بقوة. ومع امتلاء المكثف تدريجياً بالجهد نحو ~5.4V يتلاشى تيار الشحن وفق الثابت الزمني τ = R×C حتى يتوقف تماماً فتنطفئ الـ LED تلقائياً إلى أن يتم تفريغ المكثف.',
+          en: 'When the capacitor starts empty (0 V), closing the switch sends a surge of charging current from +6 V straight through C into the transistor base, turning the output LED brightly ON. As C fills toward ~5.4 V, charging current decays exponentially on timescale τ = R × C until steady-state DC reaches zero and the LED smoothly fades off until discharged.',
+        },
         components: ['2×BC547', 'Condensateur 10–470µF', '100k', '220R', 'LED', '6V'],
       },
       {
@@ -253,6 +283,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'À la fermeture de la porte, le BC557 + BD679 maintiennent la lampe allumée le temps que le 47 µF se charge via 100 kΩ.',
           ar: 'عند غلق الباب، يبقى المصباح مضيئاً ريثما يشحن مكثف 47µF عبر مقاومة 100k.',
           en: 'When the door shuts, BC557 + BD679 hold the lamp lit while the 47 µF cap charges via 100 kΩ.',
+        },
+        howItWorks: {
+          fr: 'Porte ouverte, le contacteur de porte met la base à la masse et décharge instantanément le condensateur 47 µF tout en maintenant l’ampoule allumée. Dès que la porte se referme, le 47 µF se recharge lentement à travers la 100 kΩ : ce courant de charge polarise le PNP BC557 qui commande à son tour le Darlington de puissance BD679, gardant le plafonnier 12 V allumé pendant ~5 à 10 secondes avant une extinction progressive.',
+          ar: 'عند فتح الباب، يفرّغ مفتاح الباب المكثف 47µF فوراً ويشغل مصباح السقف. وفور إغلاق الباب يبدأ المكثف بالشحن البطيء عبر مقاومة 100kΩ؛ فيمر تيار الشحن عبر قاعدة الترانزستور BC557 الذي يقود ترانزستور القدرة BD679 ليبقى المصباح 12V مضيئاً عدة ثوانٍ قبل أن يخبو وينطفئ تدريجياً.',
+          en: 'Opening the car door grounds the sense line, discharging the 47 µF capacitor instantly and lighting the dome lamp. Once the door closes, the 47 µF cap slowly recharges through 100 kΩ; that trickle drives PNP BC557, which holds power Darlington BD679 ON so the 12 V cabin lamp lingers for several seconds before dimming out.',
         },
         components: ['BC557', 'BD679', '47µF', '2×100k', '10k', 'Lampe 12V'],
       },
@@ -333,6 +368,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'أضف Q2 و Q3 على اللوحة وراقب تيار كل مرحلة وعتبة الجهد n × 0.6V.',
           en: 'Add Q2 and Q3 on the board and watch each stage current and the n × 0.6 V input threshold.',
         },
+        howItWorks: {
+          fr: 'Chaque étage injecte son courant d’émetteur directement dans la base du transistor suivant, tandis que tous les collecteurs se rejoignent sur la LED de sortie. Ainsi, avec 1 étage le seuil d’entrée vaut 0,6 V (gain 200), avec 2 étages il passe à 1,2 V (gain 40 000) et avec 3 étages à 1,8 V (gain 8 000 000). La résistance de 1 MΩ empêche les charges parasites de déclencher Q1.',
+          ar: 'يدفع كل ترانزستور تيار باعثه مباشرة إلى قاعدة الترانزستور التالي مع توحيد المجمّعات نحو المصباح. وبذلك يرتفع جهد العتبة 0.6V في كل مرحلة (0.6V لمرحلة، 1.2V لمرحلتين، 1.8V لثلاث) بينما تتضاعف الحساسية بالضرب (200 ← 40,000 ← 8,000,000)، وتحمي مقاومة 1MΩ المدخل من التشويش العابر.',
+          en: 'Each stage’s Emitter feeds directly into the next stage’s Base while all Collectors tie to the output load. Input threshold rises by 0.6 V per added B–E junction (0.6 V → 1.2 V → 1.8 V) while current gain multiplies geometrically (200 → 40,000 → 8,000,000).',
+        },
         components: ['1 à 3×BC547', '1M', '100k', '220R', 'LED', '6V'],
       },
       {
@@ -343,6 +383,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Deux BC547 câblés en paire Super-Alpha : β = 200 × 200 = 40 000. Le plus léger effleurement suffit à illuminer la LED.',
           ar: 'ترانزستورا BC547 في زوج دارلنغتون (×40 000): يكفي أخفّ تلامس لإضاءة الـ LED بالكامل.',
           en: 'Two BC547s wired as a Super-Alpha pair: β = 200 × 200 = 40,000. The slightest brush lights the LED.',
+        },
+        howItWorks: {
+          fr: 'Un courant infime (à peine 0,5 µA) entrant dans la base de Q1 ressort amplifié 200 fois par son émetteur (100 µA) qui attaque directement la base de Q2. Q2 amplifie à nouveau ces 100 µA par 200 pour fournir jusqu’à ~20 mA (limité par la 220 Ω) dans la LED. La résistance de 100 kΩ limite le courant de base si l’on court-circuite les bornes de test avec un objet métallique.',
+          ar: 'تيار ضئيل جداً (0.5 ميكروأمبير فقط) يدخل قاعدة Q1 فيضخّمه 200 مرة ليخرج 100µA من باعثه مباشرة إلى قاعدة Q2، فيضخّمها Q2 مجدداً 200 مرة ليضيء الـ LED بقوة (~20mA). وتحمي مقاومة 100kΩ القاعدة إذا لامست الأسلاك ببعضها.',
+          en: 'Just 0.5 µA entering Q1’s base exits its Emitter 200× larger (100 µA) straight into Q2’s base. Q2 multiplies that by another 200× to saturate the LED cleanly up to the 220 Ω current limit, while the 100 kΩ resistor protects Q1 if test leads touch metal.',
         },
         components: ['2×BC547', '100k', '220R', 'LED', '6V'],
       },
@@ -355,6 +400,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'ثلاث مراحل متتالية (×8 ملايين): تلتقط الشحنة الساكنة لليد أو البلاستيك عن بُعد عدة سنتيمترات دون لمس.',
           en: 'Three BC547s in cascade (200³ = 8,000,000): senses static charge from a hand or plastic ruler centimeters away.',
         },
+        howItWorks: {
+          fr: 'Avec trois étages en cascade, quelques nanoampères (10⁻⁹ A) induits dans la petite piste antenne par le champ électrostatique d’une main ou d’un peigne frotté suffisent : Q1 les porte à des fractions de microampère, Q2 à des dizaines de microampères et Q3 sature la LED ! Le circuit fonctionne comme un électroscope électronique ultra-sensible sans contact physique.',
+          ar: 'بتعاقب ثلاث مراحل (β = 8,000,000)، يكفي بضعة نانوأمبيرات تستحثّها الشحنة الساكنة لليد أو لمسطرة بلاستيكية قرب صفيحة النحاس: يرفعها Q1 إلى الميكروأمبير، ثم Q2 إلى عشرات الميكروأمبيرات، وأخيراً يشبع Q3 الـ LED ككاشف شحنة دون أي تلامس.',
+          en: 'With 200³ = 8,000,000 current gain, a few nanoamps induced onto the bare PCB sense pad by a hand’s electrostatic field are multiplied by Q1, then Q2, until Q3 drives full milliamp LED current—acting as a contactless electronic electroscope.',
+        },
         components: ['3×BC547', '1M', '100k', '220R', 'LED', '6V'],
       },
       {
@@ -365,6 +415,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Approchez l’antenne PCB d’un câble secteur sous tension (sans dénuder !) : dès 2–5 cm, les 3 étages captent le ronflement 50 Hz et activent le buzzer piézo.',
           ar: 'قرّب الهوائي من سلك كهرباء منزلي (دون لمس النحاس): على بعد 2cm تلتقط المراحل الثلاث طنين 50Hz وتفعّل الصفارة.',
           en: 'Hold the PCB antenna near a live AC cable (no stripping!): within 2–5 cm, 3 stages pick up 50 Hz hum and sound the piezo.',
+        },
+        howItWorks: {
+          fr: 'Le conducteur sous tension 230 V / 50 Hz rayonne un champ électrique alternatif qui se couple capacitivement (quelques picofarads à travers le plâtre ou l’isolant) vers l’antenne de Q1. Pendant chaque demi-alternance positive à 50 Hz, les trois transistors s’ouvrent en cascade et génèrent une onde carrée à 50 Hz dans le transducteur piézo et la LED, signalant la présence du fil caché.',
+          ar: 'يشعّ سلك الكهرباء المنزلي (230V / 50Hz) مجالاً كهربائياً متردداً ينتقل بالسعة عبر الجدار أو الغلاف العازل إلى هوائي Q1. خلال كل نصف موجة موجبة بتردد 50Hz، تفتح المراحل الثلاث متعاقبةً لتشغيل الـ LED وطنان البيزو بنغمة واضحة تدل على مسار السلك المخفي.',
+          en: 'A live 230 V / 50 Hz wire couples a tiny AC displacement current capacitively across drywall or insulation into Q1’s sense pad. Each positive 50 Hz half-cycle saturates the 8-million-gain cascade, pulsing both the LED and piezo transducer at 50 Hz to pinpoint hidden live cables safely.',
         },
         components: ['3×BC547', '1M', '100k', '220R', 'Piezo + LED', 'Antenne PCB'],
       },
@@ -444,6 +499,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'اضغط على لوح ON: تبقى الـ LED مضاءة حتى بعد رفع الإصبع بفضل التغذية الراجعة 4M7، ولوح OFF يطفئها.',
           en: 'Tap the ON and OFF pads from p. 50: a brief touch on ON latches the lamp via 4M7; OFF cuts it cleanly.',
         },
+        howItWorks: {
+          fr: 'Toucher la pastille ON envoie un micro-courant dans la paire Darlington (2×BC547), ce qui tire la base du PNP BC557 vers le bas et l’allume. Dès que le collecteur du BC557 passe à +6 V, la résistance de rétroaction 4,7 MΩ renvoie en permanence ~1 µA vers la base du Darlington : le montage s’auto-maintient indéfiniment ! Toucher la pastille OFF active le 3ᵉ BC547 qui court-circuite la base d’entrée à 0 V, brisant la boucle et coupant la lampe.',
+          ar: 'عند لمس لوح ON يدخل تيار ضئيل إلى زوج دارلنغتون فيفتح ويسحب قاعدة الترانزستور PNP BC557 للأسفل فيضيء المصباح عند +6V. عندئذٍ تعيد مقاومة التغذية الراجعة 4.7MΩ تياراً مستمراً (~1µA) من مخرج BC557 إلى مدخل دارلنغتون فيُثبّت نفسه تلقائياً! ولمس لوح OFF يشغّل BC547 إضافياً يفرّغ قاعدة الدخل إلى 0V فتنهار حلقة التثبيت وينطفئ المصباح.',
+          en: 'Touching ON injects microamps into the Darlington pair, pulling the PNP BC557 base low and powering the output rail at +6 V. Feedback resistor 4.7 MΩ immediately routes ~1 µA from BC557’s collector back into the Darlington base, latching the circuit ON forever. Touching OFF turns on a shunt BC547 that pulls the input base to 0 V, breaking the feedback loop.',
+        },
         components: ['3×BC547', 'BC557', '4M7', '470k', '4k7', '10k', '6V'],
       },
       {
@@ -454,6 +514,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Une photorésistance ORP12 pilote une paire BC557 + BC547 qui colle un relais 12 V (protégé par diode D1) dès que la lumière baisse sous le seuil réglé.',
           ar: 'تقود المقاومة الضوئية ORP12 زوج BC557 + BC547 لتشغيل مرحّل 12V عند حلول الظلام.',
           en: 'ORP12 LDR drives a BC557 + BC547 pair that closes a 12 V relay (with flyback diode D1) below the light threshold.',
+        },
+        howItWorks: {
+          fr: 'La photorésistance LDR ORP12 et le potentiomètre 1 MΩ forment un pont diviseur sur la base du BC557 : en plein jour la LDR présente une faible résistance (~1 kΩ), tirant la base du PNP vers +12 V (BC557 bloqué, relais au repos). À la tombée du soir, la résistance de la LDR grimpe au-delà de 100 kΩ : la base du BC557 descend sous +11,4 V, il devient passant et sature le BC547 de sortie qui alimente la bobine du relais 12 V (protégé par la diode de roue libre D1).',
+          ar: 'تشكّل المقاومة الضوئية ORP12 مع المقاومة 1MΩ مقسّم جهد يغذي قاعدة BC557: في النهار تكون مقاومة LDR منخفضة (~1kΩ) فترفع القاعدة قرب +12V ويبقى المرحّل مفصولاً. عند حلول الظلام ترتفع مقاومة LDR بشدة فيهبط جهد قاعدة PNP فيفتح ويقود BC547 لتشغيل ملف المرحّل 12V (المحمي بدايود الدوران الحر D1).',
+          en: 'The ORP12 LDR and 1 MΩ resistor form a light-sensing divider at BC557’s base. In daylight, low LDR resistance (~1 kΩ) holds the PNP base near +12 V (OFF). At dusk, LDR resistance rises past 100 kΩ, dropping the PNP base low enough to conduct and saturate output NPN BC547, energizing the 12 V relay coil across flyback diode D1.',
         },
         components: ['LDR ORP12', 'BC557', 'BC547', '1M', '10k', 'Relais 12V'],
       },
@@ -466,6 +531,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'ثلاثة ترانزستورات بهسترة حقيقية: يشتعل عند 30% ظلام ولا ينطفئ إلا عند إضاءة 55% لمنع الارتعاش.',
           en: 'Three BC547s sharing an emitter resistor: snaps ON below 30% light and stays lit until light reaches 55%.',
         },
+        howItWorks: {
+          fr: 'Deux BC547 partagent une même résistance d’émetteur et sont couplés par contre-phase pour créer une bascule à deux seuils (hystérésis). Au crépuscule, quand Q1 commence à se bloquer, le courant bascule vers Q2 dont le courant d’émetteur différent modifie instantanément le potentiel d’émetteur commun : cela accélère le basculement en une fraction de microseconde et décale le seuil de retour (30 % pour allumer, 55 % pour éteindre), éliminant tout clignotement parasite.',
+          ar: 'يشترك الترانزستوران في مقاومة باعث موحّدة مع ربط متبادل يخلق عتبتين مختلفتين (الهسترة). عند الغسق، بمجرد أن يبدأ Q1 بالانقطاع ينتقل التيار إلى Q2 فيتغير جهد الباعث المشترك فجأة، مما يسرّع الانقلاب بشكل حاسم ويرفع عتبة الإطفاء إلى 55% مقارنة بـ 30% للتشغيل، فيمنع أي ارتعاش أو وميض متقطع.',
+          en: 'Two BC547s share a common emitter resistor in regenerative feedback, creating dual switching thresholds (hysteresis). As dusk triggers Q1 to turn off, Q2 takes over and shifts the shared emitter voltage—snapping the 3rd stage cleanly ON below 30% lux while requiring 55% lux to snap back OFF, eliminating dusk chatter.',
+        },
         components: ['LDR ORP12', '3×BC547', '22k', '4k7', '330R', '6V'],
       },
       {
@@ -476,6 +546,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Un micro électret amplifié pompe des charges via 1N4148 dans un 10 µF (ou 100 µF) : clappez des mains pour allumer la LED temporairement !',
           ar: 'الميكروفون يضخ شحنة عبر الدايود 1N4148 إلى المكثف: صفّق بيديك ليضيء الـ LED مدة مؤقتة ثم ينطفئ!',
           en: 'Amplified electret mic pumps charge via 1N4148 into a 10 µF cap: clap to illuminate the LED temporarily!',
+        },
+        howItWorks: {
+          fr: 'Le microphone électret convertit l’onde sonore d’un claquement de mains en millivolts AC, amplifiés par le premier BC547 à travers le condensateur de couplage 100 nF. La diode 1N4148 redresse ces impulsions positives et charge rapidement le condensateur réservoir 10 µF (pompe de crête), empêchant son retour arrière. Cette tension stockée sature le second BC547 qui maintient la LED allumée quelques secondes pendant que le 10 µF se décharge lentement dans la base.',
+          ar: 'يحوّل ميكروفون الإلكتريت صوت التصفيق إلى إشارة مترددة صغيرة يضخّمها الترانزستور الأول عبر مكثف الربط 100nF. يقوم الدايود 1N4148 بتقويم النبضات الموجبة ليشحن المكثف 10µF بسرعة ويمنع عودتها، فتبقى الشحنة مشغّلةً للترانزستور الثاني والـ LED بضع ثوانٍ ريثما يتفرغ المكثف.',
+          en: 'The electret mic converts hand-clap pressure waves into AC millivolts amplified by Q1 across a 100 nF coupling cap. Rectifier diode 1N4148 peaks-charges the 10 µF hold capacitor while blocking reverse bleed, latching Q2 and the LED ON until the 10 µF cap slowly discharges through Q2’s base.',
         },
         components: ['Micro Électret', '2×BC547', '1N4148', '10u', '100n', '6V'],
       },
@@ -488,6 +563,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'يتحكم الترانزستور بمحرك أو مرحّل، ويحمي الدايود 1N4148 الترانزستور من شرارة الارتداد المغناطيسي عند الفصل.',
           en: 'A BC338 (800 mA) drives a 12 V motor or relay. Note the parallel 1N4148 diode absorbing inductive spikes at turn-off.',
         },
+        howItWorks: {
+          fr: 'La résistance 10 kΩ injecte un courant de base suffisant pour saturer franchement le transistor de puissance BC338 (supportant 800 mA), qui connecte le moteur ou la bobine du relais à la masse. À l’instant de la coupure, l’énergie magnétique de la bobine génère une surtension positive au collecteur (V = −L·dI/dt) : la diode D1 (1N4148) câblée en inverse se met alors à conduire vers +12 V et court-circuite ce pic avant qu’il ne claque le BC338.',
+          ar: 'تغذّي مقاومة 10kΩ قاعدة ترانزستور القدرة BC338 (حتى 800mA) ليشغّل المحرك أو ملف المرحّل نحو الأرضي. وعند الفصل المفاجئ، يولّد الحث المغناطيسي للملف نبضة جهد عكسية عالية على المجمّع، فيفتح دايود الحماية D1 (الموصل بعكس القطبية) ليفرّغ الطاقة بأمان نحو خط +12V ويمنع تلف الترانزستور.',
+          en: 'The 10 kΩ resistor drives enough base current to saturate the 800 mA BC338, pulling the motor or relay coil low. When switched OFF, collapsing coil flux kicks the collector high via −L·dI/dt; the anti-parallel 1N4148 diode immediately forward-biases into the +12 V rail, clamping the spike safely.',
+        },
         components: ['BC338', 'Relais / Moteur', '1N4148', '10k', '12V'],
       },
       {
@@ -498,6 +578,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Paire BC557 + BC338 envoyant des impulsions pleine puissance au moteur 3 V : il conserve un fort couple de démarrage même à basse vitesse.',
           ar: 'زوج BC557 + BC338 يرسل نبضات كاملة العزم لمحرك 3V ليبدأ الدوران بسلاسة حتى عند السرعات البطيئة.',
           en: 'BC557 + BC338 pair feeding full-voltage pulses to a 3 V motor, keeping strong starting torque at low speeds.',
+        },
+        howItWorks: {
+          fr: 'Au lieu d’affaiblir la tension avec un potentiomètre en série (qui bloque le moteur à bas régime et chauffe), le couple complémentaire BC557 + BC338 avec le condensateur 100 µF forme un oscillateur à rapport cyclique variable (PWM). Chaque impulsion applique les pleins 3 V au moteur pour décoller les frottements du rotor, puis coupe brièvement ; c’est la largeur des impulsions (rapport cyclique) qui dose la vitesse moyenne tout en gardant un couple élevé.',
+          ar: 'بدلاً من خفض الجهد بمقاومة تسلب عزم البدء، يشكّل الثنائي BC557 + BC338 مع المكثف 100µF مذبذب نبضات PWM. كل نبضة تعطي المحرك كامل جهد 3V للتغلب على الاحتكاك الابتدائي ثم تنقطع لحظياً؛ وبتغيير عرض النبضة تتغير السرعة بسلاسة مع الحفاظ على عزم دوران قوي حتى في السرعات البطيئة.',
+          en: 'Rather than starving the motor through a resistive dropper, complementary pair BC557 + BC338 with the 100 µF timing cap oscillates as a PWM pulse generator. Each pulse hits the motor with full 3 V rail voltage to overcome static rotor friction, while adjusting pulse duty cycle smoothly controls average speed without losing low-speed torque.',
         },
         components: ['BC557', 'BC338', '100u', '47R', '22k', 'Moteur 3V'],
       },
@@ -578,6 +663,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'مذبذب متناوب بترانزستورين: غيّر قيمة المقاومة وراقب تبادل LED1 و LED2 على اللوحة وعلى راسم الإشارة.',
           en: '2×BC547 astable multivibrator: adjust R from 4k7 to 47k and watch LED1/LED2 alternate on board and scope.',
         },
+        howItWorks: {
+          fr: 'Les deux condensateurs 100 µF relient en croix le collecteur de chaque transistor à la base de l’autre. À l’instant où Q1 sature, son collecteur tombe près de 0 V et pousse la borne droite de C1 vers une tension négative (~−5,4 V), bloquant net Q2 et éteignant LED2. Pendant que LED1 brille, R recharge C1 vers +6 V jusqu’à ce que la base de Q2 atteigne +0,6 V : Q2 sature alors d’un coup, bloque Q1 via C2, et le cycle alterne indéfiniment à f ≈ 1/(1,38·R·C).',
+          ar: 'يربط مكثفا 100µF مجمّع كل ترانزستور بقاعدة الآخر بشكل متقاطع. لحظة فتح Q1 يهبط مجمّعه نحو الصفر فيدفع قاعدة Q2 مؤقتاً إلى جهد سالب ويُطفئ LED2؛ بينما تبدأ المقاومة R بشحن المكثف حتى يبلغ جهد قاعدة Q2 قيمة +0.6V فيشتعل Q2 فجأة ويُطفئ Q1 عبر المكثف الثاني، وتتكرر الأرجوحة بلا توقف بتردد f ≈ 1/(1.38·R·C).',
+          en: 'Two 100 µF capacitors cross-couple each collector to the opposite base. When Q1 snaps ON, its collector drops near 0 V, driving Q2’s base negative (~−5.4 V) and turning LED2 OFF. Resistor R slowly recharges that capacitor toward +6 V until Q2’s base crosses +0.6 V, snapping Q2 ON and cutting Q1 OFF symmetrically at f ≈ 1/(1.38·R·C).',
+        },
         components: ['2×BC547', '2×100u', '2×10k', '2×330R', '2×LED', '6V'],
       },
       {
@@ -589,6 +679,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'ثلاث مراحل مترابطة في حلقة فردية تجعل حالة الإضاءة تدور باستمرار من LED1 إلى LED2 ثم LED3.',
           en: 'Odd 3-transistor BC547 ring: the charging wave rotates the active step endlessly around the circle.',
         },
+        howItWorks: {
+          fr: 'Trois étages identiques (BC547 + 22 µF + 39 kΩ) sont bouclés en anneau Q1 → Q2 → Q3 → Q1. Comme il y a un nombre impair de portes inverseuses (3), aucun équilibre stable n’existe : dès qu’un transistor conduit et bloque son successeur, le 3ᵉ transistor redevient passant, ce qui finit par basculer le 1ᵉʳ après décharge de 22 µF dans 39 kΩ. On voit ainsi un « trou » éteint (ou une LED allumée) courir en boucle.',
+          ar: 'تتشابك ثلاث مراحل متماثلة في حلقة دائرية مغلقة (Q1 → Q2 → Q3 → Q1). وبما أن العدد فردي (3 عاكسات)، يستحيل ثبات الدارة على حالة ساكنة: كل مرحلة مشبعة توقف التالية وتسمح للثالثة بالعمل، ثم تتفرغ سعة 22µF عبر 39kΩ لتنقل الدور للمرحلة الموالية فتدور النبضة الضوئية باستمرار.',
+          en: 'Three identical RC-coupled stages form a closed ring Q1 → Q2 → Q3 → Q1. Because an odd number of inverting stages cannot latch symmetrically, conduction propagates around the loop as each 22 µF capacitor recharges through 39 kΩ, creating a continuous 3-step chase pattern.',
+        },
         components: ['3×BC547', '3×22u', '3×39k', '3×1k', '3×LED', '6V'],
       },
       {
@@ -599,6 +694,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Montage BC547 + BC557 avec condensateur 2u2 et haut-parleur 8 Ω. Activez le son pour entendre le rythme du potentiomètre ou la sirène !',
           ar: 'دارة BC547 مع BC557 ومكبر صوت 8Ω: فعّل الصوت لتسمع نبضات الساعة أو تدرّج نغمة الصفارة.',
           en: 'BC547 + BC557 circuit with 2.2 µF cap and 8 Ω speaker. Unmute audio to hear the tick rhythm or siren sweep!',
+        },
+        howItWorks: {
+          fr: 'Contrairement au multivibrateur à 2 NPN où un transistor est toujours allumé, l’association complémentaire BC547 (NPN) + BC557 (PNP) s’allume et se bloque SIMULTANÉMENT ! Entre deux impulsions brèves, les deux transistors sont totalement coupés (quasi 0 mA consommé) tandis que le condensateur se charge via le potentiomètre 200 kΩ. Dès le seuil atteint, les deux se saturent en avalanche positive pour envoyer une brève impulsion sonore dans le haut-parleur 8 Ω (tic-tac lent avec 2,2 µF, ou note continue / sirène avec 100 nF).',
+          ar: 'بربط NPN (BC547) مع PNP (BC557) في تغذية راجعة موجبة، يفتح الترانزستوران معاً وينغلقان معاً! في فترة الشحن عبر المقاومة المتغيرة 200kΩ يكون الاثنان مقطوعين تماماً دون استهلاك طاقة، ثم يتدفقان فجأة لإطلاق نبضة قصيرة قوية نحو مكبر الصوت 8Ω (تكتكة ساعة بطيئة مع 2.2µF أو صفارة متواصلة مع 100nF).',
+          en: 'Pairing NPN BC547 and PNP BC557 in positive feedback locks both transistors OFF together during idle timing while the capacitor charges through the 200 kΩ pot (saving battery!). Once threshold hits, both snap ON simultaneously to dump a crisp pulse into the 8 Ω speaker—producing slow clock ticks with 2.2 µF or continuous audio/siren tones with 100 nF.',
         },
         components: ['BC547', 'BC557', '2u2 / 100n', '200k pot', 'HP 8Ω', '9V'],
       },
@@ -678,6 +778,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'بدّل يدوياً أو تلقائياً بين الطور A (شحن المكثف) والطور B (جمع 1.5V + 1.0V لإضاءة الـ LED).',
           en: 'Switch between Phase A (Charging 1 µF) and Phase B (Stacking into the LED), or run auto mode!',
         },
+        howItWorks: {
+          fr: 'Un oscillateur à deux BC547 bascule en permanence le 3ᵉ transistor. Phase A : le condensateur 1 µF est relié entre +1,5 V et la masse, il se charge à ~1,3 V (+ à gauche, − à droite). Phase B : le transistor relie brutalement la borne + du condensateur à 0 V (GND) ; comme la tension d’un condensateur ne change pas instantanément, sa borne négative plonge à −1,3 V ! La LED rouge voit alors +1,5 V d’un côté et −1,3 V de l’autre (≈ 2,5 V nets), suffisant pour briller vivement.',
+          ar: 'يقوم مذبذب بترانزستورين بتبديل ترانزستور الضخ باستمرار: في الطور A يُشحن المكثف 1µF من بطارية 1.5V حتى نحو 1.3V. في الطور B يسحب الترانزستور الطرف الموجب للمكثف إلى الأرضي (0V)، فيهبط طرفه السالب لحظياً إلى −1.3V! فتصبح الـ LED الحمراء بين +1.5V و −1.3V لتتلقى فرقاً يتجاوز 2.5V وتضيء بقوة.',
+          en: 'A two-transistor oscillator toggles the pump switch continuously. Phase A charges the 1 µF cap across the 1.5 V cell to ~1.3 V. Phase B pulls the cap’s positive terminal down to 0 V GND; because capacitor voltage holds steady, its negative side plunges below ground (~−1.0 to −1.3 V), giving the LED ~2.5 V across its leads to flash brightly.',
+        },
         components: ['3×BC547', '1u', '2×10n', '100R', 'LED Rouge', '1.5V'],
       },
       {
@@ -689,6 +794,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'ملف هوائي بدون قلب فيريت (30+30 لفة) ومكثف 10µF يومضان مصباحَي LED أبيضين من خلية 1.5V.',
           en: 'A simple air-core coil (30+30 turns, no ferrite!) and 10 µF cap flash 2 white LEDs in series from 1.5 V.',
         },
+        howItWorks: {
+          fr: 'Le bobinage double (30 + 30 spires sur mandrin d’air) sert de transformateur de rétroaction : le courant initial via 100 kΩ et 10 µF amorce le BC547, qui fait croître le courant dans l’enroulement collecteur et induit une tension positive renforçant la base. Lorsque le condensateur 10 µF se bloque et que le transistor coupe d’un coup, le champ magnétique de la bobine s’effondre et génère une pointe > 6,5 V qui allume brièvement deux LEDs blanches en série (~3,3 V chacune) à partir d’une seule pile 1,5 V.',
+          ar: 'يعمل الملف الهوائي المزدوج (30+30 لفة) كمحوّل تغذية راجعة: يبدأ التيار عبر 100kΩ بتشغيل الترانزستور فيتزايد الفيض المغناطيسي، وعندما ينقطع الترانزستور فجأة ينهار الفيض ليولّد قفزة جهد تتجاوز 6.5V فتضيء مصباحَي LED أبيضين على التوالي بوضوح من بطارية 1.5V واحدة.',
+          en: 'The bifilar air-core winding (30+30 turns) acts as a feedback transformer: initial base drive via 100 kΩ turns on the BC547, ramping coil current while inducing reinforcing base feedback. When the 10 µF cap runs out and the transistor snaps OFF, collapsing flux spikes past 6.5 V to flash two white LEDs in series from a single 1.5 V cell.',
+        },
         components: ['BC547', 'Bobine 30t+30t air', '10u', '100k', '2×LED Blanche', '1.5V'],
       },
       {
@@ -699,6 +809,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Avec noyau ferrite F29 (60t+40t) et BC337 : oscille à haute fréquence pour fournir un faisceau blanc continu très lumineux jusqu’à 0,85 V.',
           ar: 'بقلب الفيريت F29 وترانزستور BC337 يتذبذب بسرعة عالية ليضيء كشّاف LED أبيض ساطعاً حتى هبوط البطارية إلى 0.85V.',
           en: 'F29 ferrite core (60t+40t) and BC337 oscillate at high frequency for a bright steady white beam down to 0.85 V.',
+        },
+        howItWorks: {
+          fr: 'Le noyau ferrite F29 (60 + 40 spires) concentre beaucoup plus d’énergie magnétique qu’une bobine à air, permettant au BC337 d’osciller entre 30 kHz et 100 kHz. Pendant chaque phase ON, la bobine primaire stocke le courant de la pile ; dès que la ferrite sature, la tension de base retombe, le BC337 bloque et l’enroulement libère une pointe à > 3,4 V directement dans la LED blanche. Grâce à la haute fréquence, la lumière paraît totalement continue même avec une pile « morte » à 0,85 V.',
+          ar: 'يضاعف قلب الفيريت F29 (60+40 لفة) الحث المغناطيسي فيجعل الترانزستور BC337 يتذبذب بسرعة فائقة (30–100 kHz). يخزّن الملف الطاقة في طور التوصيل ثم يرفع الجهد فوق 3.4V في طور الانقطاع لتفريغها عبر الـ LED البيضاء. وبسبب السرعة العالية تبدو الإضاءة مستمرة وثابتة حتى مع بطارية مستهلكة هبطت إلى 0.85V.',
+          en: 'The F29 ferrite toroid (60+40 turns) packs far higher inductance than an air coil, driving the BC337 at 30–100 kHz. During each ON pulse the primary ramps up current from the cell until the core saturates, snapping the transistor OFF and kicking collector voltage past 3.4 V into the white LED—appearing rock-steady to the eye even down to a 0.85 V worn cell.',
         },
         components: ['BC337', 'Ferrite F29 60t+40t', '2k7', '10n', 'LED Blanche', '1.5V'],
       },
@@ -779,6 +894,11 @@ export const CHAPTERS: ChapterDef[] = [
           ar: 'ارفع جهد البطارية إلى 13.7V فينفصل الشحن ويسخن الحِمل الوهمي، ثم انزل بالمنزلق: لن يعود الشحن عند 13V بل عند 12.5V!',
           en: 'Raise V_batt to 13.7 V (relay diverts to 100 Ω load at 3.24 W), then lower it: charging stays off until ≤ 12.5 V.',
         },
+        howItWorks: {
+          fr: 'Le potentiomètre 1 kΩ prélève une fraction de la tension batterie vers la base du BC547 : tant que la batterie est sous 13,7 V, le BC547 est bloqué et le relais au repos dirige le courant du panneau solaire 18 V directement vers la batterie. Dès 13,7 V, le BC547 s’ouvre et colle la bobine du relais : celui-ci dévie alors le panneau vers la résistance de dissipation 100 Ω / 5 W (P = 18²/100 = 3,24 W). Grâce à la marge mécanique entre tension de collage et de relâchement du relais (hystérésis), la charge ne reprend que sous 12,5 V.',
+          ar: 'يرسل مقسّم الضبط 1kΩ عيّنة من جهد البطارية إلى قاعدة BC547: ما دامت البطارية دون 13.7V يبقى الترانزستور مغلقاً ويمر تيار اللوح الشمسي 18V مباشرة إلى البطارية. وعند بلوغ 13.7V يفتح BC547 ويشغّل المرحّل الذي يحوّل طاقة اللوح إلى المقاومة الوهمية 100Ω / 5W لتفريغها كحرارة (3.24W). وبفضل الفرق بين تيار الشدّ وتيار الإفلات في المرحّل (الهسترة)، لا يعود الشحن إلا عندما يهبط الجهد تحت 12.5V.',
+          en: 'A 1 kΩ trimmer samples battery voltage into the BC547 base. Below 13.7 V, the transistor stays OFF and the relaxed relay routes the 18 V solar panel straight into the battery. At 13.7 V, BC547 energizes the relay coil, diverting panel current into the 100 Ω / 5 W dummy load (3.24 W). Because a relay’s drop-out current is much lower than pull-in current (natural hysteresis), charging stays off until battery voltage falls to 12.5 V.',
+        },
         components: ['Panneau 18V (28 cel.)', 'BC547', 'Pot 1k', 'Relais 12V', '100R 5W', 'Batterie 12V'],
       },
       {
@@ -789,6 +909,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Variez la tension de 6 V à 15 V et choisissez R_sense (120R, 47R, 22R) : le BC547 régule automatiquement I_LED sans recalculer la résistance !',
           ar: 'غيّر جهد المصدر من 6V إلى 15V واختر R_sense: يحافظ BC547 على تيار ثابت تماماً للـ LED دون زيادة خطرة.',
           en: 'Sweep supply from 6 V to 15 V and pick R_sense (120R, 47R, 22R): BC547 holds I_LED steady without changing series resistors!',
+        },
+        howItWorks: {
+          fr: 'Le courant qui traverse les LEDs et le transistor de puissance BD679 passe intégralement par la résistance de mesure R_sense reliée à la masse, créant une tension U_sense = I_LED × R_sense. La base d’un petit BC547 surveille cette tension : dès qu’elle tente de dépasser 0,6 V, le BC547 conduit et détourne le courant provenant de la 10 kΩ loin de la base du BD679. Cette contre-réaction automatique bloque le courant exactement à I_const ≈ 0,6 V / R_sense, quelle que soit la tension d’alimentation (6 à 15 V).',
+          ar: 'يمر كامل تيار الـ LEDs والترانزستور الرئيسي BD679 عبر مقاومة الاستشعار R_sense نحو الأرضي، مولّداً فرق جهد U_sense = I_LED × R_sense. تراقب قاعدة الترانزستور المساعد BC547 هذا الجهد؛ وفور اقترابه من 0.6V يبدأ BC547 بالتوصيل ويسحب تيار القاعدة القادم من مقاومة 10kΩ بعيداً عن BD679. وهكذا يثبت التيار آلياً عند I_const ≈ 0.6V / R_sense مهما ارتفع جهد المصدر بين 6V و 15V.',
+          en: 'All LED current through power transistor BD679 exits via sense resistor R_sense to GND, producing U_sense = I_LED × R_sense. Sensing transistor BC547 watches that voltage across its Base–Emitter: the instant U_sense tries to rise past 0.6 V, BC547 turns on and shunts drive current from the 10 kΩ resistor away from BD679’s base—automatically locking current at I_const ≈ 0.6 V / R_sense across 6–15 V.',
         },
         components: ['BC547', 'BD679 / BC338', 'R_sense (22R–120R)', '10k', 'LEDs', '6–15V'],
       },
@@ -868,6 +993,11 @@ export const CHAPTERS: ChapterDef[] = [
           fr: 'Ajustez R_B pour viser 2,50 V (± 0,10 V pour 3 étoiles), puis activez le signal sinusoïdal d’entrée pour voir l’écrêtage disparaître au centre !',
           ar: 'اضبط R_B للاقتراب من 2.50V (واحصل على ٣ نجوم)، ثم فعّل موجة الدخل لتشاهد اختفاء التشويه في منتصف النطاق.',
           en: 'Tune R_B toward 2.50 V (± 0.10 V for 3 stars), then enable AC sine input to see clipping disappear at center!',
+        },
+        howItWorks: {
+          fr: 'La résistance de base R_B fixe un courant continu de repos I_B = (5,0 − 0,6) / R_B, qui établit un courant collecteur I_C = β·I_B dans la charge R_L = 22 kΩ et place le potentiel de repos à V_C = 5,0 − I_C·22 kΩ. Lorsque R_B ≈ 2,2 MΩ, V_C vaut exactement 2,50 V (mi-tension) : un signal sinusoïdal AC injecté sur la base dispose alors d’une marge maximale symétrique de ±2,3 V vers le haut (+5 V) et vers le bas (0,2 V) sans écrêtage ni distorsion.',
+          ar: 'تحدّد مقاومة القاعدة R_B تيار انحياز مستمر I_B = (5.0 − 0.6)/R_B، والذي يثبّت تيار المجمّع I_C = β·I_B عبر مقاومة الحمل 22kΩ ليضع جهد الراحة عند V_C = 5.0 − I_C·22kΩ. عند قيمة R_B ≈ 2.2MΩ يستقر V_C عند 2.50V تماماً (منتصف التغذية)، فتتأرجح الإشارة الجيبية المدخلة صعوداً نحو 5V وهبوطاً نحو 0.2V بمدى متماثل دون أي تشويه أو اقتصاص.',
+          en: 'Base resistor R_B sets the quiescent base bias I_B = (5.0 − 0.6)/R_B, which fixes collector current I_C = β·I_B through the 22 kΩ load resistor and parks idle collector voltage at V_C = 5.0 − I_C·22 kΩ. Tuning R_B near 2.2 MΩ centers V_C at 2.50 V, giving an incoming AC sine wave full symmetric headroom up to +5 V and down to ~0.2 V saturation without clipping.',
         },
         components: ['BC547', 'R_L 22k', 'R_B ≈ 2M2', '5V'],
       },

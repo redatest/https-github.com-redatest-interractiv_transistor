@@ -27,6 +27,8 @@ export const KirchhoffSchematicScope: React.FC<Props> = ({ params, sim, lang }) 
     kvlEqText = `M1: +${params.e1.toFixed(2)} − ${sim.u1.toFixed(2)} − ${sim.u3.toFixed(2)} = ${sim.kvlLoop1ResidualV.toFixed(2)}V  |  M2: +${params.e2.toFixed(2)} − ${sim.u2.toFixed(2)} − ${sim.u3.toFixed(2)} = ${sim.kvlLoop2ResidualV.toFixed(2)}V`;
   } else if (top === 'wheatstone-bridge') {
     kvlEqText = `M_G: +${params.e1.toFixed(2)} − ${sim.u1.toFixed(2)} − ${sim.u2.toFixed(2)} = ${sim.kvlLoop1ResidualV.toFixed(2)}V  |  ΔV_AB = ${(sim.vA - sim.vB).toFixed(2)}V`;
+  } else if (top === 'thevenin-equiv') {
+    kvlEqText = `E_th (${sim.eTh.toFixed(2)}V) − R_th·I_L (${sim.u3.toFixed(2)}V) − V_L (${sim.uLoad.toFixed(2)}V) = ${sim.kvlLoop1ResidualV.toFixed(2)}V`;
   } else {
     kvlEqText = `M1: +${params.e1.toFixed(2)}V − ${sim.u1.toFixed(2)}V − ${sim.vOut.toFixed(2)}V = ${sim.kvlLoop1ResidualV.toFixed(2)}V`;
   }
@@ -34,6 +36,8 @@ export const KirchhoffSchematicScope: React.FC<Props> = ({ params, sim, lang }) 
   let kclEqText = '';
   if (top === 'loaded-divider') {
     kclEqText = `Nœud A : I₁ (${sim.i1MA.toFixed(2)}) = I₂ (${sim.i2MA.toFixed(2)}) + I_L (${sim.iLoadMA.toFixed(2)}) mA`;
+  } else if (top === 'thevenin-equiv') {
+    kclEqText = `R_th = ${sim.rTh.toFixed(0)} Ω · I_N = ${sim.iNortonMA.toFixed(2)} mA · I_L = ${sim.iLoadMA.toFixed(2)} mA`;
   } else if (top === 'parallel-2' || top === 'led-parallel-trap') {
     kclEqText = `Nœud A : I_tot (${sim.iTotalMA.toFixed(2)}) = I₁ (${sim.i1MA.toFixed(2)}) + I₂ (${sim.i2MA.toFixed(2)}) mA`;
   } else if (top === 'parallel-3') {
@@ -46,13 +50,20 @@ export const KirchhoffSchematicScope: React.FC<Props> = ({ params, sim, lang }) 
 
   // Bar data for visual distribution
   const maxV = Math.max(params.e1, params.e2, 5);
-  const bars = [
-    { label: top === 'internal-resistance' ? 'U(r_i)' : 'U₁', val: top === 'internal-resistance' ? sim.uInternal : Math.abs(sim.u1), unit: 'V', color: 'bg-amber-500', pct: Math.min(100, ((top === 'internal-resistance' ? sim.uInternal : Math.abs(sim.u1)) / maxV) * 100) },
-    { label: top === 'internal-resistance' ? 'V_bornes' : 'U₂ / V_A', val: top === 'internal-resistance' ? sim.uLoad : Math.abs(sim.u2), unit: 'V', color: 'bg-sky-500', pct: Math.min(100, ((top === 'internal-resistance' ? sim.uLoad : Math.abs(sim.u2)) / maxV) * 100) },
-    ...(top === 'series-3r' || top === 'two-mesh-millman'
-      ? [{ label: 'U₃', val: Math.abs(sim.u3), unit: 'V', color: 'bg-emerald-500', pct: Math.min(100, (Math.abs(sim.u3) / maxV) * 100) }]
-      : []),
-  ];
+  const bars =
+    top === 'thevenin-equiv'
+      ? [
+          { label: 'E_th (vide)', val: sim.eTh, unit: 'V', color: 'bg-emerald-500', pct: Math.min(100, (sim.eTh / maxV) * 100) },
+          { label: 'R_th · I_L', val: sim.u3, unit: 'V', color: 'bg-amber-500', pct: Math.min(100, (sim.u3 / maxV) * 100) },
+          { label: 'V_L (A–B)', val: sim.uLoad, unit: 'V', color: 'bg-sky-500', pct: Math.min(100, (sim.uLoad / maxV) * 100) },
+        ]
+      : [
+          { label: top === 'internal-resistance' ? 'U(r_i)' : 'U₁', val: top === 'internal-resistance' ? sim.uInternal : Math.abs(sim.u1), unit: 'V', color: 'bg-amber-500', pct: Math.min(100, ((top === 'internal-resistance' ? sim.uInternal : Math.abs(sim.u1)) / maxV) * 100) },
+          { label: top === 'internal-resistance' ? 'V_bornes' : 'U₂ / V_A', val: top === 'internal-resistance' ? sim.uLoad : Math.abs(sim.u2), unit: 'V', color: 'bg-sky-500', pct: Math.min(100, ((top === 'internal-resistance' ? sim.uLoad : Math.abs(sim.u2)) / maxV) * 100) },
+          ...(top === 'series-3r' || top === 'two-mesh-millman'
+            ? [{ label: 'U₃', val: Math.abs(sim.u3), unit: 'V', color: 'bg-emerald-500', pct: Math.min(100, (Math.abs(sim.u3) / maxV) * 100) }]
+            : []),
+        ];
 
   return (
     <div className="flex flex-col gap-3">
@@ -117,7 +128,7 @@ export const KirchhoffSchematicScope: React.FC<Props> = ({ params, sim, lang }) 
           <line x1="275" y1="134" x2="275" y2="180" stroke="#475569" strokeWidth="2.2" />
 
           {/* Optional Right Mesh / Load / Second Source */}
-          {(top === 'loaded-divider' || top === 'parallel-2' || top === 'parallel-3' || top === 'two-mesh-millman' || top === 'dual-sources' || top === 'wheatstone-bridge' || top === 'led-parallel-trap') && (
+          {(top === 'loaded-divider' || top === 'parallel-2' || top === 'parallel-3' || top === 'two-mesh-millman' || top === 'dual-sources' || top === 'wheatstone-bridge' || top === 'led-parallel-trap' || top === 'thevenin-equiv') && (
             <g>
               <line x1="275" y1="35" x2="410" y2="35" stroke="#475569" strokeWidth="2.2" />
               {top === 'two-mesh-millman' && (
@@ -146,10 +157,10 @@ export const KirchhoffSchematicScope: React.FC<Props> = ({ params, sim, lang }) 
                 <>
                   <rect x="398" y="80" width="24" height="54" rx="2" fill="#fff7ed" stroke="#ea580c" strokeWidth="2" />
                   <text x="428" y="104" fontSize="9" fontFamily="monospace" fontWeight="700" fill="#c2410c">
-                    {top === 'loaded-divider' ? `R_L` : top === 'wheatstone-bridge' ? `B (${sim.vB.toFixed(1)}V)` : `R_br`}
+                    {top === 'loaded-divider' || top === 'thevenin-equiv' ? `R_L` : top === 'wheatstone-bridge' ? `B (${sim.vB.toFixed(1)}V)` : `R_br`}
                   </text>
                   <text x="428" y="117" fontSize="9" fontFamily="monospace" fontWeight="700" fill="#ea580c">
-                    {top === 'loaded-divider' ? `${sim.iLoadMA.toFixed(1)}mA` : `${sim.i2MA.toFixed(1)}mA`}
+                    {top === 'loaded-divider' || top === 'thevenin-equiv' ? `${sim.iLoadMA.toFixed(1)}mA` : `${sim.i2MA.toFixed(1)}mA`}
                   </text>
                 </>
               )}

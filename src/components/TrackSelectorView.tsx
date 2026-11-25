@@ -226,13 +226,13 @@ export const TrackSelectorView: React.FC<Props> = ({
             <div className="workbench-mat border-b border-stone-800/50 p-5 flex items-center justify-between gap-4">
               <div className="text-stone-100">
                 <div className="text-xs font-mono-num text-emerald-300">
-                  {tr(lang, 'FILIÈRE 03 · KIRCHHOFF', 'المسار 03 · كيرشوف', 'TRACK 03 · KIRCHHOFF')}
+                  {tr(lang, 'FILIÈRE 03 · KIRCHHOFF & THÉVENIN', 'المسار 03 · كيرشوف وثيفنان', 'TRACK 03 · KIRCHHOFF & THÉVENIN')}
                 </div>
                 <h2 className="text-2xl font-bold mt-1">
-                  {tr(lang, 'Mailles & Nœuds', 'الحلقات والعقد', 'Loops & Nodes')}
+                  {tr(lang, 'Mailles, Nœuds & Thévenin', 'الحلقات والعقد وثيفنان', 'KVL, KCL & Thévenin')}
                 </h2>
                 <p className="text-xs font-mono-num text-stone-300 mt-1" dir="ltr">
-                  KVL ∑U = 0 · KCL ∑I = 0 · Millman
+                  KVL ∑U = 0 · KCL ∑I = 0 · Thévenin
                 </p>
               </div>
 
@@ -253,9 +253,9 @@ export const TrackSelectorView: React.FC<Props> = ({
               <p className="text-sm text-stone-700 dark:text-stone-200 leading-relaxed">
                 {tr(
                   lang,
-                  'Les lois fondamentales de l’analyse de circuits : loi des mailles (∑U = 0), pont diviseur en charge, sources en opposition, loi des nœuds (∑I = 0), piège des LEDs parallèles, théorème de Millman, pont de Wheatstone et pile r_i.',
-                  'قواعد تحليل الدارات الأساسية: قانون الحلقات (∑U = 0)، المقسّم المحمّل، قانون العقد (∑I = 0)، فخ مصابيح LED، ميلمان، جسر ويتستون والبطارية r_i.',
-                  'Core circuit laws: Kirchhoff’s Voltage Law (∑U = 0), loaded voltage dividers, opposing sources, KCL current conservation, parallel LED traps, Millman 2-mesh solver, Wheatstone bridge, and battery r_i.'
+                  'Les lois fondamentales de l’analyse de circuits : loi des mailles (∑U = 0), pont diviseur en charge, loi des nœuds (∑I = 0), piège des LEDs parallèles, théorème de Millman, pont de Wheatstone, pile r_i et théorème de Thévenin (E_th, R_th).',
+                  'قواعد تحليل الدارات الأساسية: قانون الحلقات (∑U = 0)، المقسّم المحمّل، قانون العقد (∑I = 0)، فخ مصابيح LED، ميلمان، جسر ويتستون ومبرهنة ثيفنان (E_th, R_th).',
+                  'Core circuit laws: Kirchhoff’s Voltage Law (∑U = 0), loaded dividers, KCL current conservation, parallel LED traps, Millman 2-mesh solver, Wheatstone bridge, battery r_i, and Thévenin’s theorem (E_th, R_th).'
                 )}
               </p>
 
@@ -263,7 +263,7 @@ export const TrackSelectorView: React.FC<Props> = ({
                 <div>
                   <dt className="text-stone-500 dark:text-stone-400">{tr(lang, 'Lois', 'القوانين', 'Laws')}</dt>
                   <dd className="font-mono-num font-bold text-stone-900 dark:text-stone-100 mt-0.5">
-                    KVL & KCL
+                    KVL · KCL · Thév.
                   </dd>
                 </div>
                 <div>
@@ -319,19 +319,19 @@ export const TrackSelectorView: React.FC<Props> = ({
                 <td className="py-2.5 pe-4 font-medium">{tr(lang, 'Objet', 'المحور', 'Focus')}</td>
                 <td className="py-2.5 pe-4 font-mono-num">Base (B) · Collector (C) · Emitter (E)</td>
                 <td className="py-2.5 pe-4 font-mono-num">Gate (G) · Drain (D) · Source (S)</td>
-                <td className="py-2.5 font-mono-num">{tr(lang, 'Mailles (∑U = 0) & Nœuds (∑I = 0)', 'الحلقات (∑U = 0) والعقد (∑I = 0)', 'Loops (∑U = 0) & Nodes (∑I = 0)')}</td>
+                <td className="py-2.5 font-mono-num">{tr(lang, 'Mailles (∑U=0) · Nœuds (∑I=0) · Thévenin', 'الحلقات (∑U=0) · العقد · ثيفنان', 'KVL Loops · KCL Nodes · Thévenin')}</td>
               </tr>
               <tr>
                 <td className="py-2.5 pe-4 font-medium">{tr(lang, 'Mécanisme', 'المبدأ', 'Core Principle')}</td>
                 <td className="py-2.5 pe-4">{tr(lang, 'Courant permanent I_B (V_BE ≈ 0,7 V)', 'تيار مستمر بالقاعدة (V_BE ≈ 0.7V)', 'Continuous Base current I_B (V_BE ≈ 0.7 V)')}</td>
                 <td className="py-2.5 pe-4">{tr(lang, 'Champ électrique sans courant (V_GS > V_th, I_G ≈ 0)', 'مجال كهربائي بالجهد بدون تيار مستمر (I_G ≈ 0)', 'Electric field voltage drive (V_GS > V_th, I_G ≈ 0)')}</td>
-                <td className="py-2.5">{tr(lang, 'Conservation énergie (U) & charges (I)', 'حفظ الطاقة (الجهد) والشحنة (التيار)', 'Conservation of energy (V) & charge (I)')}</td>
+                <td className="py-2.5">{tr(lang, 'Conservation (U, I) & réduction (E_th, R_th)', 'حفظ الطاقة والتيار والاختزال المكافئ', 'Energy/charge conservation & (E_th, R_th) reduction')}</td>
               </tr>
               <tr>
                 <td className="py-2.5 pe-4 font-medium">{tr(lang, 'Outils labo', 'أدوات المختبر', 'Lab Tools')}</td>
                 <td className="py-2.5 pe-4 font-mono-num">{tr(lang, 'Multimètre ×10/×10k · Code couleurs', 'فاحص BJT · ألوان المقاومات', 'BJT Tester · Color Code')}</td>
                 <td className="py-2.5 pe-4 font-mono-num">{tr(lang, 'Verrouillage G · Calcul thermique', 'فاحص قفل البوابة · حاسبة الحرارة', 'Gate Latch · Thermal Calc')}</td>
-                <td className="py-2.5 font-mono-num">{tr(lang, 'Résolveur Millman · Défi inconnue', 'حلّال ميلمان · تحدّي المجهول', 'Millman Solver · Unknown Quiz')}</td>
+                <td className="py-2.5 font-mono-num">{tr(lang, 'Solveur Millman · Réducteur Thévenin', 'حلّال ميلمان · مختزل ثيفنان', 'Millman Solver · Thévenin Reducer')}</td>
               </tr>
             </tbody>
           </table>

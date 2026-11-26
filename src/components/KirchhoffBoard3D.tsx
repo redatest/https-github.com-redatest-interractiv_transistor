@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lang, tr } from '../types';
+import { PcbShell } from './PcbShell';
 import { KirchhoffSimParams, KirchhoffSimReadout } from '../utils/kirchhoffPhysics';
 
 interface Props {
@@ -389,10 +390,8 @@ export const KirchhoffBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickAc
 
         {/* 3D Tilted Emerald PCB */}
         <div className="relative mx-auto max-w-2xl" style={{ perspective: '950px' }}>
-          <div
-            className="rounded-2xl border-2 border-emerald-300/60 bg-gradient-to-br from-[#1f8a5e] via-[#18734d] to-[#125d3e] shadow-[0_22px_34px_rgba(8,26,20,0.45)] p-3 sm:p-4 transition-transform duration-300"
-            style={{ transform: 'rotateX(10deg)' }}
-          >
+          <PcbShell rx={10} radius={16}>
+          <div className="p-3 sm:p-4">
             <svg
               viewBox="0 0 520 260"
               className="w-full h-auto select-none"
@@ -1350,6 +1349,7 @@ export const KirchhoffBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickAc
               )}
             </svg>
           </div>
+          </PcbShell>
         </div>
 
         {/* Interactive Legend & Quick Fault Actions */}

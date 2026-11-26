@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lang, tr } from '../types';
+import { PcbShell } from './PcbShell';
 import { MosfetSimParams, MosfetSimReadout } from '../utils/mosfetPhysics';
 
 interface Props {
@@ -273,13 +274,8 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
 
         {/* 3D Tilted Green PCB */}
         <div style={{ perspective: '900px' }} className="w-full flex justify-center">
-          <div
-            style={{
-              transform: 'rotateX(12deg) rotateZ(-1.5deg)',
-              transformStyle: 'preserve-3d',
-            }}
-            className="w-full max-w-[560px] rounded-xl bg-gradient-to-br from-[#1f8a5e] via-[#18734d] to-[#125d3e] border-2 border-[#42b883] shadow-[0_20px_34px_rgba(0,0,0,0.42)] p-3"
-          >
+          <PcbShell rx={12} rz={-1.5} radius={12} className="w-full max-w-[560px]">
+          <div className="p-3">
             <svg
               viewBox="0 0 520 265"
               className="w-full h-auto select-none"
@@ -311,7 +307,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                 d="M 38 36 H 482"
                 stroke={params.batteryReversed || sim.shootThrough ? '#e11d48' : '#d4af37'}
                 strokeWidth="5"
-                opacity="0.35"
+                opacity="0.75"
               />
               {!isTester && (railActive || params.batteryReversed) && (
                 <path
@@ -323,7 +319,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                 />
               )}
 
-              <path d="M 38 230 H 482" stroke="#cbd5e1" strokeWidth="5" opacity="0.32" />
+              <path d="M 38 230 H 482" stroke="#6fd7a6" strokeWidth="5" opacity="0.55" />
               {!isTester && gndReturnActive && (
                 <path
                   d="M 38 230 H 482"
@@ -454,7 +450,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   )}
 
                   {/* Ground links out of Q2.S & Q4.S */}
-                  <path d="M 124 214 V 230" stroke="#64748b" strokeWidth="3.5" opacity="0.4" />
+                  <path d="M 124 214 V 230" stroke="#6fd7a6" strokeWidth="3.5" opacity="0.55" />
                   {(params.hbridgeState === 'REV' || params.hbridgeState === 'BRAKE') && (
                     <path
                       d="M 124 214 V 230"
@@ -463,7 +459,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                       className={params.hbridgeState === 'BRAKE' ? 'flow-pulse-danger' : 'flow-pulse-return'}
                     />
                   )}
-                  <path d="M 396 214 V 230" stroke="#64748b" strokeWidth="3.5" opacity="0.4" />
+                  <path d="M 396 214 V 230" stroke="#6fd7a6" strokeWidth="3.5" opacity="0.55" />
                   {(params.hbridgeState === 'FWD' || params.hbridgeState === 'BRAKE') && (
                     <path
                       d="M 396 214 V 230"
@@ -474,7 +470,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   )}
 
                   {/* Left Drain bus: Q1.D <-> Motor Left <-> Q2.D */}
-                  <path d="M 124 118 V 148" stroke="#64748b" strokeWidth="3.5" opacity="0.35" />
+                  <path d="M 124 118 V 148" stroke="#6fd7a6" strokeWidth="3.5" opacity="0.55" />
                   {params.hbridgeState !== 'COAST' && (
                     <path
                       d="M 124 118 V 148"
@@ -491,7 +487,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   )}
 
                   {/* Right Drain bus: Q3.D <-> Motor Right <-> Q4.D */}
-                  <path d="M 396 118 V 148" stroke="#64748b" strokeWidth="3.5" opacity="0.35" />
+                  <path d="M 396 118 V 148" stroke="#6fd7a6" strokeWidth="3.5" opacity="0.55" />
                   {params.hbridgeState !== 'COAST' && (
                     <path
                       d="M 396 118 V 148"
@@ -508,7 +504,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   )}
 
                   {/* Left & Right Motor Horizontal Connections */}
-                  <path d="M 124 133 H 222" stroke="#64748b" strokeWidth="4" opacity="0.35" />
+                  <path d="M 124 133 H 222" stroke="#6fd7a6" strokeWidth="4" opacity="0.55" />
                   {params.hbridgeState !== 'COAST' && (
                     <path
                       d="M 124 133 H 222"
@@ -524,7 +520,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                     />
                   )}
 
-                  <path d="M 298 133 H 396" stroke="#64748b" strokeWidth="4" opacity="0.35" />
+                  <path d="M 298 133 H 396" stroke="#6fd7a6" strokeWidth="4" opacity="0.55" />
                   {params.hbridgeState !== 'COAST' && (
                     <path
                       d="M 298 133 H 396"
@@ -684,7 +680,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   )}
 
                   {/* +5V Rail into Q1.S */}
-                  <path d="M 262 36 V 52" stroke="#b87333" strokeWidth="4" opacity="0.4" />
+                  <path d="M 262 36 V 52" stroke="#6fd7a6" strokeWidth="4" opacity="0.55" />
                   {(sim.shootThrough || params.cmosVin <= 1.5) && (
                     <path
                       d="M 262 36 V 52"
@@ -695,7 +691,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   )}
 
                   {/* Shared Drain Junction (Q1.D <-> Q2.D) -> OUT */}
-                  <path d="M 262 118 V 148 M 262 133 H 376" stroke="#64748b" strokeWidth="4" opacity="0.35" fill="none" />
+                  <path d="M 262 118 V 148 M 262 133 H 376" stroke="#6fd7a6" strokeWidth="4" opacity="0.55" fill="none" />
                   {(sim.shootThrough || params.cmosVin <= 1.5 || params.cmosVin >= 3.5) && (
                     <path
                       d="M 262 118 V 148 M 262 133 H 376"
@@ -713,7 +709,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   )}
 
                   {/* Q2.S down to GND */}
-                  <path d="M 262 214 V 230" stroke="#64748b" strokeWidth="4" opacity="0.35" />
+                  <path d="M 262 214 V 230" stroke="#6fd7a6" strokeWidth="4" opacity="0.55" />
                   {(sim.shootThrough || params.cmosVin >= 3.5) && (
                     <path
                       d="M 262 214 V 230"
@@ -814,7 +810,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   {isPMOS ? (
                     <>
                       {/* P-MOS High-Side / Reverse Guard: +Rail -> S (x=298) -> D (x=274) -> Load -> GND */}
-                      <path d="M 298 36 V 194" stroke="#b87333" strokeWidth="4" opacity="0.35" fill="none" />
+                      <path d="M 298 36 V 194" stroke="#6fd7a6" strokeWidth="4" opacity="0.55" fill="none" />
                       {(powerFlow || params.batteryReversed) && (
                         <path
                           d="M 298 36 V 194"
@@ -844,12 +840,12 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                   ) : (
                     <>
                       {/* N-MOS Low-Side: +Rail -> Load -> Drain pin D (x=274) -> Source pin S (x=298) -> GND */}
-                      <path d="M 424 36 V 78" stroke="#b87333" strokeWidth="4" opacity="0.35" fill="none" />
+                      <path d="M 424 36 V 78" stroke="#6fd7a6" strokeWidth="4" opacity="0.55" fill="none" />
                       {powerFlow && (
                         <path d="M 424 36 V 78" stroke="#fbbf24" strokeWidth="4.2" fill="none" className="flow-pulse-high" />
                       )}
 
-                      <path d="M 424 156 V 208 H 274 V 194" stroke="#64748b" strokeWidth="4" opacity="0.35" fill="none" />
+                      <path d="M 424 156 V 208 H 274 V 194" stroke="#6fd7a6" strokeWidth="4" opacity="0.55" fill="none" />
                       {(powerFlow || flybackSpikeFault) && (
                         <path
                           d="M 424 156 V 208 H 274 V 194"
@@ -860,7 +856,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
                         />
                       )}
 
-                      <path d="M 298 194 V 230" stroke="#64748b" strokeWidth="4" opacity="0.35" fill="none" />
+                      <path d="M 298 194 V 230" stroke="#6fd7a6" strokeWidth="4" opacity="0.55" fill="none" />
                       {powerFlow && (
                         <path d="M 298 194 V 230" stroke="#2dd4bf" strokeWidth="4.2" fill="none" className="flow-pulse-return" />
                       )}
@@ -1063,6 +1059,7 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
               )}
             </svg>
           </div>
+          </PcbShell>
         </div>
 
         {/* Compact Color-Pulse & Potential Level Legend */}

@@ -49,9 +49,9 @@ const PART_INFO: Record<string, InspectedPart> = {
     nameFr: 'R2 · 220 Ω (Rouge-Rouge-Marron)',
     nameAr: 'R2 · 220 Ω (أحمر-أحمر-بني)',
     nameEn: 'R2 · 220 Ω (Red-Red-Brown)',
-    roleFr: 'Résistance de limitation : protège la LED en plafonnant le courant à ~31,8 mA sous 9 V.',
-    roleAr: 'مقاومة حماية: تحدّ من تيار الـ LED عند ~31.8mA لتمنع احتراقه.',
-    roleEn: 'Current-limiting resistor: protects the LED by capping current around ~31.8 mA on a 9 V supply.',
+    roleFr: 'Résistance de limitation : protège la LED en plafonnant le courant à ~31 mA sous 9 V.',
+    roleAr: 'مقاومة حماية: تحدّ من تيار الـ LED عند ~31mA لتمنع احتراقه.',
+    roleEn: 'Current-limiting resistor: protects the LED by capping current around ~31 mA on a 9 V supply.',
   },
   RSENSE: {
     nameFr: 'R_sense (22 Ω / 47 Ω / 120 Ω)',

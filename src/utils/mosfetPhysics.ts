@@ -60,7 +60,7 @@ export interface MosfetSimReadout {
   conducting: boolean;
   bodyDiodeActive: boolean;
   shootThrough: boolean;
-  region: 'cutoff' | 'linear' | 'ohmic' | 'breakdown';
+  region: 'cutoff' | 'ohmic' | 'saturation' | 'breakdown'; // ohmic = triode (canal ouvert), saturation = canal pincé (mode actif)
   statusFr: string;
   statusAr: string;
   statusEn: string;
@@ -71,12 +71,12 @@ export interface MosfetSimReadout {
 
 export const FET_SPECS: Record<
   MosfetModelId,
-  { name: string; vth: number; fullVgs: number; rdsMin: number; polarity: 'NMOS' | 'PMOS'; cissPF: number }
+  { name: string; vth: number; fullVgs: number; rdsMin: number; polarity: 'NMOS' | 'PMOS'; cissPF: number; rthJA: number }
 > = {
-  '2n7000': { name: '2N7000 (TO-92)', vth: 2.1, fullVgs: 4.5, rdsMin: 1.8, polarity: 'NMOS', cissPF: 50 },
-  irf540n: { name: 'IRF540N (Standard 10 V)', vth: 3.8, fullVgs: 10.0, rdsMin: 0.044, polarity: 'NMOS', cissPF: 1960 },
-  irlz44n: { name: 'IRLZ44N (Logic-Level 5 V)', vth: 1.6, fullVgs: 4.5, rdsMin: 0.022, polarity: 'NMOS', cissPF: 1700 },
-  irf9540: { name: 'IRF9540 (P-Channel)', vth: 3.6, fullVgs: 10.0, rdsMin: 0.117, polarity: 'PMOS', cissPF: 1300 },
+  '2n7000': { name: '2N7000 (TO-92)', vth: 2.1, fullVgs: 4.5, rdsMin: 1.8, polarity: 'NMOS', cissPF: 50, rthJA: 300 }, // TO-92 : ordre de grandeur, à vérifier (datasheet)
+  irf540n: { name: 'IRF540N (Standard 10 V)', vth: 3.8, fullVgs: 10.0, rdsMin: 0.044, polarity: 'NMOS', cissPF: 1960, rthJA: 62 }, // TO-220 sans dissipateur
+  irlz44n: { name: 'IRLZ44N (Logic-Level 5 V)', vth: 1.6, fullVgs: 4.5, rdsMin: 0.022, polarity: 'NMOS', cissPF: 1700, rthJA: 62 },
+  irf9540: { name: 'IRF9540 (P-Channel)', vth: 3.6, fullVgs: 10.0, rdsMin: 0.117, polarity: 'PMOS', cissPF: 1300, rthJA: 62 },
 };
 
 export function createDefaultMosfetParams(
@@ -117,21 +117,67 @@ export function createDefaultMosfetParams(
   };
 }
 
-function calcChannelRds(vgsMag: number, spec: (typeof FET_SPECS)['irlz44n']): { rds: number; region: 'cutoff' | 'linear' | 'ohmic' } {
-  if (vgsMag < spec.vth) {
-    return { rds: 1e7, region: 'cutoff' };
-  }
-  const overdrive = vgsMag - spec.vth;
+const T_AMB = 25;
+/** Dérive de R_DS(on) avec la température (/°C) : ordre de grandeur ≈ ×1,9 entre 25 et 150 °C, à valider avec la datasheet. */
+const RDS_TEMPCO = 0.007;
+
+export type FetSpec = (typeof FET_SPECS)['irlz44n'];
+
+/** Paramètre de transconductance K (A/V²), calé pour que R_DS = rdsMin à V_GS = fullVgs (25 °C, V_DS faible). */
+function fetK(spec: FetSpec, tempC: number): number {
   const fullOverdrive = Math.max(0.5, spec.fullVgs - spec.vth);
-  const ratio = Math.min(1, overdrive / fullOverdrive);
-  if (ratio < 0.72) {
-    // Partially open linear/pinch-off region -> dangerous high R_DS!
-    const rds = spec.rdsMin + (1 - ratio) * (1 - ratio) * 4.2;
-    return { rds, region: 'linear' };
+  const k25 = 1 / (spec.rdsMin * fullOverdrive);
+  return k25 / (1 + RDS_TEMPCO * (tempC - T_AMB));
+}
+
+interface FetDcPoint {
+  idA: number;
+  vds: number;
+  region: 'cutoff' | 'ohmic' | 'saturation';
+}
+
+/**
+ * Point de fonctionnement d'un MOSFET niveau 1 (Shichman-Hodges, sans modulation de longueur de canal)
+ * sur une charge résistive : droite de charge I = (V_dd − V_DS)/R_L résolue analytiquement.
+ *  - saturation : I = K/2 · V_ov²   (valide si V_DS ≥ V_ov)
+ *  - triode     : I = K · (V_ov · V_DS − V_DS²/2), racine du second degré
+ */
+export function solveFetDc(spec: FetSpec, vgsMag: number, vdd: number, rLoad: number, tempC: number): FetDcPoint {
+  const vov = vgsMag - spec.vth;
+  if (vov <= 0 || vdd <= 0) return { idA: 0, vds: Math.max(0, vdd), region: 'cutoff' };
+  const rl = Math.max(1e-3, rLoad);
+  const k = fetK(spec, tempC);
+  const idSat = 0.5 * k * vov * vov;
+  const vdsSat = vdd - idSat * rl;
+  if (vdsSat >= vov) return { idA: idSat, vds: vdsSat, region: 'saturation' };
+  const b = k * vov + 1 / rl;
+  const disc = Math.max(0, b * b - (2 * k * vdd) / rl);
+  const vds = (2 * vdd) / rl / (b + Math.sqrt(disc)); // forme stable de (b − √disc)/k
+  return { idA: (vdd - vds) / rl, vds, region: 'ohmic' };
+}
+
+interface FetThermalPoint extends FetDcPoint {
+  powerW: number;
+  tempC: number;
+  rdsOhms: number; // V_DS / I_D (résistance effective vue entre D et S)
+}
+
+/** Couple point de fonctionnement et température de jonction (T = T_amb + P·R_thJA), par itérations amorties. */
+function solveFetThermal(spec: FetSpec, vgsMag: number, vdd: number, rLoad: number): FetThermalPoint {
+  let t = T_AMB;
+  for (let i = 0; i < 30; i++) {
+    const op = solveFetDc(spec, vgsMag, vdd, rLoad, t);
+    const tNew = Math.min(250, T_AMB + op.vds * op.idA * spec.rthJA);
+    t = 0.5 * t + 0.5 * tNew;
   }
-  // Smooth ohmic saturation transition
-  const rds = spec.rdsMin * (1 + (1 - ratio) * 1.4);
-  return { rds, region: 'ohmic' };
+  const op = solveFetDc(spec, vgsMag, vdd, rLoad, t);
+  const powerW = op.vds * op.idA;
+  return {
+    ...op,
+    powerW,
+    tempC: Math.min(250, T_AMB + powerW * spec.rthJA),
+    rdsOhms: op.idA > 0 ? op.vds / op.idA : 1e7,
+  };
 }
 
 export function computeMosfetSimulation(p: MosfetSimParams): MosfetSimReadout {
@@ -152,11 +198,11 @@ export function computeMosfetSimulation(p: MosfetSimParams): MosfetSimReadout {
       : p.vgs;
 
     const spec = FET_SPECS['2n7000'];
-    const { rds, region } = calcChannelRds(effectiveVgs, spec);
     const conducting = effectiveVgs >= spec.vth;
-    const idA = conducting ? Math.min(0.45, (p.vdd - 2.1) / (22 + rds)) : 0;
-    const vds = conducting ? idA * rds : p.vdd;
-    const powerW = idA * idA * rds;
+    // Charge : LED (≈ 2,1 V) en série avec 22 Ω
+    const fet = solveFetThermal(spec, effectiveVgs, Math.max(0, p.vdd - 2.1), 22);
+    const { rdsOhms: rds, region, idA, powerW } = fet;
+    const vds = conducting ? fet.vds : p.vdd;
 
     return {
       vgs: effectiveVgs,
@@ -168,7 +214,7 @@ export function computeMosfetSimulation(p: MosfetSimParams): MosfetSimReadout {
       idA,
       rdsOhms: rds,
       powerW,
-      tempC: 25 + powerW * 35,
+      tempC: fet.tempC,
       efficiencyPct: conducting ? 95 : 100,
       spikeV: 0,
       meterDeflection: 0,
@@ -210,13 +256,12 @@ export function computeMosfetSimulation(p: MosfetSimParams): MosfetSimReadout {
   if (p.chapterId === 2) {
     const model = p.fetModel === 'irf9540' ? 'irf540n' : p.fetModel;
     const spec = FET_SPECS[model];
-    const { rds, region } = calcChannelRds(p.vgs, spec);
     const conducting = p.vgs >= spec.vth;
     const rLoad = Math.max(0.5, 12 / Math.max(0.5, p.loadCurrentA));
-    const idA = conducting ? 12 / (rLoad + rds) : 0;
-    const vds = conducting ? idA * rds : 12;
-    const powerW = conducting ? idA * idA * rds : 0;
-    const tempC = Math.min(210, 25 + powerW * 16); // TO-220 bare ambient ~62°C/W scaled for lab feel
+    // Modèle niveau 1 + boucle thermique (R_thJA réel du boîtier, plus de facteur « lab feel »)
+    const fet = solveFetThermal(spec, p.vgs, 12, rLoad);
+    const { rdsOhms: rds, region, idA, vds, powerW } = fet;
+    const tempC = Math.min(210, fet.tempC);
     const eff = conducting ? (1 - vds / 12) * 100 : 100;
 
     return {
@@ -239,19 +284,19 @@ export function computeMosfetSimulation(p: MosfetSimParams): MosfetSimReadout {
       region: tempC > 150 ? 'breakdown' : region,
       statusFr: !conducting
         ? `Bloqué : V_GS (${p.vgs.toFixed(1)} V) < V_th (${spec.vth.toFixed(1)} V)`
-        : region === 'linear'
-        ? `ZONE LINÉAIRE PIÈGE ! R_DS = ${rds.toFixed(2)} Ω → chauffe (${powerW.toFixed(1)} W)`
-        : `Saturation Ohmique saine : R_DS(on) = ${(rds * 1000).toFixed(0)} mΩ`,
+        : region === 'saturation'
+        ? `MODE SATURATION (piège) : V_DS = ${vds.toFixed(1)} V × I_D = ${idA.toFixed(1)} A → chauffe (${powerW.toFixed(1)} W)`
+        : `Régime ohmique (triode) sain : R_DS = ${(rds * 1000).toFixed(0)} mΩ`,
       statusAr: !conducting
         ? `مقطوع: جهد البوابة (${p.vgs.toFixed(1)}V) أقل من العتبة (${spec.vth.toFixed(1)}V)`
-        : region === 'linear'
-        ? `فخ المنطقة الخطية! مقاومة عالية ${rds.toFixed(2)} Ω ← سخونة مفرطة (${powerW.toFixed(1)} W)`
-        : `تشبّع أومي سليم: R_DS(on) = ${(rds * 1000).toFixed(0)} mΩ`,
+        : region === 'saturation'
+        ? `فخ منطقة الإشباع! V_DS = ${vds.toFixed(1)}V × I_D = ${idA.toFixed(1)}A ← سخونة مفرطة (${powerW.toFixed(1)} W)`
+        : `منطقة أومية (تريود) سليمة: R_DS = ${(rds * 1000).toFixed(0)} mΩ`,
       statusEn: !conducting
         ? `Cut off: V_GS (${p.vgs.toFixed(1)} V) < V_th (${spec.vth.toFixed(1)} V)`
-        : region === 'linear'
-        ? `LINEAR TRAP! High R_DS = ${rds.toFixed(2)} Ω → overheating (${powerW.toFixed(1)} W)`
-        : `Healthy Ohmic saturation: R_DS(on) = ${(rds * 1000).toFixed(0)} mΩ`,
+        : region === 'saturation'
+        ? `SATURATION TRAP! V_DS = ${vds.toFixed(1)} V × I_D = ${idA.toFixed(1)} A → overheating (${powerW.toFixed(1)} W)`
+        : `Healthy ohmic (triode) region: R_DS = ${(rds * 1000).toFixed(0)} mΩ`,
       warningFr:
         tempC > 95
           ? `Surchauffe (${Math.round(tempC)} °C) ! Un IRF540N à 5 V reste semi-ouvert ; choisissez un Logic-Level IRLZ44N ou montez V_GS à 10 V.`
@@ -453,7 +498,7 @@ export function computeMosfetSimulation(p: MosfetSimParams): MosfetSimReadout {
       conducting: p.pwmDuty > 5,
       bodyDiodeActive: false,
       shootThrough: false,
-      region: tempC > 110 ? 'linear' : 'ohmic',
+      region: 'ohmic',
       statusFr: `t_commut ≈ ${swTimeUs.toFixed(2)} µs · Pic I_G = ${igPeakMA.toFixed(0)} mA · Pertes = ${powerW.toFixed(2)} W`,
       statusAr: `زمن التبديل ≈ ${swTimeUs.toFixed(2)} µs · نبضة البوابة = ${igPeakMA.toFixed(0)} mA · الفقد = ${powerW.toFixed(2)} W`,
       statusEn: `Switching time ≈ ${swTimeUs.toFixed(2)} µs · Peak I_G = ${igPeakMA.toFixed(0)} mA · Loss = ${powerW.toFixed(2)} W`,
@@ -498,7 +543,7 @@ export function computeMosfetSimulation(p: MosfetSimParams): MosfetSimReadout {
         conducting: true,
         bodyDiodeActive: true,
         shootThrough: false,
-        region: 'linear',
+        region: 'cutoff', // canal bloqué, le courant passe par la diode de corps
         statusFr: 'V_GS = 0 V MAIS la Source est à +12 V → La Diode de Corps S→D conduit (V_F ≈ 0,72 V) !',
         statusAr: 'البوابة مطفأة (V_GS = 0V) لكن الدايود الداخلي بين S و D يمرّر التيار عكسياً (0.72V)!',
         statusEn: 'V_GS = 0 V YET Source > Drain → Intrinsic S→D Body Diode conducts (V_F ≈ 0.72 V)!',
@@ -619,7 +664,7 @@ export function computeMosfetSimulation(p: MosfetSimParams): MosfetSimReadout {
         conducting: idA > 0,
         bodyDiodeActive: false,
         shootThrough: false,
-        region: tempC > 135 ? 'breakdown' : 'linear',
+        region: tempC > 135 ? 'breakdown' : 'saturation',
         statusFr: `Charge linéaire réglée à ${idA.toFixed(2)} A · P_MOSFET = V_DS × I_D = ${powerW.toFixed(1)} W`,
         statusAr: `تيار مسحوب ثابت = ${idA.toFixed(2)} A · الحرارة المبدّدة = ${powerW.toFixed(1)} W`,
         statusEn: `Linear sink locked at ${idA.toFixed(2)} A · Heat P = V_DS × I_D = ${powerW.toFixed(1)} W`,

@@ -66,7 +66,7 @@ export const MosfetAnalogyView: React.FC<Props> = ({ params, sim, lang }) => {
           width="44"
           height="32"
           rx="4"
-          fill={sim.region === 'linear' ? '#f59e0b' : '#38bdf8'}
+          fill={sim.region === 'saturation' ? '#f59e0b' : '#38bdf8'}
           className="transition-all duration-300"
         />
 

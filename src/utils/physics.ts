@@ -1,9 +1,21 @@
 export const VS_9V = 9;
 export const VLED = 2;
 export const R_220 = 220;
+/** Tension V_CE de saturation d'un transistor seul (V). Mettre 0 pour retrouver l'idéalisation « V_CE(sat) ≈ 0 » du livre. */
+export const VCE_SAT = 0.2;
 export const VBE = 0.6;
 export const BETA_200 = 200;
-export const IMAX_9V = ((VS_9V - VLED) / R_220) * 1000; // ~31.82 mA
+export const IMAX_9V = ((VS_9V - VLED - VCE_SAT) / R_220) * 1000; // ≈ 30,9 mA (31,8 mA si V_CE(sat) = 0)
+
+/** V_CE(sat) d'une chaîne Darlington de `stages` transistors : le dernier étage doit rester polarisé en V_BE. */
+export function vceSat(stages = 1): number {
+  return VCE_SAT + (stages - 1) * VBE;
+}
+
+/** Courant de saturation (mA) de la branche LED + 220 Ω : la loi des mailles est respectée à V_CE = V_CE(sat). */
+export function iSatMA(vs: number, stages = 1): number {
+  return ((vs - VLED - vceSat(stages)) / R_220) * 1000;
+}
 
 export interface SimParams {
   chapterId: number;
@@ -184,11 +196,11 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
   switch (p.catalogId) {
     case 'worlds-simplest': {
       const vs = p.supplySelect6or9 ?? 9;
-      const iMax = ((vs - VLED) / R_220) * 1000;
+      const iMax = iSatMA(vs);
       const rf = fingerResistance(p.pressure, p.skinMoisture ?? 'dry');
       const ib = (vs - VBE) / rf;
       const ic = Math.min(BETA_200 * ib * 1000, iMax);
-      const vce = Math.max(0.2, vs - VLED - (ic * R_220) / 1000);
+      const vce = Math.max(VCE_SAT, vs - VLED - (ic * R_220) / 1000);
       const powerMW = vce * ic;
       return {
         vbe: ic > 0.05 ? VBE : 0.25,
@@ -218,12 +230,12 @@ export function computeCatalogSimulation(p: SimParams): SimReadout {
 
     case 'second-simplest': {
       const vs = 6;
-      const iMax = ((vs - VLED) / R_220) * 1000; // ~18.18 mA
+      const iMax = iSatMA(vs, 2); // Darlington : V_CE(sat) ≈ 0,8 V
       const rf = fingerResistance(p.pressure, p.skinMoisture ?? 'dry');
       const ib = Math.max(0, (vs - 2 * VBE) / rf);
       const gain = BETA_200 * BETA_200; // 40,000
       const ic = Math.min(gain * ib * 1000, iMax);
-      const vce = Math.max(0.2, vs - VLED - (ic * R_220) / 1000);
+      const vce = Math.max(vceSat(2), vs - VLED - (ic * R_220) / 1000);
       return {
         vbe: ic > 0.1 ? 1.2 : 0.4,
         vce,
@@ -1395,15 +1407,16 @@ function computeChapterSimulation(p: SimParams): SimReadout {
       const rf = fingerResistance(p.pressure);
       const ib = Math.max(0, (VS_9V - stagesCount * VBE) / rf);
       const gain = Math.pow(BETA_200, stagesCount);
-      const ic = Math.min(gain * ib * 1000, IMAX_9V);
+      const iMaxChain = iSatMA(VS_9V, stagesCount);
+      const ic = Math.min(gain * ib * 1000, iMaxChain);
       return {
         vbe: stagesCount * VBE,
-        vce: Math.max(0.2, VS_9V - VLED - (ic * R_220) / 1000),
-        vc: Math.max(0.2, VS_9V - VLED - (ic * R_220) / 1000),
+        vce: Math.max(vceSat(stagesCount), VS_9V - VLED - (ic * R_220) / 1000),
+        vc: Math.max(vceSat(stagesCount), VS_9V - VLED - (ic * R_220) / 1000),
         ibUA: ib * 1e6,
         icMA: ic,
         betaEff: gain,
-        brightness: Math.min(1, ic / IMAX_9V),
+        brightness: Math.min(1, ic / iMaxChain),
         conducting: ic > 0.1,
         staircaseLeds: 0,
         statusFr: `${stagesCount} étage(s) · β = ${gain.toLocaleString('fr-FR')}`,

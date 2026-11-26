@@ -112,9 +112,9 @@ export const CHAPTERS: ChapterDef[] = [
       },
     },
     teacherNote: {
-      fr: 'Note du livre (p. 3 & p. 27) : le livre cite β ≈ 100 p. 3 et ≈ 200 p. 27. En régime saturé avec R_LED = 220 Ω sous 9 V, I_C plafonne à I_max ≈ (9 − 2) / 220 ≈ 31,8 mA.',
-      ar: 'ملاحظة: يذكر الكتاب تضخيماً نحو ١٠٠ في ص٣ ونحو ٢٠٠ في ص٢٧. عند التشبّع بـ 9V ومقاومة 220Ω، يحدّ الحِمل التيار عند I_max ≈ 31.8 mA.',
-      en: 'Book note (pp. 3 & 27): text cites β ≈ 100 on p. 3 and ≈ 200 on p. 27. In saturation with R_LED = 220 Ω at 9 V, I_C caps at I_max ≈ (9 − 2) / 220 ≈ 31.8 mA.',
+      fr: 'Note du livre (p. 3 & p. 27) : le livre cite β ≈ 100 p. 3 et ≈ 200 p. 27. En régime saturé avec R_LED = 220 Ω sous 9 V, I_C plafonne à I_max ≈ (9 − 2 − 0,2) / 220 ≈ 30,9 mA (31,8 mA si l’on néglige V_CE(sat) = 0,2 V).',
+      ar: 'ملاحظة: يذكر الكتاب تضخيماً نحو ١٠٠ في ص٣ ونحو ٢٠٠ في ص٢٧. عند التشبّع بـ 9V ومقاومة 220Ω، يحدّ الحِمل التيار عند I_max ≈ 30.9 mA (31.8 mA si V_CE(sat) ≈ 0).',
+      en: 'Book note (pp. 3 & 27): text cites β ≈ 100 on p. 3 and ≈ 200 on p. 27. In saturation with R_LED = 220 Ω at 9 V, I_C caps at I_max ≈ (9 − 2 − 0.2) / 220 ≈ 30.9 mA (31.8 mA if V_CE(sat) is neglected).',
     },
   },
   {

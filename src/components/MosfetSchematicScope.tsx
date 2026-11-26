@@ -302,7 +302,7 @@ export const MosfetSchematicScope: React.FC<Props> = ({ params, sim, lang }) => 
 
         <div className="text-xs text-stone-300 font-mono-num flex items-center justify-between pt-1">
           <span>I_G = {sim.igNA.toFixed(1)} nA</span>
-          <span className={sim.region === 'breakdown' ? 'text-rose-400 font-bold' : sim.region === 'linear' ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
+          <span className={sim.region === 'breakdown' ? 'text-rose-400 font-bold' : sim.region === 'saturation' ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
             {sim.region.toUpperCase()}
           </span>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lang, tr } from '../types';
-import { PcbShell } from './PcbShell';
+import { PcbShell, usePcbTilt } from './PcbShell';
 import { KirchhoffSimParams, KirchhoffSimReadout } from '../utils/kirchhoffPhysics';
 
 interface Props {
@@ -352,6 +352,7 @@ const PcbLed: React.FC<{
 };
 
 export const KirchhoffBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickAction }) => {
+  const tilt = usePcbTilt({ rx: 10, rz: 0 }, { rxMin: 4, rxMax: 34, rzMax: 18 });
   const [selectedPart, setSelectedPart] = useState<string>('nodeA');
   const inspector = PART_INFO[selectedPart] ?? PART_INFO.nodeA;
 
@@ -389,8 +390,13 @@ export const KirchhoffBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickAc
         </div>
 
         {/* 3D Tilted Emerald PCB */}
-        <div className="relative mx-auto max-w-2xl" style={{ perspective: '950px' }}>
-          <PcbShell rx={10} radius={16}>
+        <div
+          {...tilt.handlers}
+          className="relative mx-auto max-w-2xl select-none cursor-grab active:cursor-grabbing"
+          style={{ perspective: '950px', touchAction: 'pan-y' }}
+          title={tr(lang, 'Glisser pour incliner · double-clic pour réinitialiser', 'اسحب للإمالة · نقرتان لإعادة الضبط', 'Drag to tilt · double-click to reset')}
+        >
+          <PcbShell rx={tilt.rot.rx} rz={tilt.rot.rz} transitionMs={tilt.dragging ? 0 : 250} radius={16}>
           <div className="p-3 sm:p-4">
             <svg
               viewBox="0 0 520 260"

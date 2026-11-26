@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lang, tr } from '../types';
-import { PcbShell } from './PcbShell';
+import { PcbShell, usePcbTilt } from './PcbShell';
 import { MosfetSimParams, MosfetSimReadout } from '../utils/mosfetPhysics';
 
 interface Props {
@@ -98,6 +98,7 @@ const VoltageNodeBadge: React.FC<{ x: number; y: number; text: string; tone: Pot
 };
 
 export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickAction }) => {
+  const tilt = usePcbTilt({ rx: 12, rz: -1.5 }, { rxMin: 4, rxMax: 34, rzMax: 18 });
   const [selectedPart, setSelectedPart] = useState<string>('mosfet');
 
   const cid = params.catalogId;
@@ -273,8 +274,13 @@ export const MosfetBoard3D: React.FC<Props> = ({ params, sim, lang, onQuickActio
         </div>
 
         {/* 3D Tilted Green PCB */}
-        <div style={{ perspective: '900px' }} className="w-full flex justify-center">
-          <PcbShell rx={12} rz={-1.5} radius={12} className="w-full max-w-[560px]">
+        <div
+          {...tilt.handlers}
+          style={{ perspective: '900px', touchAction: 'pan-y' }}
+          className="w-full flex justify-center select-none cursor-grab active:cursor-grabbing"
+          title={tr(lang, 'Glisser pour incliner · double-clic pour réinitialiser', 'اسحب للإمالة · نقرتان لإعادة الضبط', 'Drag to tilt · double-click to reset')}
+        >
+          <PcbShell rx={tilt.rot.rx} rz={tilt.rot.rz} transitionMs={tilt.dragging ? 0 : 250} radius={12} className="w-full max-w-[560px]">
           <div className="p-3">
             <svg
               viewBox="0 0 520 265"

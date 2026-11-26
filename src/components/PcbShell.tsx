@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useRef, useState } from 'react';
+import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 
 /**
  * Habillage 3D commun des platines : épaisseur réelle (tranche FR-4), masque de soudure texturé,
@@ -120,4 +121,70 @@ export function PcbShell({
       </div>
     </div>
   );
+}
+
+/**
+ * Inclinaison à la souris/au doigt. Le glisser ne démarre qu'après quelques pixels de déplacement,
+ * pour ne pas gêner les clics sur les composants de la platine ; un clic qui termine un glisser est ignoré.
+ * Double-clic (ou double tap) : retour à l'angle initial.
+ */
+export function usePcbTilt(
+  initial: { rx: number; rz: number },
+  limits = { rxMin: 4, rxMax: 54, rzMax: 35 },
+) {
+  const [rot, setRot] = useState(initial);
+  const [dragging, setDragging] = useState(false);
+  const ref = useRef({ down: false, moved: false, x: 0, y: 0, justDragged: false });
+
+  const onPointerDown = (e: ReactPointerEvent<HTMLElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    ref.current = { down: true, moved: false, x: e.clientX, y: e.clientY, justDragged: false };
+  };
+
+  const onPointerMove = (e: ReactPointerEvent<HTMLElement>) => {
+    const r = ref.current;
+    if (!r.down) return;
+    const dx = e.clientX - r.x;
+    const dy = e.clientY - r.y;
+    if (!r.moved) {
+      if (Math.hypot(dx, dy) < 5) return;
+      r.moved = true;
+      setDragging(true);
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    r.x = e.clientX;
+    r.y = e.clientY;
+    setRot((prev) => ({
+      rx: Math.max(limits.rxMin, Math.min(limits.rxMax, prev.rx - dy * 0.35)),
+      rz: Math.max(-limits.rzMax, Math.min(limits.rzMax, prev.rz + dx * 0.35)),
+    }));
+  };
+
+  const end = () => {
+    const r = ref.current;
+    r.justDragged = r.moved;
+    r.down = false;
+    r.moved = false;
+    setDragging(false);
+  };
+
+  return {
+    rot,
+    dragging,
+    reset: () => setRot(initial),
+    handlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: end,
+      onPointerCancel: end,
+      onDoubleClick: () => setRot(initial),
+      onClickCapture: (e: React.MouseEvent) => {
+        if (ref.current.justDragged) {
+          ref.current.justDragged = false;
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      },
+    },
+  };
 }

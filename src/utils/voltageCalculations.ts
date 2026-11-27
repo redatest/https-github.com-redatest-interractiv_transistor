@@ -15,6 +15,7 @@ import {
   MosfetSimReadout,
 } from './mosfetPhysics';
 import { KirchhoffSimParams, KirchhoffSimReadout } from './kirchhoffPhysics';
+import { ampParamsFromSim, computeAmplifier, PREAMP_OPEN_LOOP_GAIN, VT } from './amplifier';
 
 export interface VoltageCalcStep {
   label: string;
@@ -514,6 +515,81 @@ export function computeBjtVoltageSteps(
           result: `${sim.vce.toFixed(2)} V`,
           tone: 'emerald',
         },
+      ],
+    };
+  }
+
+  // CHAPTER 10: Voltage amplification and gain factor
+  if (p.chapterId === 10) {
+    const ap = ampParamsFromSim(p);
+    const amp = computeAmplifier(ap);
+    const vinMv = ap.vinPeakV * 1000;
+    const avAbs = Math.abs(amp.avMeasured);
+    const outTone: 'emerald' | 'rose' = amp.clipped ? 'rose' : 'emerald';
+    const outStep = {
+      label: tr(lang, '4. Tension de sortie et marge aux rails', '4. جهد الخرج وهامش الحدّين', '4. Output voltage and rail headroom'),
+      formula: 'V_out = |A_v| × V_in',
+      substitution: `${avAbs.toFixed(1)} × ${vinMv.toFixed(1)} mV  (marge ±${Math.min(amp.headroomUp, amp.headroomDown).toFixed(2)} V)`,
+      result: `${amp.voutPeakV.toFixed(2)} V crête${amp.clipped ? ' · ÉCRÊTÉ' : ''}`,
+      tone: outTone,
+    };
+    if (ap.mode === 'preamp') {
+      const beta = ap.reOhm / (ap.reOhm + ap.rfOhm);
+      return {
+        headerTitle: tr(lang, 'Détail du gain · Pré-ampli micro (p. 60, 9 V)', 'تفصيل الكسب · مضخّم الميكروفون الأولي (ص ٦٠، 9V)', 'Gain Breakdown · Mic Pre-Amp (p. 60, 9 V)'),
+        summaryEquation: `V_out = A_v × V_in = ${amp.avMeasured.toFixed(1)} × ${vinMv.toFixed(1)} mV = ${amp.voutPeakV.toFixed(2)} V`,
+        steps: [
+          {
+            label: tr(lang, '1. Fraction de sortie ramenée sur l’émetteur', '1. الجزء المُعاد من الخرج إلى الباعث', '1. Fraction of output fed back to the emitter'),
+            formula: 'β = R_E / (R_E + R_F)',
+            substitution: `${fmtR(ap.reOhm)} / (${fmtR(ap.reOhm)} + ${fmtR(ap.rfOhm)})`,
+            result: beta.toFixed(4),
+            tone: 'sky',
+          },
+          {
+            label: tr(lang, '2. Gain en boucle fermée', '2. الكسب بالحلقة المغلقة', '2. Closed-loop gain'),
+            formula: 'A_v = 1 / (β + 1/A_ol)',
+            substitution: `1 / (${beta.toFixed(4)} + 1/${PREAMP_OPEN_LOOP_GAIN})  (A_ol supposé)`,
+            result: `${amp.avSmallSignal.toFixed(1)}  (${(20 * Math.log10(Math.abs(amp.avSmallSignal))).toFixed(1)} dB)`,
+            tone: 'amber',
+          },
+          {
+            label: tr(lang, '3. Gain idéal fixé par les résistances', '3. الكسب المثالي الذي تحدده المقاومات', '3. Ideal gain set by the resistors'),
+            formula: 'A_v ≈ 1 + R_F / R_E',
+            substitution: `1 + ${fmtR(ap.rfOhm)} / ${fmtR(ap.reOhm)}`,
+            result: (1 + ap.rfOhm / ap.reOhm).toFixed(1),
+            tone: 'sky',
+          },
+          outStep,
+        ],
+      };
+    }
+    return {
+      headerTitle: tr(lang, `Détail du gain · Émetteur commun (${ap.vcc} V)`, `تفصيل الكسب · باعث مشترك (${ap.vcc}V)`, `Gain Breakdown · Common Emitter (${ap.vcc} V)`),
+      summaryEquation: `V_out = A_v × V_in = ${amp.avMeasured.toFixed(1)} × ${vinMv.toFixed(1)} mV = ${amp.voutPeakV.toFixed(2)} V`,
+      steps: [
+        {
+          label: tr(lang, '1. Point de repos du collecteur', '1. جهد راحة المجمّع', '1. Quiescent collector voltage'),
+          formula: 'V_C = V_CC − I_C × R_C',
+          substitution: `${ap.vcc.toFixed(2)} V − ${(amp.icA * 1000).toFixed(3)} mA × ${fmtR(ap.rcOhm)}`,
+          result: `${amp.vc0.toFixed(2)} V`,
+          tone: 'amber',
+        },
+        {
+          label: tr(lang, '2. Résistance d’émetteur interne', '2. مقاومة الباعث الداخلية', '2. Internal emitter resistance'),
+          formula: 'r_e = V_T / I_C',
+          substitution: `${(VT * 1000).toFixed(2)} mV / ${(amp.icA * 1000).toFixed(3)} mA`,
+          result: `${amp.reIntOhm.toFixed(0)} Ω`,
+          tone: 'sky',
+        },
+        {
+          label: tr(lang, '3. Gain en tension (petit signal)', '3. كسب الجهد (إشارة صغيرة)', '3. Voltage gain (small signal)'),
+          formula: 'A_v = −R_C / (r_e + R_E)',
+          substitution: `−${fmtR(ap.rcOhm)} / (${amp.reIntOhm.toFixed(0)} Ω + ${ap.reOhm.toFixed(0)} Ω)`,
+          result: `${amp.avSmallSignal.toFixed(1)}  (${(20 * Math.log10(Math.abs(amp.avSmallSignal))).toFixed(1)} dB)`,
+          tone: 'emerald',
+        },
+        outStep,
       ],
     };
   }

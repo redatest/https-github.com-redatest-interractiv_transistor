@@ -1,4 +1,5 @@
 // Contrôles de cohérence des modèles. Lancer : npm run check:physics
+import { computeAmplifier, ampParamsFromSim } from '../src/utils/amplifier';
 import { computeCatalogSimulation, createDefaultSimParams, R_220, VLED, VS_9V } from '../src/utils/physics';
 import { computeMosfetSimulation, createDefaultMosfetParams, FET_SPECS, MosfetModelId, solveFetDc } from '../src/utils/mosfetPhysics';
 
@@ -47,6 +48,27 @@ for (const model of ['irf540n', 'irlz44n', '2n7000'] as MosfetModelId[]) {
   const b = computeMosfetSimulation(createDefaultMosfetParams({ chapterId: 2, exampleId: 'x', fetModel: 'irlz44n', vgs: 5, loadCurrentA: 4 }));
   check('IRF540N @5 V en difficulté', a.tempC > 95 && a.region !== 'ohmic', `${a.region}, ${Math.round(a.tempC)} °C, I_D=${a.idA.toFixed(2)} A`);
   check('IRLZ44N @5 V sain', b.tempC < 80 && b.region === 'ohmic', `${b.region}, ${Math.round(b.tempC)} °C`);
+}
+
+// 5. Chapitre 10 : gain en tension
+{
+  const run = (o: Record<string, unknown>) =>
+    computeAmplifier(ampParamsFromSim(createDefaultSimParams({ chapterId: 10, ...o })));
+  const ce = run({ exampleId: 'ce-gain' });
+  check('A_v émetteur commun ≈ −R_C/r_e (≈ −96)', ce.avSmallSignal < -94 && ce.avSmallSignal > -99, `A_v = ${ce.avSmallSignal.toFixed(1)}`);
+  const half = run({ exampleId: 'ce-gain', ampIcUA: 57 });
+  check('Gain proportionnel à I_C (57 µA ≈ moitié)', Math.abs(half.avSmallSignal / ce.avSmallSignal - 0.5) < 0.02, `${half.avSmallSignal.toFixed(1)} vs ${ce.avSmallSignal.toFixed(1)}`);
+  const d0 = run({ exampleId: 'emitter-degeneration', ampRe: 0 });
+  const d100 = run({ exampleId: 'emitter-degeneration', ampRe: 100 });
+  const d470 = run({ exampleId: 'emitter-degeneration', ampRe: 470 });
+  check('R_E réduit le gain', Math.abs(d0.avSmallSignal) > Math.abs(d100.avSmallSignal) && Math.abs(d100.avSmallSignal) > Math.abs(d470.avSmallSignal));
+  check('R_E réduit la distorsion', d0.thdPercent > d100.thdPercent && d100.thdPercent > d470.thdPercent, `${d0.thdPercent.toFixed(1)} % > ${d100.thdPercent.toFixed(1)} % > ${d470.thdPercent.toFixed(1)} %`);
+  const pre = run({ exampleId: 'book-preamp' });
+  check('Pré-ampli du livre : gain ≈ 100', pre.avSmallSignal > 97 && pre.avSmallSignal < 101, `A_v = ${pre.avSmallSignal.toFixed(1)}`);
+  const preBig = run({ exampleId: 'book-preamp', ampVinMV: 60 });
+  check('Pré-ampli : écrêtage au-delà de ≈ 40 mV', !pre.clipped && preBig.clipped, `V_in max propre = ${(pre.maxCleanVinV * 1000).toFixed(0)} mV`);
+  const inverted = run({ exampleId: 'ce-gain' }).avMeasured < 0 && run({ exampleId: 'book-preamp' }).avMeasured > 0;
+  check('Phase : émetteur commun inverse, pré-ampli non', inverted);
 }
 
 void VS_9V;

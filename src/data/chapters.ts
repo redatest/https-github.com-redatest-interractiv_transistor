@@ -1026,4 +1026,131 @@ export const CHAPTERS: ChapterDef[] = [
       en: 'Teaching note (p. 3): text omits β and V_BE here. Using V_BE = 0.6 V and β = 57 (typical at ~113 µA), R_B = (5 − 0.6) / (113.6 µA / 57) ≈ 2.2 MΩ yields V_C = 2.50 V!',
     },
   },
+  {
+    id: 10,
+    slug: 'voltage-gain',
+    pageRef: 'pp. 3, 5–6, 59–60',
+    title: {
+      fr: '10. Amplifier une tension : le facteur A_v',
+      ar: '١٠. تكبير الجهد: معامل التضخيم A_v',
+      en: '10. Amplifying a Voltage: the Gain Factor A_v',
+    },
+    subtitle: {
+      fr: 'De quelques millivolts à plusieurs volts : le gain dépend de R_C, de r_e et de R_E',
+      ar: 'من بضعة ميلي فولت إلى عدة فولتات: الكسب يتحدد بـ R_C و r_e و R_E',
+      en: 'From a few millivolts to several volts: gain is set by R_C, r_e and R_E',
+    },
+    analogyTitle: {
+      fr: 'Le levier : un petit geste en entrée, un grand mouvement en sortie',
+      ar: 'الرافعة: حركة صغيرة في الدخل وحركة كبيرة في الخرج',
+      en: 'The Lever: a Small Move In, a Big Move Out',
+    },
+    analogyText: {
+      fr: 'Imaginez un levier dont le bras d’entrée est court et le bras de sortie très long : un mouvement de 5 mm d’un côté déplace l’autre extrémité de 50 cm. Le rapport des bras, c’est le gain A_v. Le signe moins du transistor, c’est le levier qui bascule : quand l’entrée monte, la sortie descend. Et comme le levier ne peut pas sortir de la pièce, la sortie ne dépasse jamais les rails d’alimentation.',
+      ar: 'تخيّل رافعة ذراعها الأمامي قصير وذراعها الخلفي طويل جداً: حركة بمقدار ٥ ملم من جهة تحرّك الطرف الآخر ٥٠ سم. نسبة الذراعين هي الكسب A_v. وإشارة الناقص تعني أن الرافعة تتأرجح: إذا ارتفع الدخل انخفض الخرج. ولأن الرافعة لا تخرج من الغرفة، لا يتجاوز الخرج أبداً حدّي التغذية.',
+      en: 'Picture a lever with a short input arm and a very long output arm: moving one end 5 mm swings the other end 50 cm. The arm ratio is the gain A_v. The transistor’s minus sign is the see-saw: input up, output down. And since the lever cannot leave the room, the output can never exceed the supply rails.',
+    },
+    theory: [
+      {
+        fr: 'Amplifier une tension, c’est la multiplier par un facteur A_v = V_out / V_in. L’étage à émetteur commun du livre (Schéma E, pp. 5–6) en est capable : une variation de quelques millivolts sur la base fait varier le courant collecteur, qui crée une variation bien plus grande aux bornes de R_C. On exprime aussi le gain en décibels : 20·log₁₀|A_v| (un gain de 100 vaut 40 dB).',
+        ar: 'تكبير الجهد يعني ضربه في معامل A_v = V_out / V_in. ومرحلة الباعث المشترك في الكتاب (الشكل E، ص ٥–٦) تفعل ذلك: تغيّر بضعة ميلي فولت على القاعدة يغيّر تيار المجمّع، فيظهر تغيّر أكبر بكثير على طرفي R_C. ويُعبَّر عن الكسب أيضاً بالديسيبل: 20·log₁₀|A_v| (كسب ١٠٠ يساوي ٤٠ dB).',
+        en: 'Amplifying a voltage means multiplying it by a factor A_v = V_out / V_in. The book’s common-emitter stage (Diagram E, pp. 5–6) does exactly that: a few millivolts on the base change the collector current, which produces a far larger change across R_C. Gain is also given in decibels: 20·log₁₀|A_v| (a gain of 100 is 40 dB).',
+      },
+      {
+        fr: 'Pour de petits signaux, le BC547 se comporte comme une résistance d’émetteur interne r_e ≈ 26 mV / I_C. Sans résistance d’émetteur : A_v ≈ −R_C / r_e = −I_C·R_C / 26 mV. Le signe − signifie que la sortie est inversée (déphasée de 180°). Avec le point de repos du chapitre 9 (I_C ≈ 114 µA, R_C = 22 kΩ), r_e ≈ 227 Ω et |A_v| ≈ 96. Doublez I_C et le gain double aussi : il dépend du point de repos.',
+        ar: 'للإشارات الصغيرة يتصرّف BC547 كمقاومة باعث داخلية r_e ≈ 26 mV / I_C. بدون مقاومة باعث: A_v ≈ −R_C / r_e = −I_C·R_C / 26 mV. وتعني إشارة − أن الخرج معكوس (فرق طور ١٨٠°). مع نقطة التشغيل في الفصل ٩ (I_C ≈ 114 µA و R_C = 22 kΩ) نجد r_e ≈ 227 Ω و |A_v| ≈ 96. ضاعِف I_C يتضاعف الكسب أيضاً: فهو يتبع نقطة التشغيل.',
+        en: 'For small signals the BC547 behaves like an internal emitter resistance r_e ≈ 26 mV / I_C. With no emitter resistor: A_v ≈ −R_C / r_e = −I_C·R_C / 26 mV. The minus sign means the output is inverted (180° out of phase). With chapter 9’s bias point (I_C ≈ 114 µA, R_C = 22 kΩ), r_e ≈ 227 Ω and |A_v| ≈ 96. Double I_C and the gain doubles too: it follows the bias point.',
+      },
+      {
+        fr: 'Ce gain est donc peu précis (il suit la température et β) et le signal se déforme dès que V_in dépasse une dizaine de millivolts, car la caractéristique I_C(V_BE) est exponentielle. Ajouter une résistance d’émetteur R_E (dégénérescence) donne A_v ≈ −R_C / (r_e + R_E) : on perd du gain, mais le gain devient fixé par des résistances et la distorsion s’effondre.',
+        ar: 'إذن هذا الكسب غير دقيق (يتغير مع الحرارة و β) وتتشوّه الإشارة بمجرد أن يتجاوز V_in عشرة ميلي فولت تقريباً، لأن العلاقة I_C(V_BE) أُسّية. وإضافة مقاومة باعث R_E تعطي A_v ≈ −R_C / (r_e + R_E): نخسر بعض الكسب، لكن يصبح الكسب محدداً بالمقاومات وينهار التشوّه.',
+        en: 'That gain is imprecise (it follows temperature and β) and the signal distorts as soon as V_in exceeds about ten millivolts, because I_C(V_BE) is exponential. Adding an emitter resistor R_E (degeneration) gives A_v ≈ −R_C / (r_e + R_E): gain is lost, but it is now set by resistors and distortion collapses.',
+      },
+      {
+        fr: 'Le pré-ampli micro du livre (p. 60) pousse l’idée jusqu’au bout : deux étages à couplage direct et une contre-réaction. Le gain ne dépend presque plus des transistors mais du rapport des résistances : A_v ≈ 1 + R_F / R_E = 1 + 10 kΩ / 100 Ω ≈ 100 (le livre dit « le rapport 10k / 100R fixe le gain à 100 »). Enfin, la sortie ne peut pas dépasser les rails : sous 9 V, elle plafonne vers ±4 V, soit V_in max ≈ 4 V / 100 = 40 mV avant écrêtage. (Le microphone dynamique de la p. 59 utilise, lui, un montage à base commune, de gain > 100 et sans inversion.)',
+        ar: 'مضخّم الميكروفون الأولي في الكتاب (ص ٦٠) يأخذ الفكرة إلى نهايتها: مرحلتان متصلتان مباشرة وتغذية عكسية. لم يعد الكسب يعتمد تقريباً على الترانزستورات بل على نسبة المقاومتين: A_v ≈ 1 + R_F / R_E = 1 + 10 kΩ / 100 Ω ≈ 100 (يقول الكتاب إن نسبة 10k إلى 100R تحدّد الكسب بـ ١٠٠). وأخيراً لا يستطيع الخرج تجاوز حدّي التغذية: عند 9V يتوقف قرابة ±4V، أي أن V_in الأقصى ≈ 4V / 100 = 40 mV قبل القصّ. (أما الميكروفون الديناميكي في ص ٥٩ فيستعمل دارة قاعدة مشتركة بكسب أكبر من ١٠٠ ودون عكس للطور.)',
+        en: 'The book’s microphone pre-amplifier (p. 60) takes the idea all the way: two directly coupled stages and negative feedback. Gain now barely depends on the transistors, only on a resistor ratio: A_v ≈ 1 + R_F / R_E = 1 + 10 kΩ / 100 Ω ≈ 100 (the book says the 10k to 100R ratio sets the gain at 100). Finally the output cannot exceed the rails: on 9 V it tops out near ±4 V, so V_in max ≈ 4 V / 100 = 40 mV before clipping. (The dynamic microphone on p. 59 uses a common-base stage instead: gain above 100, no inversion.)',
+      },
+    ],
+    formula: 'A_v = V_out / V_in ≈ − R_C / (r_e + R_E)',
+    formulaVars: [
+      { symbol: 'A_v', meaning: { fr: 'Gain en tension (négatif = sortie inversée)', ar: 'كسب الجهد (سالب = خرج معكوس)', en: 'Voltage gain (negative = inverted output)' }, unit: '×' },
+      { symbol: 'R_C', meaning: { fr: 'Résistance de collecteur (charge)', ar: 'مقاومة المجمّع (الحِمل)', en: 'Collector (load) resistor' }, unit: 'kΩ' },
+      { symbol: 'r_e', meaning: { fr: 'Résistance d’émetteur interne ≈ 26 mV / I_C', ar: 'مقاومة الباعث الداخلية ≈ 26 mV / I_C', en: 'Internal emitter resistance ≈ 26 mV / I_C' }, unit: 'Ω' },
+      { symbol: 'R_E', meaning: { fr: 'Résistance d’émetteur ajoutée (0 = aucune)', ar: 'مقاومة الباعث المضافة (0 = بدونها)', en: 'Added emitter resistor (0 = none)' }, unit: 'Ω' },
+    ],
+    examples: [
+      {
+        id: 'ce-gain',
+        pageRef: 'p. 3 (E) & pp. 5–6',
+        title: { fr: 'Étage émetteur commun : A_v = −R_C / r_e', ar: 'مرحلة الباعث المشترك: A_v = −R_C / r_e', en: 'Common-Emitter Stage: A_v = −R_C / r_e' },
+        summary: {
+          fr: 'Le schéma E du livre (5 V, R_C = 22 kΩ). Déplacez le courant de repos I_C et regardez le gain suivre r_e = 26 mV / I_C, puis augmentez V_in pour voir le signal se déformer.',
+          ar: 'الشكل E في الكتاب (5V و R_C = 22kΩ). غيّر تيار الراحة I_C وراقب الكسب يتبع r_e = 26 mV / I_C، ثم ارفع V_in لترى الإشارة تتشوّه.',
+          en: 'The book’s Diagram E (5 V, R_C = 22 kΩ). Move the quiescent current I_C and watch the gain follow r_e = 26 mV / I_C, then raise V_in to see the signal distort.',
+        },
+        howItWorks: {
+          fr: 'R_B fixe le courant de repos : à I_C ≈ 114 µA, V_C = 5 − 0,114 mA × 22 kΩ ≈ 2,5 V (le point de repos du chapitre 9). Un petit signal sur la base module I_C autour de cette valeur, et la chute dans R_C s’inverse en une grande excursion de V_C. Le gain vaut −R_C / r_e avec r_e = 26 mV / I_C ≈ 227 Ω, soit A_v ≈ −96 : un signal de 5 mV crête devient environ 0,5 V crête, inversé. À 57 µA le gain tombe à −48. Quand V_in grandit, l’exponentielle I_C(V_BE) écrase un côté de l’onde (la distorsion monte) puis la sortie touche les rails et s’écrête.',
+          ar: 'تحدّد R_B تيار الراحة: عند I_C ≈ 114 µA يكون V_C = 5 − 0.114 mA × 22 kΩ ≈ 2.5V (نقطة الراحة في الفصل ٩). إشارة صغيرة على القاعدة تُحوِّر I_C حول هذه القيمة، فينقلب الهبوط على R_C إلى تأرجح كبير في V_C. الكسب يساوي −R_C / r_e مع r_e = 26 mV / I_C ≈ 227 Ω أي A_v ≈ −96: إشارة ٥ mV قمة تصبح نحو ٠.٥V قمة معكوسة. عند 57 µA ينخفض الكسب إلى −48. وعندما يكبر V_in تضغط العلاقة الأُسّية I_C(V_BE) أحد جانبي الموجة (يرتفع التشوّه) ثم يلامس الخرج حدّي التغذية فيُقصّ.',
+          en: 'R_B sets the quiescent current: at I_C ≈ 114 µA, V_C = 5 − 0.114 mA × 22 kΩ ≈ 2.5 V (chapter 9’s bias point). A small base signal modulates I_C around that value, and the drop across R_C turns into a large swing of V_C. Gain is −R_C / r_e with r_e = 26 mV / I_C ≈ 227 Ω, so A_v ≈ −96: a 5 mV peak signal becomes about 0.5 V peak, inverted. At 57 µA the gain falls to −48. As V_in grows, the exponential I_C(V_BE) squashes one side of the wave (distortion rises), then the output hits the rails and clips.',
+        },
+        components: ['BC547', 'R_C 22k', 'R_B ≈ 2M2', '5V'],
+      },
+      {
+        id: 'emitter-degeneration',
+        pageRef: 'pp. 5–6 + p. 60 (100 Ω)',
+        title: { fr: 'Résistance d’émetteur : moins de gain, plus de précision', ar: 'مقاومة الباعث: كسب أقل ودقة أعلى', en: 'Emitter Resistor: Less Gain, More Precision' },
+        summary: {
+          fr: 'Même étage sous 9 V (R_C = 10 kΩ, I_C = 0,4 mA) avec V_in = 20 mV. Choisissez R_E = 0, 47, 100, 220, 470 Ω : le gain chute, mais la distorsion s’effondre.',
+          ar: 'نفس المرحلة عند 9V (R_C = 10kΩ و I_C = 0.4mA) مع V_in = 20 mV. اختر R_E = 0 أو 47 أو 100 أو 220 أو 470 Ω: ينخفض الكسب لكن ينهار التشوّه.',
+          en: 'Same stage on 9 V (R_C = 10 kΩ, I_C = 0.4 mA) with V_in = 20 mV. Pick R_E = 0, 47, 100, 220, 470 Ω: gain drops, but distortion collapses.',
+        },
+        howItWorks: {
+          fr: 'À I_C = 0,4 mA, r_e ≈ 65 Ω. Sans R_E, A_v = −10 kΩ / 65 Ω ≈ −154, mais 20 mV crête, c’est bien trop pour l’exponentielle : la sortie est nettement déformée (≈ 19 % de distorsion). Avec R_E = 100 Ω, une partie du signal d’entrée tombe aux bornes de R_E au lieu d’attaquer la jonction : A_v ≈ −10 kΩ / (65 + 100) ≈ −60, et la distorsion tombe vers 3 %. Avec 470 Ω, A_v ≈ −19 et la sortie est quasi pure (0,3 %). Quand R_E ≫ r_e, A_v ≈ −R_C / R_E : le gain ne dépend plus que de deux résistances.',
+          ar: 'عند I_C = 0.4 mA تكون r_e ≈ 65 Ω. بدون R_E يكون A_v = −10 kΩ / 65 Ω ≈ −154، لكن ٢٠ mV قمة كبيرة جداً على العلاقة الأُسّية: يتشوّه الخرج بوضوح (نحو ١٩٪ تشوّه). مع R_E = 100 Ω يسقط جزء من إشارة الدخل على R_E بدل أن يصل إلى الوصلة: A_v ≈ −10 kΩ / (65 + 100) ≈ −60 وينخفض التشوّه إلى نحو ٣٪. ومع 470 Ω يصبح A_v ≈ −19 والخرج شبه نقي (٠.٣٪). وعندما R_E ≫ r_e يصبح A_v ≈ −R_C / R_E: أي أن الكسب لا يعتمد إلا على مقاومتين.',
+          en: 'At I_C = 0.4 mA, r_e ≈ 65 Ω. With no R_E, A_v = −10 kΩ / 65 Ω ≈ −154, but 20 mV peak is far too much for the exponential: the output is clearly distorted (≈ 19 % distortion). With R_E = 100 Ω, part of the input drops across R_E instead of driving the junction: A_v ≈ −10 kΩ / (65 + 100) ≈ −60 and distortion falls to about 3 %. With 470 Ω, A_v ≈ −19 and the output is nearly pure (0.3 %). When R_E ≫ r_e, A_v ≈ −R_C / R_E: gain depends only on two resistors.',
+        },
+        components: ['BC547', 'R_C 10k', 'R_E 0–470 Ω', '9V'],
+      },
+      {
+        id: 'book-preamp',
+        pageRef: 'p. 60',
+        title: { fr: 'Pré-ampli micro du livre : gain 100 = 10 kΩ / 100 Ω', ar: 'مضخّم الميكروفون الأولي: الكسب ١٠٠ = 10k / 100Ω', en: 'The Book’s Mic Pre-Amp: Gain 100 = 10 kΩ / 100 Ω' },
+        summary: {
+          fr: 'BC547 + BC557 en couplage direct sous 9 V, avec la contre-réaction R_F (10 kΩ) sur l’émetteur de Q1 (R_E = 100 Ω). Changez R_F et R_E : le gain suit le rapport des résistances.',
+          ar: 'BC547 مع BC557 بوصل مباشر عند 9V، وتغذية عكسية R_F (10kΩ) نحو باعث Q1 (R_E = 100Ω). غيّر R_F و R_E: يتبع الكسب نسبة المقاومتين.',
+          en: 'BC547 + BC557 directly coupled on 9 V, with feedback R_F (10 kΩ) to Q1’s emitter (R_E = 100 Ω). Change R_F and R_E: gain follows the resistor ratio.',
+        },
+        howItWorks: {
+          fr: 'Q1 (BC547) et Q2 (BC557) sont deux étages à émetteur commun reliés directement : le gain total en boucle ouverte est énorme, mais instable. La résistance R_F (10 kΩ) ramène une fraction β = R_E / (R_E + R_F) de la sortie sur l’émetteur de Q1 : le gain en boucle fermée devient 1 / (β + 1/A_ol) ≈ 1 + R_F / R_E ≈ 101, quelle que soit la dispersion des transistors (le modèle suppose A_ol ≈ 5000, valeur non donnée par le livre : on obtient 99). Résultat : 5 mV de micro deviennent environ 0,5 V. Au-delà de ≈ 40 mV d’entrée, la sortie touche les rails (±4 V) et s’écrête. Avec R_F = 47 kΩ le gain monte vers 430, plus proche de A_ol que de 1 + R_F / R_E : la contre-réaction perd en précision quand on lui demande trop.',
+          ar: 'Q1 (BC547) و Q2 (BC557) مرحلتا باعث مشترك متصلتان مباشرة: الكسب الكلي بدون تغذية عكسية ضخم لكنه غير مستقر. تعيد المقاومة R_F (10kΩ) جزءاً β = R_E / (R_E + R_F) من الخرج إلى باعث Q1، فيصبح الكسب بالحلقة المغلقة 1 / (β + 1/A_ol) ≈ 1 + R_F / R_E ≈ 101 مهما اختلفت الترانزستورات (يفترض النموذج A_ol ≈ 5000 وهي قيمة لا يذكرها الكتاب، فنحصل على ٩٩). النتيجة: ٥ mV من الميكروفون تصبح نحو ٠.٥V. وعند دخل يفوق ≈ 40 mV يلامس الخرج حدّي التغذية (±4V) فيُقصّ. وعند R_F = 47kΩ يرتفع الكسب نحو ٤٣٠، أقرب إلى A_ol منه إلى 1 + R_F / R_E: تفقد التغذية العكسية دقتها عندما نطلب منها أكثر من اللازم.',
+          en: 'Q1 (BC547) and Q2 (BC557) are two common-emitter stages wired directly together: open-loop gain is huge but unstable. R_F (10 kΩ) feeds back a fraction β = R_E / (R_E + R_F) of the output to Q1’s emitter, so closed-loop gain becomes 1 / (β + 1/A_ol) ≈ 1 + R_F / R_E ≈ 101 whatever the transistor spread (the model assumes A_ol ≈ 5000, a value the book does not give: we get 99). Result: 5 mV from the mic becomes about 0.5 V. Beyond ≈ 40 mV of input, the output hits the rails (±4 V) and clips. With R_F = 47 kΩ the gain rises toward 430, closer to A_ol than to 1 + R_F / R_E: feedback loses precision when asked for too much.',
+        },
+        components: ['BC547', 'BC557', 'R_F 10k', 'R_E 100R', '10µ', '9V'],
+      },
+    ],
+    prediction: {
+      question: {
+        fr: 'Dans l’étage du schéma E (V_CC = 5 V, R_C = 22 kΩ), on diminue R_B pour faire passer I_C de 57 µA à 114 µA. Que devient |A_v| ?',
+        ar: 'في مرحلة الشكل E (V_CC = 5V و R_C = 22kΩ) نصغّر R_B فيرتفع I_C من 57 µA إلى 114 µA. ماذا يحدث لـ |A_v|؟',
+        en: 'In the Diagram E stage (V_CC = 5 V, R_C = 22 kΩ), you lower R_B so I_C goes from 57 µA to 114 µA. What happens to |A_v|?',
+      },
+      options: [
+        { fr: 'Il reste ≈ 48 : le gain ne dépend que de R_C', ar: 'يبقى ≈ 48: الكسب يتبع R_C فقط', en: 'Stays ≈ 48: gain depends only on R_C' },
+        { fr: 'Il double, ≈ 96', ar: 'يتضاعف إلى ≈ 96', en: 'It doubles, ≈ 96' },
+        { fr: 'Il est divisé par deux, ≈ 24', ar: 'ينخفض إلى النصف ≈ 24', en: 'It halves, ≈ 24' },
+      ],
+      correctIndex: 1,
+      explanation: {
+        fr: 'Sans résistance d’émetteur, A_v ≈ −R_C / r_e et r_e = 26 mV / I_C. Doubler I_C divise r_e par deux (454 Ω → 227 Ω), donc le gain double (≈ −48 → ≈ −96). C’est aussi pourquoi un étage sans R_E dérive avec la température.',
+        ar: 'بدون مقاومة باعث A_v ≈ −R_C / r_e و r_e = 26 mV / I_C. مضاعفة I_C تنصّف r_e (من 454 Ω إلى 227 Ω) فيتضاعف الكسب (≈ −48 إلى ≈ −96). ولهذا تتغير مرحلة بلا R_E مع الحرارة.',
+        en: 'With no emitter resistor, A_v ≈ −R_C / r_e and r_e = 26 mV / I_C. Doubling I_C halves r_e (454 Ω → 227 Ω), so gain doubles (≈ −48 → ≈ −96). That is also why a stage with no R_E drifts with temperature.',
+      },
+    },
+    teacherNote: {
+      fr: 'Note pédagogique : le livre donne le principe (schéma E, p. 3 et 5–6) et le pré-ampli de la p. 60, mais aucune formule de gain. Les calculs de ce chapitre sont de la physique standard : V_T = 25,85 mV, α = β/(β+1) avec β = 200, résolution exacte de l’exponentielle I_C(V_BE) (distorsion mesurée par analyse de Fourier, harmoniques 2 à 9). Pour le pré-ampli, le gain en boucle ouverte A_ol = 5000 est une hypothèse de modélisation (le livre dit seulement « gain de 100 »). Le chapitre 9 illustrait la marge de tension du point de repos avec une grande excursion ; ici on mesure le vrai gain petit signal, en millivolts.',
+      ar: 'ملاحظة للمعلم: يعطي الكتاب المبدأ (الشكل E ص ٣ و٥–٦) ومضخّم ص ٦٠، دون أي صيغة للكسب. الحسابات هنا فيزياء قياسية: V_T = 25.85 mV و α = β/(β+1) مع β = 200، وحلّ دقيق للعلاقة الأُسّية I_C(V_BE) (يُقاس التشوّه بتحليل فورييه من التوافقية ٢ إلى ٩). وفي المضخّم الأولي يُفترض الكسب المفتوح A_ol = 5000 (فرضية نمذجة، فالكتاب يذكر فقط «كسب ١٠٠»). كان الفصل ٩ يوضح هامش الجهد لنقطة الراحة بتأرجح كبير؛ أما هنا فنقيس الكسب الحقيقي للإشارات الصغيرة بالميلي فولت.',
+      en: 'Teaching note: the book gives the principle (Diagram E, pp. 3 and 5–6) and the p. 60 pre-amp, but no gain formula. The maths here is standard: V_T = 25.85 mV, α = β/(β+1) with β = 200, exact solution of the exponential I_C(V_BE) (distortion measured by Fourier analysis, harmonics 2 to 9). For the pre-amp, open-loop gain A_ol = 5000 is a modelling assumption (the book only says “gain of 100”). Chapter 9 showed bias headroom with a large swing; here we measure true small-signal gain, in millivolts.',
+    },
+  },
 ];

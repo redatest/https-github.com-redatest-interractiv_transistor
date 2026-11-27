@@ -24,6 +24,8 @@ import { playPageFlip, playRelayClick, playTickSound } from '../utils/sound';
 import { VoltageCalculationCard } from './VoltageCalculationCard';
 import { computeBjtVoltageSteps } from '../utils/voltageCalculations';
 import { ExampleOperationBox } from './ExampleOperationBox';
+import { AmplifierAnalogy, AmplifierBoard, AmplifierScope } from './AmplifierViews';
+import { AMP_DEFAULTS } from '../utils/amplifier';
 
 interface Props {
   chapters: ChapterDef[];
@@ -114,10 +116,12 @@ export const ChapterWorkspace: React.FC<Props> = ({
   }, [chapter, activeExampleId]);
 
   useEffect(() => {
+    const d = AMP_DEFAULTS[selectedExampleId];
     setParams((prev) => ({
       ...prev,
       chapterId: chapter.id,
       exampleId: selectedExampleId,
+      ...(chapter.id === 10 && d ? { ampIcUA: d.icUA, ampVinMV: d.vinMV, ampRe: d.re, ampRf: d.rf } : {}),
     }));
   }, [chapter.id, selectedExampleId]);
 
@@ -452,7 +456,8 @@ export const ChapterWorkspace: React.FC<Props> = ({
           </div>
 
           {/* Visual Stage Content */}
-          {stageView === 'board3d' && (
+          {stageView === 'board3d' && chapter.id === 10 && <AmplifierBoard params={params} lang={lang} />}
+          {stageView === 'board3d' && chapter.id !== 10 && (
             <InteractiveBoard3D
               params={params}
               sim={sim}
@@ -460,10 +465,19 @@ export const ChapterWorkspace: React.FC<Props> = ({
               onQuickAction={handleQuickAction}
             />
           )}
-          {stageView === 'schematic' && (
+          {stageView === 'schematic' && chapter.id === 10 && <AmplifierScope params={params} lang={lang} />}
+          {stageView === 'schematic' && chapter.id !== 10 && (
             <LiveSchematicScope params={params} sim={sim} lang={lang} />
           )}
-          {stageView === 'analogy' && (
+          {stageView === 'analogy' && chapter.id === 10 && (
+            <AmplifierAnalogy
+              params={params}
+              lang={lang}
+              analogyTitle={chapter.analogyTitle[lang]}
+              analogyText={chapter.analogyText[lang]}
+            />
+          )}
+          {stageView === 'analogy' && chapter.id !== 10 && (
             <WaterValveAnalogy
               params={params}
               sim={sim}
@@ -979,6 +993,92 @@ export const ChapterWorkspace: React.FC<Props> = ({
             )}
 
             {/* CH 9 Controls (Half-Rail Challenge + AC Clipping) */}
+            {chapter.id === 10 && (() => {
+              const d = AMP_DEFAULTS[selectedExampleId] ?? AMP_DEFAULTS['ce-gain'];
+              const vin = params.ampVinMV ?? d.vinMV;
+              const icUA = params.ampIcUA ?? d.icUA;
+              const re = params.ampRe ?? d.re;
+              const rf = params.ampRf ?? d.rf;
+              const vinMax = selectedExampleId === 'ce-gain' ? 40 : selectedExampleId === 'emitter-degeneration' ? 100 : 60;
+              const chip = (active: boolean) =>
+                `px-3 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer whitespace-nowrap ${
+                  active
+                    ? 'border-amber-600 text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30'
+                    : 'border-stone-300 dark:border-stone-700'
+                }`;
+              const rbMohm = (4.4 / (icUA * 1e-6 / 57)) / 1e6;
+              return (
+                <div className="flex flex-col gap-3">
+                  <label className="flex flex-col gap-1.5 text-sm">
+                    <div className="flex justify-between font-medium">
+                      <span>{tr(lang, 'Amplitude du signal d’entrée V_in (crête)', 'سعة إشارة الدخل V_in (قمة)', 'Input signal amplitude V_in (peak)')}</span>
+                      <span className="font-mono-num text-sky-700 dark:text-sky-400">{vin.toFixed(1)} mV</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.5}
+                      max={vinMax}
+                      step={0.5}
+                      value={Math.min(vin, vinMax)}
+                      onChange={(e) => setParams((p) => ({ ...p, ampVinMV: Number(e.target.value) }))}
+                      className="w-full accent-sky-600 cursor-pointer"
+                    />
+                  </label>
+
+                  {selectedExampleId === 'ce-gain' && (
+                    <label className="flex flex-col gap-1.5 text-sm">
+                      <div className="flex justify-between font-medium">
+                        <span>{tr(lang, 'Courant de repos I_C (via R_B)', 'تيار الراحة I_C (عبر R_B)', 'Quiescent current I_C (via R_B)')}</span>
+                        <span className="font-mono-num text-amber-700 dark:text-amber-400">
+                          {icUA.toFixed(0)} µA · R_B ≈ {rbMohm.toFixed(2)} MΩ · r_e ≈ {((25.85e-3 / (icUA * 1e-6))).toFixed(0)} Ω
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={20}
+                        max={190}
+                        step={2}
+                        value={icUA}
+                        onChange={(e) => setParams((p) => ({ ...p, ampIcUA: Number(e.target.value) }))}
+                        className="w-full accent-amber-600 cursor-pointer"
+                      />
+                    </label>
+                  )}
+
+                  {(selectedExampleId === 'emitter-degeneration' || selectedExampleId === 'book-preamp') && (
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium">{tr(lang, 'Résistance d’émetteur R_E :', 'مقاومة الباعث R_E:', 'Emitter resistor R_E:')}</span>
+                      {(selectedExampleId === 'book-preamp' ? [47, 100, 220] : [0, 47, 100, 220, 470]).map((v) => (
+                        <button key={v} type="button" onClick={() => setParams((p) => ({ ...p, ampRe: v }))} className={chip(re === v)}>
+                          {v === 0 ? tr(lang, 'aucune', 'بدون', 'none') : `${v} Ω`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {selectedExampleId === 'book-preamp' && (
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium">{tr(lang, 'Contre-réaction R_F :', 'التغذية العكسية R_F:', 'Feedback R_F:')}</span>
+                      {[1000, 4700, 10000, 22000, 47000].map((v) => (
+                        <button key={v} type="button" onClick={() => setParams((p) => ({ ...p, ampRf: v }))} className={chip(rf === v)}>
+                          {v >= 1000 ? `${v / 1000} kΩ` : `${v} Ω`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+                    {tr(
+                      lang,
+                      'Astuce : ouvrez l’onglet Oscillo pour comparer V_in et V_out, puis augmentez V_in jusqu’à voir la sortie se déformer puis s’écrêter.',
+                      'نصيحة: افتح تبويب الراسم لمقارنة V_in و V_out، ثم ارفع V_in حتى ترى الخرج يتشوّه ثم يُقصّ.',
+                      'Tip: open the Scope tab to compare V_in and V_out, then raise V_in until the output distorts and then clips.'
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {chapter.id === 9 && (
               <div className="flex flex-col gap-3">
                 <label className="flex flex-col gap-1.5 text-sm">
@@ -1066,7 +1166,7 @@ export const ChapterWorkspace: React.FC<Props> = ({
               </div>
               <div>
                 <div className="text-stone-500 dark:text-stone-400">
-                  {tr(lang, 'Gain actif', 'التضخيم', 'Active gain')}
+                  {chapter.id === 10 ? tr(lang, 'β (gain en courant)', 'β (كسب التيار)', 'β (current gain)') : tr(lang, 'Gain actif', 'التضخيم', 'Active gain')}
                 </div>
                 <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                   ×{sim.betaEff.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US')}

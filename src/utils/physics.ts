@@ -1,3 +1,5 @@
+import { ampParamsFromSim, computeAmplifier } from './amplifier';
+
 export const VS_9V = 9;
 export const VLED = 2;
 export const R_220 = 220;
@@ -71,6 +73,11 @@ export interface SimParams {
   rbSlider: number; // 0..100
   acSignalOn: boolean;
   acAmplitude?: number; // 0.3..3.0 V
+  // Chapitre 10 — amplification de tension
+  ampIcUA?: number; // courant de repos I_C (µA)
+  ampVinMV?: number; // amplitude crête d'entrée (mV)
+  ampRe?: number; // résistance d'émetteur R_E (Ω)
+  ampRf?: number; // résistance de contre-réaction R_F (Ω)
   // #24 Analog Multimeter Transistor Tester
   mysteryType?: 'npn_ebc' | 'pnp_bce' | 'faulty';
   meterRange?: 'x10' | 'x10k';
@@ -1679,6 +1686,37 @@ function computeChapterSimulation(p: SimParams): SimReadout {
             ? 'Charging cut off → diverted to 100 Ω dummy load (3.24 W)'
             : 'Charging cut off (panel open-circuited)'
           : 'Charging active into 12 V battery',
+      };
+    }
+
+    case 10: {
+      const amp = computeAmplifier(ampParamsFromSim(p));
+      const av = Math.abs(amp.avMeasured);
+      const swingTxt = `±${amp.voutPeakV.toFixed(2)} V`;
+      const sign = amp.avSmallSignal < 0;
+      const vinMax = (amp.maxCleanVinV * 1000).toFixed(amp.maxCleanVinV < 0.01 ? 1 : 0);
+      return {
+        vbe: VBE,
+        vce: amp.vc0,
+        vc: amp.vc0,
+        ibUA: (amp.icA / BETA_200) * 1e6,
+        icMA: amp.icA * 1000,
+        betaEff: BETA_200,
+        brightness: Math.min(1, av / 150),
+        conducting: true,
+        staircaseLeds: 0,
+        warningFr: amp.clipped
+          ? `Écrêtage : la sortie touche les rails. Gardez V_in sous ≈ ${vinMax} mV pour éviter l’écrêtage.`
+          : undefined,
+        warningAr: amp.clipped
+          ? `قصّ: الخرج يلامس حدّي التغذية. أبقِ V_in أقل من ≈ ${vinMax} mV لتفادي القصّ.`
+          : undefined,
+        warningEn: amp.clipped
+          ? `Clipping: the output hits the rails. Keep V_in below ≈ ${vinMax} mV to avoid clipping.`
+          : undefined,
+        statusFr: `Gain A_v = ${sign ? '−' : '+'}${av.toFixed(1)} (${amp.gainDb.toFixed(1)} dB)${sign ? ' · sortie inversée' : ' · sortie en phase'} · sortie ${swingTxt} · distorsion ${amp.thdPercent.toFixed(1)} %`,
+        statusAr: `الكسب A_v = ${sign ? '−' : '+'}${av.toFixed(1)} (${amp.gainDb.toFixed(1)} dB)${sign ? ' · الخرج معكوس الطور' : ' · الخرج بنفس الطور'} · الخرج ${swingTxt} · تشوّه ${amp.thdPercent.toFixed(1)}%`,
+        statusEn: `Gain A_v = ${sign ? '−' : '+'}${av.toFixed(1)} (${amp.gainDb.toFixed(1)} dB)${sign ? ' · inverted output' : ' · in-phase output'} · output ${swingTxt} · distortion ${amp.thdPercent.toFixed(1)} %`,
       };
     }
 

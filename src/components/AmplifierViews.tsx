@@ -3,6 +3,7 @@ import { Lang, tr } from '../types';
 import { SimParams } from '../utils/physics';
 import { AmpResult, ampParamsFromSim, computeAmplifier } from '../utils/amplifier';
 import { PcbShell, usePcbTilt } from './PcbShell';
+import { TransistorTO92 } from './InteractiveBoard3D';
 
 interface ViewProps {
   params: SimParams;
@@ -150,38 +151,12 @@ const Res: React.FC<{ x: number; y: number; label: string; value: string; horizo
   </g>
 );
 
-/** Symbole de transistor : pattes collecteur/émetteur en x+4 (haut/bas), base à gauche. PNP : émetteur en haut. */
-const Npn: React.FC<{ x: number; y: number; label: string; pnp?: boolean }> = ({ x, y, label, pnp }) => {
-  // Diagonale côté haut : (-8,-5) → (4,-15) ; côté bas : (-8,5) → (4,15)
-  const arrow = (x1: number, y1: number, x2: number, y2: number) => {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const len = Math.hypot(dx, dy);
-    const ux = dx / len;
-    const uy = dy / len;
-    const tx = x1 + dx * 0.88;
-    const ty = y1 + dy * 0.88;
-    const px = -uy;
-    const py = ux;
-    return `${tx},${ty} ${tx - 7 * ux + 3.2 * px},${ty - 7 * uy + 3.2 * py} ${tx - 7 * ux - 3.2 * px},${ty - 7 * uy - 3.2 * py}`;
-  };
-  return (
-    <g transform={`translate(${x} ${y})`}>
-      <circle cx="0" cy="0" r="22" fill="#111827" stroke="#9ca3af" strokeWidth="2" />
-      <line x1="-8" y1="-12" x2="-8" y2="12" stroke="#e5e7eb" strokeWidth="3.2" />
-      <polyline points="-8,-5 4,-15 4,-22" fill="none" stroke="#e5e7eb" strokeWidth="2.2" />
-      <polyline points="-8,5 4,15 4,22" fill="none" stroke="#e5e7eb" strokeWidth="2.2" />
-      {pnp ? (
-        // émetteur en haut, flèche vers la base
-        <polygon points={arrow(4, -15, -8, -5)} fill="#e5e7eb" />
-      ) : (
-        // émetteur en bas, flèche vers l'extérieur
-        <polygon points={arrow(-8, 5, 4, 15)} fill="#e5e7eb" />
-      )}
-      <text x="30" y="4" textAnchor="start" fontSize="10" fill="#fef3c7" fontWeight="700">{label}</text>
-    </g>
-  );
-};
+const TRACE = '#6fd7a6';
+const OUT_TRACE = '#f59e0b';
+const W = { stroke: TRACE, strokeWidth: 4, opacity: 0.85, fill: 'none', strokeLinejoin: 'round' as const };
+const WO = { ...W, stroke: OUT_TRACE };
+const Dot: React.FC<{ x: number; y: number }> = ({ x, y }) => <circle cx={x} cy={y} r="4" fill={TRACE} stroke="#064e3b" strokeWidth="1" />;
+const noop = () => undefined;
 
 export const AmplifierBoard: React.FC<ViewProps> = ({ params, lang }) => {
   const amp = useAmp(params);
@@ -191,8 +166,17 @@ export const AmplifierBoard: React.FC<ViewProps> = ({ params, lang }) => {
   const inverted = amp.avSmallSignal < 0;
   const vinMax = Math.max(1e-6, Math.max(...amp.vin.map(Math.abs)));
   const voutMax = Math.max(1e-6, Math.max(...amp.vout.map(Math.abs)));
-  const wInX = 48;
-  const outX = preamp ? 500 : 420;
+  const vinPeak = Math.max(...amp.vin);
+  const hasRe = amp.reOhm > 0;
+
+  // Géométrie du boîtier TO-92 (voir TransistorTO92) : pattes E, B, C à cx−26, cx, cx+26 ; pastilles à topY+74.
+  const TOP = 130;
+  const PAD = TOP + 74;
+  const q1x = preamp ? 150 : 290;
+  const q2x = 380;
+  const gnd = preamp ? 300 : 272;
+  const reCy = preamp ? 272 : 250;
+  const vbH = preamp ? 322 : 300;
 
   return (
     <div className="flex flex-col gap-2">
@@ -200,7 +184,7 @@ export const AmplifierBoard: React.FC<ViewProps> = ({ params, lang }) => {
         <span className="px-2 py-1 rounded-md bg-stone-900 text-amber-300">
           A_v {inverted ? '−' : '+'}{Math.abs(amp.avMeasured).toFixed(1)} · {amp.gainDb.toFixed(1)} dB
         </span>
-        <span className="px-2 py-1 rounded-md bg-stone-900 text-sky-300">V_in {fmtV(params.ampVinMV !== undefined ? params.ampVinMV / 1000 : Math.max(...amp.vin))}</span>
+        <span className="px-2 py-1 rounded-md bg-stone-900 text-sky-300">V_in {fmtV(vinPeak)}</span>
         <span className={`px-2 py-1 rounded-md bg-stone-900 ${amp.clipped ? 'text-rose-300' : 'text-emerald-300'}`}>V_out {fmtV(amp.voutPeakV)}</span>
       </div>
       <div
@@ -211,92 +195,88 @@ export const AmplifierBoard: React.FC<ViewProps> = ({ params, lang }) => {
       >
         <PcbShell rx={tilt.rot.rx} rz={tilt.rot.rz} transitionMs={tilt.dragging ? 0 : 250} radius={14} className="w-full max-w-[600px]">
           <div className="p-3">
-            <svg viewBox="0 0 560 300" className="w-full h-auto" direction="ltr">
+            <svg viewBox={`0 0 560 ${vbH}`} className="w-full h-auto" direction="ltr">
               {/* Rails */}
-              <line x1="30" y1="34" x2="540" y2="34" stroke="#d4af37" strokeWidth="5" opacity="0.85" />
-              <text x="34" y="26" fontSize="11" fill="#fde68a" fontWeight="700">+{amp.vcc} V</text>
-              <line x1="30" y1="272" x2="540" y2="272" stroke="#6fd7a6" strokeWidth="5" opacity="0.7" />
-              <text x="34" y="289" fontSize="11" fill="#d1fae5" fontWeight="700">0 V</text>
+              <line x1="24" y1="34" x2="540" y2="34" stroke="#d4af37" strokeWidth="5" opacity="0.85" />
+              <text x="28" y="26" fontSize="11" fill="#fde68a" fontWeight="700">+{amp.vcc} V</text>
+              <line x1="24" y1={gnd} x2="540" y2={gnd} stroke={TRACE} strokeWidth="5" opacity="0.7" />
+              <text x="28" y={gnd - 8} fontSize="11" fill="#d1fae5" fontWeight="700">0 V</text>
 
               {!preamp && (
                 <g>
-                  {/* R_C */}
-                  <line x1="290" y1="34" x2="290" y2="68" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  <Res x={290} y={90} label="R_C" value={fmtR(amp.rcOhm)} />
-                  <line x1="290" y1="112" x2="290" y2="148" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  {/* Transistor */}
-                  <Npn x={286} y={165} label="BC547" />
+                  {/* Collecteur : pastille C → R_C → rail */}
+                  <polyline points={`${q1x + 26},${PAD} 352,${PAD} 352,112`} {...W} />
+                  <line x1="352" y1="34" x2="352" y2="68" {...W} />
+                  <Res x={352} y={90} label="R_C" value={fmtR(amp.rcOhm)} />
+                  {/* Sortie prise sur le collecteur */}
+                  <polyline points="352,150 462,150" {...WO} />
+                  <Dot x={352} y={150} />
+                  <text x="360" y="176" fontSize="10" fill="#fde68a">V_C = {amp.vc0.toFixed(2)} V</text>
                   {/* Émetteur */}
-                  <line x1="290" y1="187" x2="290" y2={amp.reOhm > 0 ? 205 : 272} stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  {amp.reOhm > 0 && (
+                  <line x1={q1x - 26} y1={PAD} x2={q1x - 26} y2={hasRe ? reCy - 22 : gnd} {...W} />
+                  {hasRe && (
                     <g>
-                      <Res x={290} y={227} label="R_E" value={fmtR(amp.reOhm)} />
-                      <line x1="290" y1="249" x2="290" y2="272" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
+                      <Res x={q1x - 26} y={reCy} label="R_E" value={fmtR(amp.reOhm)} />
+                      <line x1={q1x - 26} y1={reCy + 22} x2={q1x - 26} y2={gnd} {...W} />
                     </g>
                   )}
-                  {/* Base */}
-                  <line x1="116" y1="165" x2="264" y2="165" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  <rect x="140" y="152" width="8" height="26" fill="#38bdf8" opacity="0.85" />
-                  <rect x="154" y="152" width="8" height="26" fill="#38bdf8" opacity="0.85" />
-                  <text x="151" y="146" textAnchor="middle" fontSize="9" fill="#bae6fd">C</text>
-                  <text x="116" y="214" fontSize="9.5" fill="#d1fae5">{tr(lang, 'R_B fixe le repos : I_C = ', 'R_B تحدد الراحة: I_C = ', 'R_B sets rest: I_C = ')}{(amp.icA * 1e6).toFixed(0)} µA</text>
-                  {/* Collecteur → sortie */}
-                  <line x1="290" y1="112" x2="290" y2="125" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  <line x1="290" y1="128" x2="400" y2="128" stroke="#f59e0b" strokeWidth="4" opacity="0.85" />
-                  <text x="296" y="122" fontSize="10" fill="#fde68a">V_C = {amp.vc0.toFixed(2)} V</text>
+                  {/* Base ← condensateur de liaison ← entrée */}
+                  <polyline points={`${q1x},${PAD} ${q1x},222 112,222`} {...W} />
+                  <rect x="150" y="209" width="7" height="26" fill="#38bdf8" opacity="0.9" />
+                  <rect x="162" y="209" width="7" height="26" fill="#38bdf8" opacity="0.9" />
+                  <text x="159" y="204" textAnchor="middle" fontSize="9" fill="#bae6fd">C</text>
+                  <text x="60" y="258" fontSize="9.5" fill="#d1fae5">{tr(lang, 'repos : I_C = ', 'الراحة: I_C = ', 'rest: I_C = ')}{(amp.icA * 1e6).toFixed(0)} µA</text>
+                  <TransistorTO92 cx={q1x} topY={TOP} label="Q1" sub="BC547" compId="Q1" active onSelect={noop} />
+                  {/* Entrée / sortie */}
+                  <circle cx="112" cy="222" r="5" fill="#38bdf8" />
+                  <text x="112" y="209" textAnchor="middle" fontSize="10" fill="#bae6fd" fontWeight="700">V_in</text>
+                  <path d={wavePath(amp.vin, 22, 62, 222, 18 / vinMax, phase, 1.5)} fill="none" stroke="#38bdf8" strokeWidth="2.4" strokeLinejoin="round" />
+                  <circle cx="462" cy="150" r="5" fill="#f59e0b" />
+                  <text x="440" y="136" textAnchor="middle" fontSize="10" fill="#fde68a" fontWeight="700">V_out</text>
+                  <path d={wavePath(amp.vout, 470, 60, 150, 24 / voutMax, phase, 1.5)} fill="none" stroke={amp.clipped ? '#ef4444' : '#f59e0b'} strokeWidth="2.6" strokeLinejoin="round" />
+                  <text x="548" y="196" textAnchor="end" fontSize="9.5" fill="#fef3c7">{tr(lang, 'amplitude réelle : ', 'السعة الفعلية: ', 'real amplitude: ')}{fmtV(amp.voutPeakV)}</text>
                 </g>
               )}
 
               {preamp && (
                 <g>
-                  {/* Q1 */}
-                  <line x1="150" y1="34" x2="150" y2="62" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  <Res x={150} y={84} label="12k" value="" />
-                  <line x1="150" y1="106" x2="150" y2="143" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  <Npn x={146} y={165} label="Q1" />
-                  <line x1="150" y1="187" x2="150" y2="205" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  <Res x={150} y={227} label="R_E" value={fmtR(amp.reOhm)} />
-                  <line x1="150" y1="249" x2="150" y2="272" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  <line x1="72" y1="165" x2="124" y2="165" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  {/* Q1 collecteur -> base Q2 */}
-                  <line x1="150" y1="143" x2="150" y2="118" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  <polyline points="150,118 250,118 250,138 328,138" fill="none" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  {/* Q2 PNP */}
-                  <Npn x={346} y={160} label="Q2" pnp />
-                  <line x1="350" y1="138" x2="350" y2="34" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  <line x1="350" y1="182" x2="350" y2="215" stroke="#f59e0b" strokeWidth="4" opacity="0.85" />
-                  <Res x={350} y={237} label="10k" value="" />
-                  <line x1="350" y1="259" x2="350" y2="272" stroke="#6fd7a6" strokeWidth="4" opacity="0.8" />
-                  {/* Contre-réaction R_F : sortie -> émetteur Q1 */}
-                  <line x1="350" y1="200" x2="150" y2="200" stroke="#a78bfa" strokeWidth="3.5" strokeDasharray="6 4" opacity="0.95" />
-                  <Res x={250} y={200} label="R_F" value={fmtR(amp.rfOhm)} horizontal />
-                  <text x="250" y="236" textAnchor="middle" fontSize="9" fill="#ddd6fe">{tr(lang, 'contre-réaction', 'تغذية عكسية', 'feedback')}</text>
-                  <line x1="350" y1="200" x2="470" y2="200" stroke="#f59e0b" strokeWidth="4" opacity="0.85" />
+                  {/* Q1 : émetteur → R_E → masse */}
+                  <line x1={q1x - 26} y1={PAD} x2={q1x - 26} y2={reCy - 22} {...W} />
+                  <Res x={q1x - 26} y={reCy} label="R_E" value={fmtR(amp.reOhm)} />
+                  <line x1={q1x - 26} y1={reCy + 22} x2={q1x - 26} y2={gnd} {...W} />
+                  {/* Q1 : base ← entrée */}
+                  <polyline points={`${q1x},${PAD} ${q1x},222 90,222`} {...W} />
+                  {/* Q1 : collecteur → 12k → +V, et vers la base de Q2 */}
+                  <polyline points={`${q1x + 26},${PAD} ${q1x + 26},232 ${q2x},232 ${q2x},${PAD}`} {...W} />
+                  <line x1="240" y1="34" x2="240" y2="68" {...W} />
+                  <Res x={240} y={90} label="12k" value="" />
+                  <line x1="240" y1="112" x2="240" y2="232" {...W} />
+                  <Dot x={240} y={232} />
+                  {/* Q2 PNP : émetteur → +V */}
+                  <polyline points={`${q2x - 26},${PAD} ${q2x - 26},216 328,216 328,34`} {...W} />
+                  <Dot x={328} y={34} />
+                  {/* Q2 : collecteur → sortie, charge 10k, contre-réaction */}
+                  <polyline points={`${q2x + 26},${PAD} ${q2x + 26},${gnd - 44}`} {...WO} />
+                  <Res x={q2x + 26} y={gnd - 22} label="10k" value="" />
+                  <polyline points={`${q2x + 26},226 470,226`} {...WO} />
+                  <Dot x={q2x + 26} y={226} />
+                  <polyline points={`${q2x + 26},244 ${q1x - 26},244`} stroke="#a78bfa" strokeWidth="3.5" strokeDasharray="6 4" fill="none" opacity="0.95" />
+                  <Dot x={q2x + 26} y={244} />
+                  <Dot x={q1x - 26} y={244} />
+                  <Res x={265} y={244} label="R_F" value={fmtR(amp.rfOhm)} horizontal />
+                  <text x="265" y="284" textAnchor="middle" fontSize="9" fill="#ddd6fe">{tr(lang, 'contre-réaction', 'تغذية عكسية', 'feedback')}</text>
+                  <TransistorTO92 cx={q1x} topY={TOP} label="Q1" sub="BC547" compId="Q1" active onSelect={noop} />
+                  <TransistorTO92 cx={q2x} topY={TOP} label="Q2" sub="BC557" compId="Q2" active isPnp onSelect={noop} />
+                  {/* Entrée / sortie */}
+                  <circle cx="90" cy="222" r="5" fill="#38bdf8" />
+                  <text x="90" y="209" textAnchor="middle" fontSize="10" fill="#bae6fd" fontWeight="700">V_in</text>
+                  <path d={wavePath(amp.vin, 12, 56, 250, 16 / vinMax, phase, 1.5)} fill="none" stroke="#38bdf8" strokeWidth="2.4" strokeLinejoin="round" />
+                  <circle cx="470" cy="226" r="5" fill="#f59e0b" />
+                  <text x="470" y="212" textAnchor="middle" fontSize="10" fill="#fde68a" fontWeight="700">V_out</text>
+                  <path d={wavePath(amp.vout, 478, 60, 262, 22 / voutMax, phase, 1.5)} fill="none" stroke={amp.clipped ? '#ef4444' : '#f59e0b'} strokeWidth="2.6" strokeLinejoin="round" />
+                  <text x="548" y="196" textAnchor="end" fontSize="9.5" fill="#fef3c7">{tr(lang, 'amplitude réelle : ', 'السعة الفعلية: ', 'real amplitude: ')}{fmtV(amp.voutPeakV)}</text>
+                  <text x="28" y="60" fontSize="9" fill="#d1fae5">{tr(lang, 'polarisation simplifiée', 'تحيّز مبسّط', 'simplified bias')}</text>
                 </g>
-              )}
-
-              {/* Entrée */}
-              <circle cx={preamp ? 72 : 116} cy="165" r="5" fill="#38bdf8" />
-              <text x={preamp ? 36 : 60} y="150" fontSize="10" fill="#bae6fd" fontWeight="700">V_in</text>
-              <path
-                d={wavePath(amp.vin, wInX - 28, 56, 195, 18 / vinMax, phase, 1.5)}
-                transform={preamp ? 'translate(-6 0)' : 'translate(0 0)'}
-                fill="none" stroke="#38bdf8" strokeWidth="2.4" strokeLinejoin="round"
-              />
-              {/* Sortie */}
-              <circle cx={outX - (preamp ? 30 : 20)} cy={preamp ? 200 : 128} r="5" fill="#f59e0b" />
-              <text x={outX - (preamp ? 52 : 42)} y={preamp ? 186 : 112} fontSize="10" fill="#fde68a" fontWeight="700">V_out</text>
-              <path
-                d={wavePath(amp.vout, outX - (preamp ? 24 : 14), 54, preamp ? 224 : 152, 22 / voutMax, phase, 1.5)}
-                fill="none" stroke={amp.clipped ? '#ef4444' : '#f59e0b'} strokeWidth="2.6" strokeLinejoin="round"
-              />
-              <text x={preamp ? 548 : 540} y={preamp ? 166 : 196} textAnchor="end" fontSize="9.5" fill="#fef3c7">
-                {tr(lang, 'amplitude réelle : ', 'السعة الفعلية: ', 'real amplitude: ')}{fmtV(amp.voutPeakV)}
-              </text>
-              {preamp && (
-                <text x="136" y="122" textAnchor="end" fontSize="8.5" fill="#d1fae5">
-                  {tr(lang, 'polarisation simplifiée', 'تحيّز مبسّط', 'simplified bias')}
-                </text>
               )}
             </svg>
           </div>

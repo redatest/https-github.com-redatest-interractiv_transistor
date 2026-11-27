@@ -255,7 +255,7 @@ interface TransistorProps {
   onSelect: (id: string) => void;
 }
 
-const TransistorTO92: React.FC<TransistorProps> = ({
+export const TransistorTO92: React.FC<TransistorProps> = ({
   cx,
   topY,
   label,
